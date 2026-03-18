@@ -10,7 +10,7 @@ const HOST = process.env.HOST;
 app.use(cors());
 app.use(express.json());
 
-const authRoutes = require("./routes/testRoute");
+const authRoutes = require("./routes/authRoute");
 
 //Routes
 app.use("/auth", authRoutes);

@@ -44,11 +44,47 @@ const register = (req, res) => {
 
 //login user
 const login = (req, res) => {
-  const { username, password } = req.body;
+  const schema = Joi.object({
+    username: Joi.string().required(),
+    password: Joi.string().required(),
+  });
 
-  res.json({
-    message: "Login successful",
-    username: username,
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
+  const { username, password } = value;
+
+  const sql =
+    "SELECT id, username, password, role, bio_id FROM users WHERE username = ? LIMIT 1";
+
+  db.query(sql, [username], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (!results.length) {
+      return res.status(401).json({ error: "Invalid username or password." });
+    }
+
+    const user = results[0];
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid username or password." });
+    }
+
+    return res.json({
+      message: "Login successful",
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        bio_id: user.bio_id,
+      },
+    });
   });
 };
 
