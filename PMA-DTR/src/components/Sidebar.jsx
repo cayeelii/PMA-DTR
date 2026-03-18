@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 const SidebarLayout = ({ children }) => {
-  const [open] = useState(true); // you can add toggle later
+  const [open] = useState(true); 
 
   const baseClass =
     "flex items-center gap-4 px-3 py-2 rounded-lg transition";
@@ -31,7 +31,7 @@ const SidebarLayout = ({ children }) => {
           {/* LOGO */}
           <div className="flex justify-center items-center py-6">
             <img
-              src="/pma-logo.png"
+              src="/pmalogo.png"
               alt="Logo"
               className={`${open ? "w-24" : "w-12"} transition-all`}
             />
