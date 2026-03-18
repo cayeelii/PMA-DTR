@@ -1,89 +1,155 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Home, FileText, Settings, ClipboardList, PenLine, Users } from "lucide-react";
+import {
+  Home,
+  FileText,
+  Settings,
+  ClipboardList,
+  PenLine,
+  Users,
+  UserCircle,
+  LogOut,
+} from "lucide-react";
 
-const NavLinks = ({ open, setIsOpen }) => (
-  <ul className="space-y-3 mt-6">
+const SidebarLayout = ({ children }) => {
+  const [open] = useState(true); // you can add toggle later
 
-    {/* Home */}
-    <li>
-      <NavLink
-        to="/"
-        className={({ isActive }) =>
-          `flex items-center gap-4 p-2 rounded-md transition ${
-            isActive
-              ? "bg-blue-800 text-yellow-400"
-              : "text-gray-300 hover:bg-blue-700 hover:text-white"
-          }`
-        }
+  const baseClass =
+    "flex items-center gap-4 px-3 py-2 rounded-lg transition";
+  const activeClass = "text-[#FFDD00] bg-white/10";
+  const inactiveClass = "text-white hover:bg-white/10";
+
+  return (
+    <div className="flex min-h-screen">
+      {/* SIDEBAR */}
+      <aside
+        className={`bg-[#0F1E4D] text-white transition-all duration-300 ${
+          open ? "w-64" : "w-20"
+        }`}
       >
-        <Home size={20} />
-        {open && <span>Home</span>}
-      </NavLink>
-    </li>
+        <div className="flex flex-col h-full p-4">
+          {/* LOGO */}
+          <div className="flex justify-center items-center py-6">
+            <img
+              src="/pma-logo.png"
+              alt="Logo"
+              className={`${open ? "w-24" : "w-12"} transition-all`}
+            />
+          </div>
 
-    {/* DTR */}
-    <li>
-      <NavLink to="/dtr" className={({ isActive }) =>
-        `flex items-center gap-4 p-2 rounded-md transition ${
-          isActive ? "bg-blue-800 text-yellow-400" : "text-gray-300 hover:bg-blue-700 hover:text-white"
-        }`
-      }>
-        <FileText size={20} />
-        {open && <span>DTR</span>}
-      </NavLink>
-    </li>
+          {/* NAV LINKS */}
+          <nav className="flex-1 px-2">
+            <ul className="space-y-3">
+              <li>
+                <NavLink
+                  to="/"
+                  className={({ isActive }) =>
+                    `${baseClass} ${
+                      isActive ? activeClass : inactiveClass
+                    }`
+                  }
+                >
+                  <Home size={22} />
+                  {open && <span className="text-lg">Home</span>}
+                </NavLink>
+              </li>
 
-    {/* Maintenance */}
-    <li>
-      <NavLink to="/maintenance" className={({ isActive }) =>
-        `flex items-center gap-4 p-2 rounded-md transition ${
-          isActive ? "bg-blue-800 text-yellow-400" : "text-gray-300 hover:bg-blue-700 hover:text-white"
-        }`
-      }>
-        <Settings size={20} />
-        {open && <span>Maintenance</span>}
-      </NavLink>
-    </li>
+              <li>
+                <NavLink
+                  to="/dtr"
+                  className={({ isActive }) =>
+                    `${baseClass} ${
+                      isActive ? activeClass : inactiveClass
+                    }`
+                  }
+                >
+                  <FileText size={22} />
+                  {open && <span className="text-lg">DTR</span>}
+                </NavLink>
+              </li>
 
-    {/* Logs */}
-    <li>
-      <NavLink to="/logs" className={({ isActive }) =>
-        `flex items-center gap-4 p-2 rounded-md transition ${
-          isActive ? "bg-blue-800 text-yellow-400" : "text-gray-300 hover:bg-blue-700 hover:text-white"
-        }`
-      }>
-        <ClipboardList size={20} />
-        {open && <span>Logs</span>}
-      </NavLink>
-    </li>
+              <li>
+                <NavLink
+                  to="/maintenance"
+                  className={({ isActive }) =>
+                    `${baseClass} ${
+                      isActive ? activeClass : inactiveClass
+                    }`
+                  }
+                >
+                  <Settings size={22} />
+                  {open && <span className="text-lg">Maintenance</span>}
+                </NavLink>
+              </li>
 
-    <hr className="border-gray-700 my-3" />
+              <li>
+                <NavLink
+                  to="/logs"
+                  className={({ isActive }) =>
+                    `${baseClass} ${
+                      isActive ? activeClass : inactiveClass
+                    }`
+                  }
+                >
+                  <ClipboardList size={22} />
+                  {open && <span className="text-lg">Logs</span>}
+                </NavLink>
+              </li>
 
-    {/* Signatories */}
-    <li>
-      <NavLink to="/signatories" className={({ isActive }) =>
-        `flex items-center gap-4 p-2 rounded-md transition ${
-          isActive ? "bg-blue-800 text-yellow-400" : "text-gray-300 hover:bg-blue-700 hover:text-white"
-        }`
-      }>
-        <PenLine size={20} />
-        {open && <span>Signatories</span>}
-      </NavLink>
-    </li>
+              <hr className="border-white/20 my-4" />
 
-    {/* Accounts */}
-    <li>
-      <NavLink to="/accounts" className={({ isActive }) =>
-        `flex items-center gap-4 p-2 rounded-md transition ${
-          isActive ? "bg-blue-800 text-yellow-400" : "text-gray-300 hover:bg-blue-700 hover:text-white"
-        }`
-      }>
-        <Users size={20} />
-        {open && <span>Accounts</span>}
-      </NavLink>
-    </li>
+              <li>
+                <NavLink
+                  to="/signatories"
+                  className={({ isActive }) =>
+                    `${baseClass} ${
+                      isActive ? activeClass : inactiveClass
+                    }`
+                  }
+                >
+                  <PenLine size={22} />
+                  {open && <span className="text-lg">Signatories</span>}
+                </NavLink>
+              </li>
 
-  </ul>
-);
+              <li>
+                <NavLink
+                  to="/accounts"
+                  className={({ isActive }) =>
+                    `${baseClass} ${
+                      isActive ? activeClass : inactiveClass
+                    }`
+                  }
+                >
+                  <Users size={22} />
+                  {open && <span className="text-lg">Accounts</span>}
+                </NavLink>
+              </li>
+            </ul>
+          </nav>
 
-export default NavLinks;
+          {/* USER SECTION */}
+          <div className="mt-auto border-t border-white/10 pt-4 flex items-center justify-between px-3">
+            <div className="flex items-center gap-3">
+              <UserCircle size={28} />
+              {open && <span className="text-lg">Juan</span>}
+            </div>
+
+            {open && (
+              <button className="hover:text-red-400 transition">
+                <LogOut size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 bg-[#ECEEF3] p-8">
+        {children}
+      </main>
+    </div>
+  );
+};
+
+export default SidebarLayout;
