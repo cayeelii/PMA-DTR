@@ -39,7 +39,7 @@ const SidebarLayout = ({ children }) => {
 
           {/* NAV LINKS */}
           <nav className="flex-1 px-2">
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               <li>
                 <NavLink
                   to="/"
