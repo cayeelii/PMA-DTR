@@ -32,7 +32,7 @@ function SignatoriesPage() {
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
             />
           </div>
-          <button className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded-lg font-medium shadow flex items-center gap-2">
+          <button className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-3 py-1 rounded-lg font-medium shadow flex items-center gap-2">
             <span className="text-xl">+</span> Add Signatory
           </button>
         </div>
