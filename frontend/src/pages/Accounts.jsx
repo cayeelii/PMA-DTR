@@ -1,27 +1,125 @@
 import { useState } from "react";
-import { Delete, PenLine, KeyRound, Trash, Search } from "lucide-react";
-const mockData = Array(15).fill({ department: "", head: "" });
-const PAGE_SIZE = 5;
+import { Delete, PenLine, KeyRound, Trash, Search, X } from "lucide-react";
 
+const mockData = Array(15).fill({
+  timestamp: "",
+  user: "",
+  role: "",
+  department: "",
+  head: ""
+});
+const PAGE_SIZE = 5; 
 
 function AccountsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false); 
   const filtered = mockData.filter((row) =>
-    row.department.toLowerCase().includes(search.toLowerCase()),
+    row.user.toLowerCase().includes(search.toLowerCase()) ||
+    row.department.toLowerCase().includes(search.toLowerCase())
   );
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const AddUserModal = ({ isOpen, onClose }) => {
+    const [formData, setFormData] = useState({
+      username: "",
+      role: "",
+      password: "",
+      confirmPassword: ""
+    });
 
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      if (formData.password !== formData.confirmPassword) { 
+        alert("Passwords do not match");
+        return;
+      }
+      console.log("Add user:", formData);  
+      onClose();
+      setFormData({ username: "", role: "", password: "", confirmPassword: "" });
+    };
+
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Add User</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="text"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              placeholder="Enter username"
+              required
+            />
+            
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              required
+            >
+              <option value="">Select Role</option>
+              <option value="Super Admin">Super Admin</option>
+              <option value="Admin">Admin</option>
+            </select>
+            
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              placeholder="Enter password"
+              required
+            />
+            
+            <input
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              placeholder="Confirm password"
+              required
+            />
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition text-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-[#FEAF01] text-black font-semibold py-3 px-6 rounded-lg hover:bg-[#ffc940] transition text-lg"
+              >
+                Add User
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  
   return (
     <div className="min-h-screen bg-[#ECEEF3] p-8">
-  {/* Title only */}
   <div className="mb-6">
     <h1 className="text-3xl font-bold">Accounts</h1>
   </div>
 
-  {/* Search + Button aligned */}
   <div className="flex justify-between items-center mb-4">
     <div className="relative w-64">
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -39,7 +137,10 @@ function AccountsPage() {
       />
     </div>
 
-    <button className="bg-[#FEAF01] text-black font-medium px-4 py-2 rounded flex items-center gap-2 hover:bg-[#ffc940] transition">
+    <button 
+      onClick={() => setIsModalOpen(true)}
+      className="bg-[#FEAF01] text-black font-medium px-4 py-2 rounded flex items-center gap-2 hover:bg-[#ffc940] transition"
+    >
       <span className="text-xl">+</span> Add User
     </button>
   </div>
@@ -87,6 +188,7 @@ function AccountsPage() {
           </tbody>
         </table>
       </div>
+      <AddUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
