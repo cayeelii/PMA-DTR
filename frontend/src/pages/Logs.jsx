@@ -18,35 +18,6 @@ const mockLogs = [
     action: "Updated Time In",
     details: "Employee: Jessie Tanongan; Time In changed from 8:20 AM to 8:00 AM",
   },
-  {
-    id: 3,
-    timestamp: "Mar 02, 2026 - 08:01 AM",
-    user: "Juan",
-    action: "Updated Time In",
-    details: "Employee: Jessie Tanongan; Time In changed from 8:20 AM to 8:00 AM",
-  },
-  {
-    id: 4,
-    timestamp: "Mar 02, 2026 - 08:01 AM",
-    user: "Juan",
-    action: "Updated Time In",
-    details: "Employee: Jessie Tanongan; Time In changed from 8:20 AM to 8:00 AM",
-  },
-  {
-    id: 5,
-    timestamp: "Mar 02, 2026 - 08:01 AM",
-    user: "Juan",
-    action: "Updated Time In",
-    details: "Employee: Jessie Tanongan; Time In changed from 8:20 AM to 8:00 AM",
-  },
-  {
-    id: 6,
-    timestamp: "Mar 02, 2026 - 08:01 AM",
-    user: "Juan",
-    action: "Updated Time In",
-    details: "Employee: Jessie Tanongan; Time In changed from 8:20 AM to 8:00 AM",
-  },
- 
 ];
 
 function LogsPage() {
@@ -105,9 +76,9 @@ function LogsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="text-left px-6 py-3 font-semibold"> TimeStamp</th>
-                <th className="text-left px-6 py-3 font-semibold">User</th>
-                <th className="text-left px-6 py-3 font-semibold">Action</th>
+                <th className="text-left w-52  px-6 py-3 font-semibold">TimeStamp</th>
+                <th className="text-left w-24  pl-3 pr-4 py-3 font-semibold">User</th>
+                <th className="text-left pl-3 pr-6 py-3 font-semibold">Action</th>
                 <th className="text-left px-6 py-3 font-semibold">Details</th>
               </tr>
             </thead>
@@ -127,11 +98,11 @@ function LogsPage() {
                     key={log.id}
                     className={`border-t ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } hover:bg-blue-50 transition`}
+                    }`}
                   >
-                    <td className="px-6 py-4">{log.timestamp}</td>
-                    <td className="px-6 py-4">{log.user}</td>
-                    <td className="px-6 py-4">{log.action}</td>
+                    <td className="w-52 px-6 py-4 whitespace-nowrap">{log.timestamp}</td>
+                    <td className="w-24 pl-3 pr-4 py-4 whitespace-nowrap">{log.user}</td>
+                    <td className="pl-3 pr-6 py-4">{log.action}</td>
                     <td className="px-6 py-4">{log.details}</td>
                   </tr>
                 ))
