@@ -76,7 +76,7 @@ function LogsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="text-left w-52  px-6 py-3 font-semibold">TimeStamp</th>
+                <th className="text-left w-52  px-6 py-3 font-semibold">Timestamp</th>
                 <th className="text-left w-24  pl-3 pr-4 py-3 font-semibold">User</th>
                 <th className="text-left pl-3 pr-6 py-3 font-semibold">Action</th>
                 <th className="text-left px-6 py-3 font-semibold">Details</th>

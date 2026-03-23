@@ -40,9 +40,9 @@ function SignatoriesPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="text-left px-6 py-3 font-semibold">Department</th>
-                <th className="text-left px-6 py-3 font-semibold">Department Head</th>
-                <th className="text-center px-6 py-3 font-semibold">Actions</th>
+                <th className="text-center px-8 py-3 font-semibold">Department</th>
+                <th className="text-center px-12 py-3 font-semibold">Department Head</th>
+                <th className="text-center px-12 py-3 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
