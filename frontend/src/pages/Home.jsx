@@ -21,6 +21,9 @@ function HomePage() {
   };
   const [openCurrent, setOpenCurrent] = React.useState({2025: true, 2024: false, 2023: false});
   const [openDone, setOpenDone] = React.useState({2024: true, 2023: false, 2022: false});
+  const [modalOpen, setModalOpen] = React.useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [selectedMonth, setSelectedMonth] = React.useState(null);
 
   const handleToggle = (type, year) => {
     if (type === "current") {
@@ -54,8 +57,33 @@ function HomePage() {
     </svg>
   );
 
+  // Sample data for modal
+  const departmentRows = [
+    { name: "Tactical Department", status: "Complete" },
+    { name: "Accounting", status: "Complete" },
+    { name: "Procurement/Contracting", status: "Complete" },
+    { name: "Information", status: "Complete" },
+    { name: "Dental", status: "Complete" },
+    { name: "ACDI", status: "Complete" },
+  ];
+
+  const [search, setSearch] = React.useState("");
+  const filteredRows = departmentRows.filter(row =>
+    row.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleMonthClick = (month) => {
+    setSelectedMonth(month);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedMonth(null);
+  };
+
   return (
-    <div className="min-h-screen bg-[#ECEEF3] flex flex-col items-center justify-start py-8 px-2">
+    <div className="min-h-screen bg-[#ECEEF3] flex flex-col items-center justify-start py-8 px-2 relative">
       {/* Header */}
       <div className="flex items-center w-full max-w-4xl mb-8">
         <span className="text-2xl font-semibold text-[#222] ml-2 flex-1">DTR Processing System</span>
@@ -88,6 +116,7 @@ function HomePage() {
                         <button
                           type="button"
                           className="transition-colors text-black hover:text-blue-600 hover:underline focus:text-blue-600 focus:underline outline-none bg-transparent p-0 m-0"
+                          onClick={() => handleMonthClick(item)}
                         >
                           {item}
                         </button>
@@ -126,6 +155,7 @@ function HomePage() {
                           <button
                             type="button"
                             className="transition-colors text-black hover:text-blue-600 hover:underline focus:text-blue-600 focus:underline outline-none bg-transparent p-0 m-0"
+                            onClick={() => handleMonthClick(item)}
                           >
                             {item}
                           </button>
@@ -140,8 +170,58 @@ function HomePage() {
           </div>
         </div>
       </div>
+      {/* Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-xl mx-4 relative animate-fadeIn">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-3 bg-[#223488] rounded-t-lg">
+              <div className="flex items-center w-full">
+                <span className="bg-white rounded-full px-2 py-1 flex items-center max-w-xs w-full">
+                  <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" strokeLinecap="round" /></svg>
+                  <input
+                    type="text"
+                    placeholder="Search Department"
+                    className="w-full outline-none bg-transparent text-sm"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                </span>
+              </div>
+              <button className="ml-4 text-white text-xl font-bold hover:text-red-400" onClick={closeModal}>&times;</button>
             </div>
-          );
-        }
+            {/* Modal Table */}
+            <div className="px-6 py-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 font-semibold">Department Name</th>
+                    <th className="text-left py-2 font-semibold">Status</th>
+                    <th className="text-left py-2 font-semibold"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-4 text-center text-gray-400">No departments found.</td>
+                    </tr>
+                  ) : (
+                    filteredRows.map((row, idx) => (
+                      <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
+                        <td className="py-2">{row.name}</td>
+                        <td className="py-2"><span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">{row.status}</span></td>
+                        <td className="py-2"><button className="text-[#223488] hover:underline">view details</button></td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
-        export default HomePage;
+export default HomePage;
