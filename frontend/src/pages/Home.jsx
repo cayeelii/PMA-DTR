@@ -34,13 +34,27 @@ function HomePage() {
     }
   };
 
-  // Date for header
-  const today = new Date("2026-03-23");
-  const dateString = today.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+
+  const [dateString, setDateString] = React.useState(() => {
+    const today = new Date();
+    return today.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   });
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const today = new Date();
+      setDateString(today.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }));
+    }, 60 * 1000); 
+    return () => clearInterval(interval);
+  }, []);
 
   const FolderIcon = (
     <svg className="w-5 h-5 mr-2 text-gray-600 inline align-middle" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
