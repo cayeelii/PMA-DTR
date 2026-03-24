@@ -98,7 +98,7 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-start py-6 relative">
+    <div className="min-h-screen flex flex-col items-center justify-start py-6 relative" style={{overflowX: 'hidden'}}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center w-full max-w-4xl mb-6 sm:mb-8 gap-2 sm:gap-0">
         <span className="text-xl sm:text-2xl font-semibold text-[#222] sm:ml-2 flex-1 text-center sm:text-left">DTR Processing System</span>
@@ -106,9 +106,9 @@ function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col md:flex-row justify-center items-stretch md:items-start gap-8 md:gap-12 lg:gap-16 w-full max-w-5xl">
+      <div className="flex flex-col md:flex-row justify-center items-stretch md:items-start gap-8 md:gap-12 lg:gap-16 max-w-5xl">
         {/* Current DTRs */}
-        <div className="bg-white/90 rounded-2xl shadow-xl p-6 min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0 border border-blue-100 hover:shadow-2xl transition-shadow duration-300">
+        <div className="bg-white/90 rounded-2xl shadow-xl p-6 min-w-0 sm:min-w-[320px] md:max-w-xs mx-auto md:mx-0 border border-blue-100 hover:shadow-2xl transition-shadow duration-300">
           <div className="font-bold text-lg sm:text-xl px-2 py-2 text-[#223488] flex items-center gap-2">
             <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h3.28a2 2 0 001.42-.59l1.3-1.3a2 2 0 012.83 0l1.3 1.3A2 2 0 0015.72 5H19a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>
             Current DTRs
@@ -149,7 +149,7 @@ function HomePage() {
         </div>
 
         {/* DONE DTRs */}
-        <div className="bg-white/90 rounded-2xl shadow-xl p-6 min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0 border border-blue-100 hover:shadow-2xl transition-shadow duration-300">
+        <div className="bg-white/90 rounded-2xl shadow-xl p-6 min-w-0 sm:min-w-[320px] md:max-w-xs mx-auto md:mx-0 border border-blue-100 hover:shadow-2xl transition-shadow duration-300">
           <div className="font-bold text-lg sm:text-xl px-2 py-2 text-[#223488] flex items-center gap-2">
             <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             DONE DTRs
