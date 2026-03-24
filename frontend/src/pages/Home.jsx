@@ -83,21 +83,21 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ECEEF3] flex flex-col items-center justify-start py-8 px-2 relative">
+    <div className="min-h-screen bg-[#ECEEF3] flex flex-col items-center justify-start py-6 px-2 sm:py-8 sm:px-4 md:px-8 relative">
       {/* Header */}
-      <div className="flex items-center w-full max-w-4xl mb-8">
-        <span className="text-2xl font-semibold text-[#222] ml-2 flex-1">DTR Processing System</span>
-        <span className="text-lg text-[#222] font-medium">{dateString}</span>
+      <div className="flex flex-col sm:flex-row items-center w-full max-w-4xl mb-6 sm:mb-8 gap-2 sm:gap-0">
+        <span className="text-xl sm:text-2xl font-semibold text-[#222] sm:ml-2 flex-1 text-center sm:text-left">DTR Processing System</span>
+        <span className="text-base sm:text-lg text-[#222] font-medium text-center sm:text-right">{dateString}</span>
       </div>
 
       {/* Main Content */}
-      <div className="flex justify-center items-start gap-16 w-full max-w-4xl">
+      <div className="flex flex-col md:flex-row justify-center items-stretch md:items-start gap-6 md:gap-12 lg:gap-16 w-full max-w-4xl">
         {/* Current DTRs */}
-        <div className="min-w-[320px]">
-          <div className="font-semibold text-lg px-2 py-2">Current DTRs</div>
+        <div className="min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0">
+          <div className="font-semibold text-base sm:text-lg px-2 py-2">Current DTRs</div>
           <div>
           {Object.keys(currentDTRs).sort((a,b)=>b-a).map((year) => (
-              <div key={year} className="mb-4">
+              <div key={year} className="mb-3 sm:mb-4">
               <button
                 className="flex items-center w-full px-2 py-1 bg-[#dddddd] rounded border border-gray-200 text-left text-black font-medium focus:outline-none shadow-sm"
                 onClick={() => handleToggle("current", year)}
@@ -131,11 +131,11 @@ function HomePage() {
         </div>
 
         {/* DONE DTRs */}
-        <div className="min-w-[320px]">
-          <div className="font-semibold text-lg px-2 py-2">DONE DTRs</div>
+        <div className="min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0">
+          <div className="font-semibold text-base sm:text-lg px-2 py-2">DONE DTRs</div>
           <div>
           {Object.keys(doneDTRs).sort((a,b)=>b-a).map((year) => (
-              <div key={year} className="mb-4">
+              <div key={year} className="mb-3 sm:mb-4">
               <button
                 className="flex items-center w-full px-2 py-1 bg-[#dddddd] rounded border border-gray-200 text-left text-black font-medium focus:outline-none shadow-sm"
                 onClick={() => handleToggle("done", year)}
@@ -173,9 +173,9 @@ function HomePage() {
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-xl mx-4 relative animate-fadeIn">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-xl mx-2 sm:mx-4 relative animate-fadeIn">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-3 bg-[#223488] rounded-t-lg">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 bg-[#223488] rounded-t-lg gap-2 sm:gap-0">
               <div className="flex items-center w-full">
                 <span className="bg-white rounded-full px-2 py-1 flex items-center max-w-xs w-full">
                   <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" strokeLinecap="round" /></svg>
@@ -188,11 +188,11 @@ function HomePage() {
                   />
                 </span>
               </div>
-              <button className="ml-4 text-white text-xl font-bold hover:text-red-400" onClick={closeModal}>&times;</button>
+              <button className="sm:ml-4 text-white text-xl font-bold hover:text-red-400" onClick={closeModal}>&times;</button>
             </div>
             {/* Modal Table */}
-            <div className="px-6 py-4">
-              <table className="w-full text-sm">
+            <div className="px-2 sm:px-6 py-4 overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2 font-semibold">Department Name</th>
