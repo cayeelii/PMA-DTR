@@ -1,3 +1,4 @@
+
 import React from "react";
 
 function HomePage() {
@@ -48,12 +49,12 @@ function HomePage() {
   );
   const ArrowDown = (
     <svg className="inline ml-2" width="18" height="18" viewBox="0 0 20 20" fill="none">
-      <path d="M6 8l4 4 4-4" stroke="#6b6d6e" strokeWidth="1.5" fill="none"/>
+      <path d="M6 8l4 4 4-4" stroke="#656869" strokeWidth="1.5" fill="none"/>
     </svg>
   );
   const ArrowUp = (
     <svg className="inline ml-2" width="18" height="18" viewBox="0 0 20 20" fill="none">
-      <path d="M6 12l4-4 4 4" stroke="#6b6d6e" strokeWidth="1.5" fill="none"/>
+      <path d="M6 12l4-4 4 4" stroke="#656869" strokeWidth="1.5" fill="none"/>
     </svg>
   );
 
@@ -83,7 +84,7 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ECEEF3] flex flex-col items-center justify-start py-6 px-2 sm:py-8 sm:px-4 md:px-8 relative">
+    <div className="min-h-screen w-full flex flex-col items-center justify-start py-6 relative">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center w-full max-w-4xl mb-6 sm:mb-8 gap-2 sm:gap-0">
         <span className="text-xl sm:text-2xl font-semibold text-[#222] sm:ml-2 flex-1 text-center sm:text-left">DTR Processing System</span>
@@ -91,91 +92,98 @@ function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col md:flex-row justify-center items-stretch md:items-start gap-6 md:gap-12 lg:gap-16 w-full max-w-4xl">
+      <div className="flex flex-col md:flex-row justify-center items-stretch md:items-start gap-8 md:gap-12 lg:gap-16 w-full max-w-5xl">
         {/* Current DTRs */}
-        <div className="min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0">
-          <div className="font-semibold text-base sm:text-lg px-2 py-2">Current DTRs</div>
-          <div>
-          {Object.keys(currentDTRs).sort((a,b)=>b-a).map((year) => (
-              <div key={year} className="mb-3 sm:mb-4">
-              <button
-                className="flex items-center w-full px-2 py-1 bg-[#dddddd] rounded border border-gray-200 text-left text-black font-medium focus:outline-none shadow-sm"
-                onClick={() => handleToggle("current", year)}
-              >
-                {FolderIcon}
-                {year}
-                {openCurrent[year] ? ArrowUp : ArrowDown}
-              </button>
-              {openCurrent[year] && (
-                <ul className="border border-t-0 border-gray-300 rounded-b bg-white">
-                  {currentDTRs[year].length === 0 ? (
-                    <li className="px-4 py-2 text-gray-400 text-sm">No DTRs</li>
-                  ) : (
-                    currentDTRs[year].map((item, idx) => (
-                      <li key={idx} className="px-4 py-2 border-t border-gray-100 text-gray-700 text-sm">
-                        <button
-                          type="button"
-                          className="transition-colors text-black hover:text-blue-600 hover:underline focus:text-blue-600 focus:underline outline-none bg-transparent p-0 m-0"
-                          onClick={() => handleMonthClick(item)}
-                        >
-                          {item}
-                        </button>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              )}
-            </div>
-          ))}
+        <div className="bg-white/90 rounded-2xl shadow-xl p-6 min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0 border border-blue-100 hover:shadow-2xl transition-shadow duration-300">
+          <div className="font-bold text-lg sm:text-xl px-2 py-2 text-[#223488] flex items-center gap-2">
+            <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h3.28a2 2 0 001.42-.59l1.3-1.3a2 2 0 012.83 0l1.3 1.3A2 2 0 0015.72 5H19a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>
+            Current DTRs
           </div>
-        </div>
-
-        {/* DONE DTRs */}
-        <div className="min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0">
-          <div className="font-semibold text-base sm:text-lg px-2 py-2">DONE DTRs</div>
           <div>
-          {Object.keys(doneDTRs).sort((a,b)=>b-a).map((year) => (
+            {Object.keys(currentDTRs).sort((a,b)=>b-a).map((year) => (
               <div key={year} className="mb-3 sm:mb-4">
-              <button
-                className="flex items-center w-full px-2 py-1 bg-[#dddddd] rounded border border-gray-200 text-left text-black font-medium focus:outline-none shadow-sm"
-                onClick={() => handleToggle("done", year)}
-              >
-                {FolderIcon}
-                {year}
-                {openDone[year] ? ArrowUp : ArrowDown}
-              </button>
-              {openDone[year] && (
-                <ul className="border border-t-0 border-gray-300 rounded-b bg-white">
-                  {doneDTRs[year].length === 0 ? (
-                    <li className="px-4 py-2 text-gray-400 text-sm">No DTRs</li>
-                  ) : (
-                    doneDTRs[year].map((item, idx) => (
-                      <li key={idx} className="px-4 py-2 border-t border-gray-100 text-gray-700 text-sm">
-                        {item.includes("Archive") ? (
+                <button
+                  className="flex items-center w-full px-2 py-1 bg-blue-50 rounded border border-blue-200 text-left text-[#223488] font-semibold focus:outline-none shadow-sm hover:bg-blue-100 transition-colors duration-200"
+                  onClick={() => handleToggle("current", year)}
+                >
+                  {FolderIcon}
+                  {year}
+                  {openCurrent[year] ? ArrowUp : ArrowDown}
+                </button>
+                {openCurrent[year] && (
+                  <ul className="border border-t-0 border-blue-200 rounded-b bg-white animate-fadeIn">
+                    {currentDTRs[year].length === 0 ? (
+                      <li className="px-4 py-2 text-gray-400 text-sm">No DTRs</li>
+                    ) : (
+                      currentDTRs[year].map((item, idx) => (
+                        <li key={idx} className="px-4 py-2 border-t border-blue-50 text-gray-700 text-sm">
                           <button
                             type="button"
-                            className="transition-colors text-black hover:text-blue-600 hover:underline focus:text-blue-600 focus:underline outline-none bg-transparent p-0 m-0"
+                            className="transition-colors text-[#223488] hover:text-blue-600 hover:underline focus:text-blue-600 focus:underline outline-none bg-transparent p-0 m-0 font-medium"
                             onClick={() => handleMonthClick(item)}
                           >
                             {item}
                           </button>
-                        ) : item}
-                      </li>
-                    ))
-                  )}
-                </ul>
-              )}
-            </div>
-          ))}
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* DONE DTRs */}
+        <div className="bg-white/90 rounded-2xl shadow-xl p-6 min-w-[90vw] sm:min-w-[320px] max-w-full md:max-w-xs mx-auto md:mx-0 border border-blue-100 hover:shadow-2xl transition-shadow duration-300">
+          <div className="font-bold text-lg sm:text-xl px-2 py-2 text-[#223488] flex items-center gap-2">
+            <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            DONE DTRs
+          </div>
+          <div>
+            {Object.keys(doneDTRs).sort((a,b)=>b-a).map((year) => (
+              <div key={year} className="mb-3 sm:mb-4">
+                <button
+                  className="flex items-center w-full px-2 py-1 bg-green-50 rounded border border-green-200 text-left text-green-700 font-semibold focus:outline-none shadow-sm hover:bg-green-100 transition-colors duration-200"
+                  onClick={() => handleToggle("done", year)}
+                >
+                  {FolderIcon}
+                  {year}
+                  {openDone[year] ? ArrowUp : ArrowDown}
+                </button>
+                {openDone[year] && (
+                  <ul className="border border-t-0 border-green-200 rounded-b bg-white animate-fadeIn">
+                    {doneDTRs[year].length === 0 ? (
+                      <li className="px-4 py-2 text-gray-400 text-sm">No DTRs</li>
+                    ) : (
+                      doneDTRs[year].map((item, idx) => (
+                        <li key={idx} className="px-4 py-2 border-t border-green-50 text-gray-700 text-sm">
+                          {item.includes("Archive") ? (
+                            <button
+                              type="button"
+                              className="transition-colors text-green-700 hover:text-green-900 hover:underline focus:text-green-900 focus:underline outline-none bg-transparent p-0 m-0 font-medium"
+                              onClick={() => handleMonthClick(item)}
+                            >
+                              {item}
+                            </button>
+                          ) : item}
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
+
       {/* Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-xl mx-2 sm:mx-4 relative animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl mx-2 sm:mx-4 relative animate-fadeInUp">
             {/* Modal Header */}
-            <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 bg-[#223488] rounded-t-lg gap-2 sm:gap-0">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-r from-[#223488] to-blue-500 rounded-t-2xl gap-2 sm:gap-0">
               <div className="flex items-center w-full">
                 <span className="bg-white rounded-full px-2 py-1 flex items-center max-w-xs w-full">
                   <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" strokeLinecap="round" /></svg>
@@ -188,7 +196,7 @@ function HomePage() {
                   />
                 </span>
               </div>
-              <button className="sm:ml-4 text-white text-xl font-bold hover:text-red-400" onClick={closeModal}>&times;</button>
+              <button className="sm:ml-4 text-white text-xl font-bold hover:text-red-400 transition-colors duration-200" onClick={closeModal}>&times;</button>
             </div>
             {/* Modal Table */}
             <div className="px-2 sm:px-6 py-4 overflow-x-auto">
@@ -207,7 +215,7 @@ function HomePage() {
                     </tr>
                   ) : (
                     filteredRows.map((row, idx) => (
-                      <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
+                      <tr key={idx} className="border-b last:border-b-0 hover:bg-blue-50 transition-colors duration-150">
                         <td className="py-2">{row.name}</td>
                         <td className="py-2"><span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">{row.status}</span></td>
                         <td className="py-2"><button className="text-[#223488] hover:underline">view details</button></td>
