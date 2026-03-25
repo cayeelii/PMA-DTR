@@ -22,11 +22,10 @@ function MaintenancePage() {
     setModalConfig({ isOpen: false, mode: "" });
   };
 
-  // Logic to add the new entry to the table
   const handleAddEntry = (newEntry) => {
     const entryWithId = { 
       ...newEntry, 
-      id: Date.now(), // Temporary unique ID
+      id: Date.now(), 
       remarks: modalConfig.mode === "holiday" ? "Holiday" : "Half-day" 
     };
     setRows((prev) => [...prev, entryWithId]);

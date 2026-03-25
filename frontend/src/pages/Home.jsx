@@ -55,11 +55,11 @@ function HomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#ECEEF3] flex flex-col items-center justify-start py-8 px-2">
-      {/* Header */}
-      <div className="flex items-center w-full max-w-4xl mb-8">
-        <span className="text-2xl font-semibold text-[#222] ml-2 flex-1">DTR Processing System</span>
-        <span className="text-lg text-[#222] font-medium">{dateString}</span>
+    <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
+
+      <div className="flex flex-row md:items-center justify-between mb-8 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#222]">DTR Processing System</h1>
+        <span className="text-xl text-[#222] font-medium">{dateString}</span>
       </div>
 
       {/* Main Content */}
