@@ -3,7 +3,7 @@ import SidebarLayout from "./components/Sidebar.jsx";
 
 import LoginPage from "./pages/Login"; 
 import HomePage from "./pages/Home";
-import DTRPage from "./pages/DTRPage";
+import DTRPage from "./pages/DTRManagement.jsx";
 import MaintenancePage from "./pages/Maintenance";
 import LogsPage from "./pages/Logs";
 import SignatoriesPage from "./pages/Signatories";
