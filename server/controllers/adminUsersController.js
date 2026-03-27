@@ -29,4 +29,18 @@ const approveUser = (req, res) => {
   });
 };
 
-module.exports = { getPendingUsers, approveUser };
+//Reject user
+const rejectUser = (req, res) => {
+  const { user_id } = req.params;
+
+  const sql = "UPDATE users SET status = 'rejected' WHERE user_id = ?";
+
+  db.query(sql, [user_id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0)
+      return res.status(404).json({ error: "User not found" });
+    res.json({ message: "User rejected successfully" });
+  });
+};
+
+module.exports = { getPendingUsers, approveUser, rejectUser };
