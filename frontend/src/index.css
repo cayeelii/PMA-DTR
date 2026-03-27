@@ -16,11 +16,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* FIXED: removed flex */
+
 body {
   margin: 0;
-  min-width: 100vw;
+  width: 100vw;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Root container */
