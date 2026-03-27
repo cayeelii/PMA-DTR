@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import SidebarLayout from "./components/Sidebar.jsx";
 
 import LoginPage from "./pages/Login"; 
+import EmployeeLoginPage from "./pages/EmployeeLogin";
+import EmployeeRegisterPage from "./pages/EmployeeRegister";
 import HomePage from "./pages/Home";
 import DTRPage from "./pages/DTRManagement.jsx";
 import MaintenancePage from "./pages/Maintenance";
@@ -14,6 +16,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/employee-login" element={<EmployeeLoginPage />} />
+        <Route path="/employee-register" element={<EmployeeRegisterPage />} />
 
         <Route
           path="/*"
