@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const departments = [
-  "PMACO",
-  "ICTC",
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const departmentOptions = ["PMACO", "ICTC"];
+const bioIdCheck = /^\d{6}$/;
+const passwordCheck = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 const EmployeeRegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -13,14 +13,66 @@ const EmployeeRegisterPage = () => {
     password: '',
     department: '',
   });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    console.log("Employee register data:", formData);
+    setErrorMessage('');
+    setSuccessMessage('');
+    setIsSubmitting(true);
+
+    if (!bioIdCheck.test(formData.bioid)) {
+      setErrorMessage('Bio ID must be exactly 6 digits.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!passwordCheck.test(formData.password)) {
+      setErrorMessage('Password must be at least 8 chars with uppercase, lowercase, and number.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!departmentOptions.includes(formData.department)) {
+      setErrorMessage('Please select department.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Register employee account
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          bio_id: formData.bioid,
+          password: formData.password,
+          department: formData.department,
+        }),
+      });
+
+      const data = await response.json();
+      const ok = response.ok;
+
+      if (!ok) {
+        setErrorMessage(data.error || 'Registration failed.');
+        return;
+      }
+
+      setSuccessMessage('Account submitted. Please wait for admin approval before login.');
+      setFormData({ bioid: '', username: '', password: '', department: '' });
+    } catch (error) {
+      setErrorMessage('Unable to connect to server.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -57,6 +109,8 @@ const EmployeeRegisterPage = () => {
                 value={formData.bioid}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+                pattern="\d{6}"
+                title="Bio ID must be exactly 6 digits."
                 required
               />
             </div>
@@ -69,6 +123,7 @@ const EmployeeRegisterPage = () => {
                 value={formData.username}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+
                 required
               />
             </div>
@@ -81,6 +136,8 @@ const EmployeeRegisterPage = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}"
+                title="At least 8 characters with uppercase, lowercase, and number."
                 required
               />
             </div>
@@ -96,7 +153,7 @@ const EmployeeRegisterPage = () => {
                   required
                 >
                   <option value="" disabled>Select department</option>
-                  {departments.map((dept) => (
+                  {departmentOptions.map((dept) => (
                     <option key={dept} value={dept}>
                       {dept}
                     </option>
@@ -118,11 +175,18 @@ const EmployeeRegisterPage = () => {
             <div className="pt-4 flex justify-center">
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full md:w-1/2 bg-[#0b246a] hover:bg-[#00154d] text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95"
               >
-                Register
+                {isSubmitting ? 'Registering...' : 'Register'}
               </button>
             </div>
+            {errorMessage && (
+              <p className="text-center text-sm text-red-600">{errorMessage}</p>
+            )}
+            {successMessage && (
+              <p className="text-center text-sm text-green-600">{successMessage}</p>
+            )}
 
             <div className="text-center">
               <Link
