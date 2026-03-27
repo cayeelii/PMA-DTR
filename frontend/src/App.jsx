@@ -4,6 +4,7 @@ import SidebarLayout from "./components/Sidebar.jsx";
 import LoginPage from "./pages/Login"; 
 import EmployeeLoginPage from "./pages/EmployeeLogin";
 import EmployeeRegisterPage from "./pages/EmployeeRegister";
+import EmployeeHomePage from "./pages/EmployeeHome";
 import HomePage from "./pages/Home";
 import DTRPage from "./pages/DTRManagement.jsx";
 import MaintenancePage from "./pages/Maintenance";
@@ -18,6 +19,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/employee-login" element={<EmployeeLoginPage />} />
         <Route path="/employee-register" element={<EmployeeRegisterPage />} />
+        <Route path="/employee-home" element={<EmployeeHomePage />} />
 
         <Route
           path="/*"
