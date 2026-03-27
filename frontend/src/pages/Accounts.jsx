@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Pencil, Archive, KeyRound } from "lucide-react";
+import { Search, Pencil, Archive } from "lucide-react";
 import AddUserModal from "../components/AddUser"; 
 
 const mockData = Array(15).fill({
@@ -22,7 +22,7 @@ function AccountsPage() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-      <div className="min-h-screen bg-[#ECEEF3] p-8">
+     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
           <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-800">Accounts</h1>
           </div>
@@ -43,10 +43,10 @@ function AccountsPage() {
               </div>
 
               <button
-                  className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-3 py-1 rounded-lg font-medium shadow flex items-center gap-2"
+                  className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
                   onClick={() => setIsModalOpen(true)}
               >
-                  <span className="text-xl">+</span> Add User
+                  <span>Add User</span>
               </button>
           </div>
 
@@ -88,13 +88,13 @@ function AccountsPage() {
                                           : "bg-gray-50"
                                   } hover:bg-blue-50 transition`}
                               >
-                                  <td className="text-center px-6 py-4 text-gray-600">
+                                  <td className="text-center px-6 py-4">
                                       {row.timestamp}
                                   </td>
-                                  <td className="text-center px-6 py-4 font-medium text-gray-800">
+                                  <td className="text-center px-6 py-4">
                                       {row.user}
                                   </td>
-                                  <td className="text-center px-6 py-4 text-gray-600">
+                                  <td className="text-center px-6 py-4">
                                       {row.role}
                                   </td>
                                   <td className="text-center px-6 py-4">
