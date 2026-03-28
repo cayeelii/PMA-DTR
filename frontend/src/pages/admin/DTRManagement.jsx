@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import UploadView from "../components/ImportFile";
-import DepartmentView from "../components/DepartmentView";
+import UploadView from "../../components/ImportFile";
+import DepartmentView from "../../components/DepartmentView";
 
 const DTRManagement = () => {
   const [step, setStep] = useState(1);

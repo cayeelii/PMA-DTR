@@ -1,16 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import SidebarLayout from "./components/Sidebar.jsx";
+import SidebarLayout from "./layout/AdminSidebar.jsx";
 
-import LoginPage from "./pages/Login"; 
-import EmployeeLoginPage from "./pages/EmployeeLogin";
-import EmployeeRegisterPage from "./pages/EmployeeRegister";
-import EmployeeHomePage from "./pages/EmployeeHome";
-import HomePage from "./pages/Home";
-import DTRPage from "./pages/DTRManagement.jsx";
-import MaintenancePage from "./pages/Maintenance";
-import LogsPage from "./pages/Logs";
-import SignatoriesPage from "./pages/Signatories";
-import AccountsPage from "./pages/Accounts";
+import LoginPage from "./pages/admin/Login"; 
+import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
+import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
+import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
+import HomePage from "./pages/admin/Home";
+import DTRPage from "./pages/admin/DTRManagement.jsx";
+import MaintenancePage from "./pages/admin/Maintenance";
+import LogsPage from "./pages/admin/Logs";
+import SignatoriesPage from "./pages/admin/Signatories";
+import AccountsPage from "./pages/admin/Accounts";
 
 function App() {
   return (

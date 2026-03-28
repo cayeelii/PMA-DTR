@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, Pencil, Archive } from "lucide-react";
-import AddUserModal from "../components/AddUser";
+import AddUserModal from "../../components/AddUser";
 
 const mockData = Array(15).fill({
     timestamp: "2024-03-27",

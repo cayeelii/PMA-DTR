@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Check, ChevronDown, ChevronUp, Folder, FolderOpen } from "lucide-react";
-import HomeDepartment from "../components/HomeDepartment";
+import HomeDepartment from "../../components/HomeDepartment";
 
 function HomePage() {
   const currentDTRs = {
