@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { X, User, KeyRound } from "lucide-react";
 
-const AddUserModal = ({ isOpen, onClose }) => {
+
+const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin", "Admin", "Employee"], departmentOptions = ["Department 1", "Department 2"] }) => {
   const [formData, setFormData] = useState({
     username: "",
     role: "",
+    department: "",
     password: "",
     confirmPassword: ""
   });
@@ -15,9 +17,21 @@ const AddUserModal = ({ isOpen, onClose }) => {
       alert("Passwords do not match");
       return;
     }
-    console.log("Add user:", formData);
+    if ((formData.role === "Employee" || formData.role === "Staff") && !formData.department) {
+      alert("Please select a department.");
+      return;
+    }
+    if (formData.role === "Employee" || formData.role === "Staff") {
+      const newEmployee = {
+        bioId: `EMP${Math.floor(100000 + Math.random() * 900000)}`,
+        name: formData.username,
+        department: formData.department,
+        role: formData.role
+      };
+      if (onAddUser) onAddUser(newEmployee);
+    }
     onClose();
-    setFormData({ username: "", role: "", password: "", confirmPassword: "" });
+    setFormData({ username: "", role: "", department: "", password: "", confirmPassword: "" });
   };
 
   if (!isOpen) return null;
@@ -53,15 +67,34 @@ const AddUserModal = ({ isOpen, onClose }) => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">User Role</label>
               <select
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value, department: "" })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="">Choose User Role</option>
-                <option value="Super Admin">Super Admin</option>
-                <option value="Admin">Admin</option>
+                {roleOptions.map((role) => (
+                  <option key={role} value={role}>{role === "Employee" ? "Employee (Staff)" : role}</option>
+                ))}
               </select>
             </div>
+
+            {/* Department field only for Employee/Staff */}
+            { (formData.role === "Employee" || formData.role === "Staff") && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Department</label>
+                <select
+                  value={formData.department}
+                  onChange={e => setFormData({ ...formData, department: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {departmentOptions.map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>

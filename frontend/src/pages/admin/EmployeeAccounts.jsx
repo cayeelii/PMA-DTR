@@ -37,6 +37,10 @@ function EmployeeAccounts() {
     setEmployees((prev) => prev.filter((emp) => emp.bioId !== bioId));
   };
 
+  const handleAddUser = (newEmployee) => {
+    setEmployees((prev) => [...prev, newEmployee]);
+  };
+
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
@@ -80,6 +84,9 @@ function EmployeeAccounts() {
             <AddUserModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
+              onAddUser={handleAddUser}
+              roleOptions={["Employee"]}
+              departmentOptions={["OMA1", "OMA2", "ICTC", "PMACO"]}
             />
             <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
               <table className="w-full text-sm">
