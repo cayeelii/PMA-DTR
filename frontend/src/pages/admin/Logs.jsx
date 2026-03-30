@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import Pagination from "../../components/Pagination";
 
 const PAGE_SIZE = 5;
 
@@ -111,35 +112,8 @@ function LogsPage() {
           </table>
         </div>
 
-         {/* Pagination */}
-         <div className="flex justify-center items-center mt-4 gap-2">
-          <button
-            className="flex items-center text-[#3A3D4B] bg-transparent font-medium px-2 py-1 disabled:text-gray-400"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-            Prev
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              className={`mx-1 w-7 h-7 flex items-center justify-center rounded-full text-sm font-semibold transition ${page === i + 1 ? "bg-[#3A3D4B] text-white" : "bg-[#E0E1E6] text-[#3A3D4B]"}`}
-              onClick={() => setPage(i + 1)}
-              style={{ boxShadow: page === i + 1 ? "0 0 2px #3A3D4B" : "none" }}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            className="flex items-center text-[#3A3D4B] bg-transparent font-medium px-2 py-1 disabled:text-gray-400"
-            disabled={page === totalPages || totalPages === 0}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </div>
+        {/* Pagination */}
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </div>
   );
