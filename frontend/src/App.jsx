@@ -14,34 +14,52 @@ import AccountsPage from "./pages/admin/Accounts";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/employee-login" element={<EmployeeLoginPage />} />
-        <Route path="/employee-register" element={<EmployeeRegisterPage />} />
-        <Route path="/employee-home" element={<EmployeeHomePage />} />
+      <Router>
+          <Routes>
+              <Route path="/" element={<Navigate to="/login" />} />
+              <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/*"
-          element={
-            <SidebarLayout>
-              <Routes>
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/dtr" element={<DTRPage />} />
-                <Route path="/maintenance" element={<MaintenancePage />} />
-                <Route path="/logs" element={<LogsPage />} />
-                <Route path="/signatories" element={<SignatoriesPage />} />
-                <Route path="/accounts" element={<AccountsPage />} />
-                
-                <Route path="/" element={<Navigate to="/home" />} />
-              </Routes>
-            </SidebarLayout>
-          }
-        />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/employee-login" element={<EmployeeLoginPage />} />
+              <Route
+                  path="/employee-register"
+                  element={<EmployeeRegisterPage />}
+              />
+              <Route path="/employee-home" element={<EmployeeHomePage />} />
 
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
-    </Router>
+              <Route
+                  path="/*"
+                  element={
+                      <SidebarLayout>
+                          <Routes>
+                              <Route path="/home" element={<HomePage />} />
+                              <Route path="/dtr" element={<DTRPage />} />
+                              <Route
+                                  path="/maintenance"
+                                  element={<MaintenancePage />}
+                              />
+                              <Route path="/logs" element={<LogsPage />} />
+                              <Route
+                                  path="/signatories"
+                                  element={<SignatoriesPage />}
+                              />
+                              <Route
+                                  path="/accounts"
+                                  element={<AccountsPage />}
+                              />
+
+                              <Route
+                                  path="/"
+                                  element={<Navigate to="/home" />}
+                              />
+                          </Routes>
+                      </SidebarLayout>
+                  }
+              />
+
+              <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+      </Router>
   );
 }
 
