@@ -74,38 +74,40 @@ const register = (req, res) => {
 
 //login user
 const login = (req, res) => {
-  const schema = Joi.object({
-    username: Joi.string().required(),
-    password: Joi.string().required(),
-  });
+    const { username, password } = req.body;
 
-  const { error, value } = schema.validate(req.body);
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
+  // Basic validation
+  if (!username || !password) {
+    return res.status(400).json({
+      message: "Username and password are required",
+    });
   }
 
-  const { username, password } = value;
-
-  const sql =
-    "SELECT user_id, username, password, role, bio_id FROM users WHERE username = ? LIMIT 1";
+  const sql = `
+    SELECT user_id, username, password, role, bio_id 
+    FROM users 
+    WHERE username = ? 
+    LIMIT 1
+  `;
 
   db.query(sql, [username], (err, results) => {
     if (err) {
-      return res.status(500).json({ error: err.message });
+      console.error("Database error:", err.sqlMessage);
+      return res.status(500).json({
+        message: "Database error",
+      });
     }
 
-    if (!results.length) {
-      return res.status(401).json({ error: "Invalid username or password." });
+    // Check if user exists OR password mismatch
+    if (results.length === 0 || password !== results[0].password) {
+      return res.status(401).json({
+        message: "Invalid username or password",
+      });
     }
 
     const user = results[0];
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
 
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: "Invalid username or password." });
-    }
-
+    // Success
     return res.json({
       message: "Login successful",
       user: {
