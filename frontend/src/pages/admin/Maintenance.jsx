@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
-import MaintenanceModal from "../components/MaintenanceModal"; 
+import MaintenanceModal from "../../components/MaintenanceModal"; 
 
 function MaintenancePage() {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, mode: "" });

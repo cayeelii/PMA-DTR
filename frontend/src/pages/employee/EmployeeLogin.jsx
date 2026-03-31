@@ -1,27 +1,65 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-const LoginPage = () => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const bioIdCheck = /^\d{6}$/;
+
+const EmployeeLoginPage = () => {
+  const [credentials, setCredentials] = useState({ bio_id: '', password: '' });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Logging in with:", credentials);
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    if (!bioIdCheck.test(credentials.bio_id)) {
+      setErrorMessage('Bio ID must be exactly 6 digits.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Employee login authentication
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/employee-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+      const ok = response.ok;
+
+      if (!ok) {
+        setErrorMessage(data.error || 'Employee login failed.');
+        return;
+      }
+
+      localStorage.setItem('employeeUser', JSON.stringify(data.user));
+      navigate('/employee-home');
+    } catch (error) {
+      setErrorMessage('Unable to connect to server.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4">
       <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden min-h-[500px]">
-        
         <div className="md:w-5/12 bg-[#00154d] p-8 flex flex-col items-center justify-center text-center relative">
           <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#fdd835]"></div>
-          
-          <img 
-            src="/pmalogo.png" 
-            alt="PMA Logo" 
+
+          <img
+            src="/pmalogo.png"
+            alt="PMA Logo"
             className="w-32 h-32 mb-6 object-contain"
           />
           <h1 className="text-white text-xl font-bold tracking-wider uppercase">
@@ -40,13 +78,16 @@ const LoginPage = () => {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-gray-600 text-sm font-semibold mb-2">Username</label>
+              <label className="block text-gray-600 text-sm font-semibold mb-2">BioID</label>
               <input
                 type="text"
-                name="username"
-                value={credentials.username}
+                name="bio_id"
+                value={credentials.bio_id}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+                placeholder="Enter 6-digit BioID"
+                pattern="\d{6}"
+                title="Bio ID must be exactly 6 digits."
                 required
               />
             </div>
@@ -61,7 +102,7 @@ const LoginPage = () => {
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
                 required
               />
-              <button 
+              <button
                 type="button"
                 className="text-xs text-gray-500 hover:text-blue-900 mt-2 transition-colors"
               >
@@ -72,10 +113,22 @@ const LoginPage = () => {
             <div className="pt-4 flex justify-center">
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full md:w-1/2 bg-[#0b246a] hover:bg-[#00154d] text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95"
               >
-                Log In
+                {isSubmitting ? 'Logging in...' : 'Log In'}
               </button>
+            </div>
+            {errorMessage && (
+              <p className="text-center text-sm text-red-600">{errorMessage}</p>
+            )}
+            <div className="text-center">
+              <Link
+                to="/employee-register"
+                className="text-xs text-[#0b246a] hover:text-[#00154d] font-semibold transition-colors"
+              >
+                Create Account
+              </Link>
             </div>
           </form>
         </div>
@@ -84,4 +137,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default EmployeeLoginPage;
