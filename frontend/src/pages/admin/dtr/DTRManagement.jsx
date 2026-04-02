@@ -32,13 +32,14 @@ const DTRManagement = () => {
   };
 
   return (
-    <div className="relative bg-gray-50 min-h-screen w-full p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
-          DTR Management
-        </h1>
+    <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
+      <div className="p-1 md:p-5 md:mt-0">
+        <div className="flex flex-row md:items-center justify-between mb-6 gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-primary">DTR Management</h1>
+        </div>
 
         {/* Progress Stepper UI */}
+        {step > 1 && (
         <div className="flex items-center justify-center mb-12 max-w-4xl mx-auto">
           {[
             { id: 1, label: "Department", sub: "Select department" },
@@ -51,9 +52,9 @@ const DTRManagement = () => {
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 
                   ${
-                    step > index + 1
+                    step > index + 2
                       ? "bg-[#00154d] text-white border-[#00154d]"
-                      : step === index + 1
+                      : step === index + 2
                         ? "bg-orange-400 text-white border-orange-400"
                         : "bg-white text-gray-300 border-gray-200"
                   }`}
@@ -62,7 +63,7 @@ const DTRManagement = () => {
                 </div>
                 <div className="hidden md:block">
                   <p
-                    className={`text-sm font-bold ${step >= index + 1 ? "text-gray-800" : "text-gray-300"}`}
+                    className={`text-sm font-bold ${step >= index + 2 ? "text-gray-800" : "text-gray-300"}`}
                   >
                     {item.label}
                   </p>
@@ -72,11 +73,12 @@ const DTRManagement = () => {
                 </div>
               </div>
               {index < arr.length - 1 && (
-                <div className="w-12 md:w-20 h-[2px] bg-gray-200 mx-4" />
+                <div className={`w-12 md:w-20 h-[2px] mx-4 ${step > index + 2 ? "bg-[#00154d]" : "bg-gray-200"}`} />
               )}
             </React.Fragment>
           ))}
         </div>
+        )}
 
         {/* View Switcher */}
         <div className="mt-8">

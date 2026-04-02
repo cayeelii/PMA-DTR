@@ -4,7 +4,7 @@ const departments = Array(12).fill({ name: "AICTC", employees: 20 });
 
 const DepartmentView = ({ fileName, onReset, onSelect }) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-8 max-w-5xl mx-auto">
+    <div className="bg-white rounded-xl shadow-sm p-10 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-xl font-semibold text-gray-800">
           Select a department
@@ -22,7 +22,7 @@ const DepartmentView = ({ fileName, onReset, onSelect }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {departments.map((dept, index) => (
           <button
             key={index}
