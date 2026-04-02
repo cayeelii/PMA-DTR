@@ -6,7 +6,7 @@ import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
 import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
 import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
 import HomePage from "./pages/admin/Home";
-import DTRPage from "./pages/admin/DTRManagement.jsx";
+import DTRPage from "./pages/admin/dtr/DTRManagement.jsx";
 import MaintenancePage from "./pages/admin/Maintenance";
 import LogsPage from "./pages/admin/Logs";
 import SignatoriesPage from "./pages/admin/Signatories";

@@ -1,5 +1,5 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 function HomeDepartment({ open, onClose, selectedMonth }) {
   const departmentRows = [
@@ -49,10 +49,11 @@ function HomeDepartment({ open, onClose, selectedMonth }) {
             ) : null}
           </div>
           <button
-            className="sm:ml-4 text-white text-xl font-bold hover:text-red-400 transition-colors duration-200"
+            className="sm:ml-4 text-white p-1 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors duration-200"
             onClick={handleClose}
+            aria-label="Close"
           >
-            &times;
+            <X className="w-6 h-6" />
           </button>
         </div>
         {/* Modal Table */}
@@ -61,7 +62,7 @@ function HomeDepartment({ open, onClose, selectedMonth }) {
             <thead>
               <tr className="border-b">
                 <th className="text-left py-2 font-semibold">Department Name</th>
-                <th className="text-left py-2 font-semibold">Status</th>
+                   <th className="text-center py-2 font-semibold">Status</th>
                 <th className="text-left py-2 font-semibold"></th>
               </tr>
             </thead>
@@ -79,8 +80,8 @@ function HomeDepartment({ open, onClose, selectedMonth }) {
                     className="border-b last:border-b-0 hover:bg-blue-50 transition-colors duration-150"
                   >
                     <td className="py-2">{row.name}</td>
-                    <td className="py-2">
-                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+                    <td className="py-2 text-center align-middle">
+                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs inline-block">
                         {row.status}
                       </span>
                     </td>
