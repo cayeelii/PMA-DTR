@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PenLine, Search } from "lucide-react";
+import { Pencil, Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
 const mockData = Array(15).fill({ department: "", head: "" });
 const PAGE_SIZE = 5;
@@ -13,7 +13,9 @@ function SignatoriesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newDept, setNewDept] = useState("");
   const [newHead, setNewHead] = useState("");
-  const filtered = data.filter((row) => row.department.toLowerCase().includes(search.toLowerCase()));
+  const filtered = data.filter((row) =>
+    row.department.toLowerCase().includes(search.toLowerCase()),
+  );
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -31,7 +33,9 @@ function SignatoriesPage() {
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
         <div className="flex flex-row md:items-center justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary">Signatories</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-primary">
+            Signatories
+          </h1>
         </div>
         <div className="flex flex-row md:items-center justify-between gap-4 mb-4">
           <div className="relative w-64">
@@ -42,17 +46,22 @@ function SignatoriesPage() {
               type="text"
               placeholder="Search Department"
               value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
             />
           </div>
+
           <button
-            className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-3 py-1 rounded-lg font-medium shadow flex items-center gap-2"
-            onClick={() => setShowAddModal(true)}
+            className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
+            onClick={() => setIsModalOpen(true)}
           >
-            <span className="text-xl">+</span> Add Signatory
+            <span>Add Signatory</span>
           </button>
         </div>
+
         {/* Add Signatory Modal */}
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
@@ -63,30 +72,40 @@ function SignatoriesPage() {
                 <input
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
                   value={newDept}
-                  onChange={e => setNewDept(e.target.value)}
+                  onChange={(e) => setNewDept(e.target.value)}
                   placeholder="Enter department"
                   autoFocus
                 />
               </div>
               <div className="mb-6">
-                <label className="block text-gray-700 mb-1">Department Head</label>
+                <label className="block text-gray-700 mb-1">
+                  Department Head
+                </label>
                 <input
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
                   value={newHead}
-                  onChange={e => setNewHead(e.target.value)}
+                  onChange={(e) => setNewHead(e.target.value)}
                   placeholder="Enter department head"
                 />
               </div>
               <div className="flex justify-end gap-2">
                 <button
                   className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded"
-                  onClick={() => { setShowAddModal(false); setNewDept(""); setNewHead(""); }}
-                >Cancel</button>
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setNewDept("");
+                    setNewHead("");
+                  }}
+                >
+                  Cancel
+                </button>
                 <button
                   className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded font-semibold"
                   onClick={handleAddSignatory}
                   disabled={!newDept.trim() || !newHead.trim()}
-                >Add</button>
+                >
+                  Add
+                </button>
               </div>
             </div>
           </div>
@@ -95,27 +114,41 @@ function SignatoriesPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="text-center px-8 py-3 font-semibold">Department</th>
-                <th className="text-center px-12 py-3 font-semibold">Department Head</th>
-                <th className="text-center px-12 py-3 font-semibold">Actions</th>
+                <th className="text-center px-8 py-3 font-semibold">
+                  Department
+                </th>
+                <th className="text-center px-12 py-3 font-semibold">
+                  Department Head
+                </th>
+                <th className="text-center px-12 py-3 font-semibold">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-4 text-center text-gray-500">No results found.</td>
+                  <td
+                    colSpan={3}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    No results found.
+                  </td>
                 </tr>
               ) : (
                 paginated.map((row, idx) => {
                   const globalIdx = (page - 1) * PAGE_SIZE + idx;
                   return (
-                    <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <tr
+                      key={idx}
+                      className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    >
                       <td className="px-6 py-4">
                         {editIdx === globalIdx ? (
                           <input
                             className="px-2 py-1 w-32 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
                             value={editDept}
-                            onChange={e => setEditDept(e.target.value)}
+                            onChange={(e) => setEditDept(e.target.value)}
                           />
                         ) : (
                           row.department || ""
@@ -126,7 +159,7 @@ function SignatoriesPage() {
                           <input
                             className="px-2 py-1 w-32 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
                             value={editHead}
-                            onChange={e => setEditHead(e.target.value)}
+                            onChange={(e) => setEditHead(e.target.value)}
                           />
                         ) : (
                           row.head || ""
@@ -136,32 +169,35 @@ function SignatoriesPage() {
                         {editIdx === globalIdx ? (
                           <>
                             <button
-                              style={{ backgroundColor: '#142050' }}
+                              style={{ backgroundColor: "#142050" }}
                               className="hover:bg-blue-900 text-white px-3 py-1 rounded w-16 mr-2"
                               onClick={() => {
                                 const newData = [...data];
-                                newData[globalIdx] = { department: editDept, head: editHead };
+                                newData[globalIdx] = {
+                                  department: editDept,
+                                  head: editHead,
+                                };
                                 setData(newData);
                                 setEditIdx(null);
                               }}
-                            >Save</button>
+                            >
+                              Save
+                            </button>
                             <button
                               className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-1 rounded w-16"
                               onClick={() => setEditIdx(null)}
-                            >Cancel</button>
+                            >
+                              Cancel
+                            </button>
                           </>
                         ) : (
                           <button
-                            className="hover:text-blue-600"
+                            className="text-blue-600 hover:text-blue-800 transition"
                             title="Edit"
-                            onClick={() => {
-                              setEditIdx(globalIdx);
-                              setEditDept(row.department);
-                              setEditHead(row.head);
-                            }}
                           >
-                            <PenLine className="w-5 h-5 inline" />
+                            <Pencil size={18} />
                           </button>
+                          
                         )}
                       </td>
                     </tr>
@@ -171,9 +207,13 @@ function SignatoriesPage() {
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination */}
-        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   );
