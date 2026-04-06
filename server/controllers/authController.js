@@ -2,7 +2,7 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
 
-//Register user
+//Register employee
 const register = (req, res) => {
   const schema = Joi.object({
     username: Joi.string()
@@ -37,7 +37,8 @@ const register = (req, res) => {
   const role = "employee";
   const status = "pending";
 
-  const checkDeptSql = "SELECT dept_id FROM departments WHERE dept_name = ? LIMIT 1";
+  const checkDeptSql =
+    "SELECT dept_id FROM departments WHERE dept_name = ? LIMIT 1";
 
   db.query(checkDeptSql, [department], (err, deptResult) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -72,14 +73,19 @@ const register = (req, res) => {
   });
 };
 
-//login user
+//Login user
 const login = (req, res) => {
-    const { username, password } = req.body;
+  const { username, password } = req.body;
 
-  // Basic validation
   if (!username || !password) {
     return res.status(400).json({
       message: "Username and password are required",
+    });
+  }
+
+  if (req.session.user) {
+    return res.status(403).json({
+      message: `User ${req.session.user.username} is already logged in.`,
     });
   }
 
@@ -98,8 +104,7 @@ const login = (req, res) => {
       });
     }
 
-    // Check if user exists OR password mismatch
-    if (results.length === 0 || password !== results[0].password) {
+    if (results.length === 0) {
       return res.status(401).json({
         message: "Invalid username or password",
       });
@@ -107,20 +112,29 @@ const login = (req, res) => {
 
     const user = results[0];
 
-    // Success
+    const isMatch = bcrypt.compareSync(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid username or password",
+      });
+    }
+
+    req.session.user = {
+      user_id: user.user_id,
+      username: user.username,
+      role: user.role,
+      bio_id: user.bio_id,
+    };
+
     return res.json({
       message: "Login successful",
-      user: {
-        user_id: user.user_id,
-        username: user.username,
-        role: user.role,
-        bio_id: user.bio_id,
-      },
+      user: req.session.user,
     });
   });
 };
 
-// Employee login 
+//Employee login
 const employeeLogin = (req, res) => {
   const schema = Joi.object({
     bio_id: Joi.string()
@@ -168,17 +182,41 @@ const employeeLogin = (req, res) => {
       });
     }
 
+    req.session.user = {
+      user_id: user.user_id,
+      username: user.username,
+      role: user.role,
+      bio_id: user.bio_id,
+      status: user.status,
+    };
+
     return res.json({
       message: "Employee login successful",
-      user: {
-        user_id: user.user_id,
-        username: user.username,
-        role: user.role,
-        bio_id: user.bio_id,
-        status: user.status,
-      },
+      user: req.session.user,
     });
   });
 };
 
-module.exports = { register, login, employeeLogin };
+//Logout user
+const logout = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Logout failed" });
+    }
+
+    res.clearCookie("connect.sid");
+
+    return res.json({ message: "Logged out successfully" });
+  });
+};
+
+//Get the name of the currently logged in user
+const getCurrentUser = (req, res) => {
+  if (req.session.user) {
+    return res.json({ user: req.session.user });
+  } else {
+    return res.status(401).json({ message: "No user logged in" });
+  }
+};
+
+module.exports = { register, login, employeeLogin, logout, getCurrentUser };
