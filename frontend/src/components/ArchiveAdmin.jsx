@@ -18,7 +18,7 @@ const ArchiveAdminModal = ({ isOpen, user, onClose, onConfirm }) => {
         <div className="px-6 py-8 text-center">
           <p className="text-[19px] text-[#3c4043]">
             Are you sure you want to archive{" "}
-            <span className="font-bold text-[#d93025]">{user?.name || "Nikko"}</span>?
+            <span className="font-bold text-[#d93025]">{user?.user}</span>?
           </p>
         </div>
 
