@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const adminUserController = require("../controllers/adminUsersController");
+const adminUserController = require("../../controllers/admin/adminUsersController");
 
 //GET /users/pending
 router.get("/pending", adminUserController.getPendingUsers);

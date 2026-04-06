@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 const authRoutes = require("./routes/authRoute");
-const adminUsersRoute = require("./routes/adminUsersRoute");
+const adminUsersRoute = require("./routes/admin/adminUsersRoute");
 
 //Routes
 app.use("/api/auth", authRoutes);

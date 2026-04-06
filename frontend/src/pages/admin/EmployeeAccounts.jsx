@@ -1,15 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Check, X } from "lucide-react";
 import AdminAccounts from "./AdminAccounts";
-import AddUserModal from "../../components/AddUser";
-
-const initialEmployees = [
-  { bioId: "OMA1101", name: "Juan", department: "OMA1" },
-  { bioId: "OMA1102", name: "Jake", department: "OMA1" },
-  { bioId: "OMA1103", name: "Justine", department: "OMA1" },
-  { bioId: "OMA1104", name: "Jacob", department: "OMA1" },
-  { bioId: "OMA1105", name: "Jasper", department: "OMA1" },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const admins = [
   { bioId: "ADM1001", name: "Admin1", department: "IT" },
@@ -19,22 +11,84 @@ const admins = [
 function EmployeeAccounts() {
   const [activeTab, setActiveTab] = useState("admins");
   const [search, setSearch] = useState("");
-  const [employees, setEmployees] = useState(initialEmployees);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [employeeError, setEmployeeError] = useState("");
+  const [actionUserId, setActionUserId] = useState(null);
+
+  const fetchPendingEmployees = async () => {
+    setEmployeeError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/pending`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to load pending employees.");
+        return;
+      }
+
+      setEmployees(data);
+    } catch (error) {
+      setEmployeeError("Unable to connect to server.");
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingEmployees();
+  }, []);
 
   const data = activeTab === "admins" ? admins : employees;
   const filtered = data.filter((row) =>
-    row.name.toLowerCase().includes(search.toLowerCase()) ||
-    row.bioId.toLowerCase().includes(search.toLowerCase()) ||
-    row.department.toLowerCase().includes(search.toLowerCase())
+    (activeTab === "admins"
+      ? row.name.toLowerCase().includes(search.toLowerCase()) ||
+        row.bioId.toLowerCase().includes(search.toLowerCase()) ||
+        row.department.toLowerCase().includes(search.toLowerCase())
+      : row.username.toLowerCase().includes(search.toLowerCase()) ||
+        String(row.bio_id).toLowerCase().includes(search.toLowerCase()) ||
+        row.dept_name.toLowerCase().includes(search.toLowerCase()))
   );
-
-  // Approve/Reject handlers
-  const handleApprove = (bioId) => {
-    setEmployees((prev) => prev.filter((emp) => emp.bioId !== bioId));
+// Approve/Reject handlers
+  const handleApprove = async (userId) => {
+    setActionUserId(userId);
+    setEmployeeError("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/approve/${userId}`, {
+        method: "PATCH",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to approve employee.");
+        return;
+      }
+      setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
+    } catch (error) {
+      setEmployeeError("Unable to connect to server.");
+    } finally {
+      setActionUserId(null);
+    }
   };
-  const handleReject = (bioId) => {
-    setEmployees((prev) => prev.filter((emp) => emp.bioId !== bioId));
+
+  const handleReject = async (userId) => {
+    setActionUserId(userId);
+    setEmployeeError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/reject/${userId}`, {
+        method: "PATCH",
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to reject employee.");
+        return;
+      }
+
+      setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
+    } catch (error) {
+      setEmployeeError("Unable to connect to server.");
+    } finally {
+      setActionUserId(null);
+    }
   };
 
   const handleAddUser = (newEmployee) => {
@@ -89,7 +143,9 @@ function EmployeeAccounts() {
                   <span>Add User</span>
                 </div>
               </div>
-              <AddUserModal open={isModalOpen} setOpen={setIsModalOpen} onAddUser={handleAddUser} />
+              {employeeError && (
+                <p className="mb-4 text-sm text-red-600">{employeeError}</p>
+              )}
               <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-100 text-gray-700">
@@ -107,17 +163,18 @@ function EmployeeAccounts() {
                       </tr>
                     ) : (
                       filtered.map((row, idx) => (
-                        <tr key={row.bioId} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="text-center px-6 py-4 font-semibold">{row.bioId}</td>
-                          <td className="text-center px-6 py-4">{row.name}</td>
-                          <td className="text-center px-6 py-4">{row.department}</td>
+                        <tr key={row.user_id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                          <td className="text-center px-6 py-4 font-semibold">{row.bio_id}</td>
+                          <td className="text-center px-6 py-4">{row.username}</td>
+                          <td className="text-center px-6 py-4">{row.dept_name}</td>
                           <td className="text-center px-6 py-4">
                             <div className="flex justify-center gap-3">
                               <button
                                 className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-200 transition-all duration-150 text-sm"
                                 title="Approve"
-                                onClick={() => handleApprove(row.bioId)}
+                                onClick={() => handleApprove(row.user_id)}
                                 aria-label="Approve"
+                                disabled={actionUserId === row.user_id}
                               >
                                 <Check className="w-5 h-5" />
                                 <span className="hidden sm:inline">Approve</span>
@@ -125,8 +182,9 @@ function EmployeeAccounts() {
                               <button
                                 className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200 transition-all duration-150 text-sm"
                                 title="Reject"
-                                onClick={() => handleReject(row.bioId)}
+                                onClick={() => handleReject(row.user_id)}
                                 aria-label="Reject"
+                                disabled={actionUserId === row.user_id}
                               >
                                 <X className="w-5 h-5" />
                                 <span className="hidden sm:inline">Reject</span>
