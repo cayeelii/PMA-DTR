@@ -18,18 +18,17 @@ const DTREditView = ({ employee, onBack, onSave }) => {
   };
 
   return (
-    /* 1. Define a height and flex layout for the main card */
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(100vh-100px)] min-h-[500px]">
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(80vh-80px)] min-h-[300px]">
       
-      {/* Header Section - shrink-0 keeps it from collapsing */}
+      {/* Header Section */}
       <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4 shrink-0">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <ChevronLeft size={24} className="text-gray-600" />
           </button>
           <div>
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-              {employee?.name || "Maria Santos"}
+              {employee?.name}
               <span className="text-xs font-mono text-gray-400 bg-gray-50 px-2 py-1 rounded">OMA1</span>
             </h2>
           </div>

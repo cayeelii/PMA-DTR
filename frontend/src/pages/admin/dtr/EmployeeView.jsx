@@ -27,13 +27,10 @@ const EmployeeView = ({ departmentName, onBack, onSelectEmployee }) => {
   );
 
   return (
-    /* 1. Set a fixed height or max-height on the main container and flex-col */
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-5xl mx-auto border border-gray-100 flex flex-col h-[600px]">
-      
-      {/* Header Section (Stays Fixed) */}
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-5xl mx-auto border border-gray-100 flex flex-col h-[650px]">
       <div className="p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
-        <h2 className="text-2xl font-bold text-gray-800">
-          {departmentName} <span className="text-gray-400 mx-2">•</span> Employees
+        <h2 className="text-xl font-bold text-gray-800">
+          {departmentName} <span className="text-gray-400 mx-1">•</span> Employees
         </h2>
         <button 
           onClick={onBack}
@@ -44,7 +41,7 @@ const EmployeeView = ({ departmentName, onBack, onSelectEmployee }) => {
         </button>
       </div>
 
-      {/* Search Bar Section (Stays Fixed) */}
+      {/* Search Bar */}
       <div className="p-6 pb-4 flex items-center justify-between shrink-0">
         <div className="relative w-full max-w-xl">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
