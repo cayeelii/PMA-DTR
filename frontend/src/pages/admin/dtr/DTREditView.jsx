@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import { ChevronLeft, Save, FileText } from 'lucide-react';
 
 const DTREditView = ({ employee, onBack, onSave }) => {
-  const [dtrEntries, setDtrEntries] = useState([
-    { date: '03/01/26', day: 'Mon', amIn: '08:05 AM', amOut: '11:59 AM', pmIn: '12:31 PM', pmOut: '05:00 PM', otIn: '--', otOut: '--' },
-    { date: '03/02/26', day: 'Tue', amIn: '08:05 AM', amOut: '11:55 AM', pmIn: '12:35 PM', pmOut: '05:05 PM', otIn: '--', otOut: '--' },
-    { date: '03/03/26', day: 'Wed', amIn: '07:55 AM', amOut: '11:59 AM', pmIn: '12:40 PM', pmOut: '05:05 PM', otIn: '--', otOut: '--' },
-    { date: '03/04/26', day: 'Thurs', amIn: '07:55 AM', amOut: '11:59 AM', pmIn: '12:40 PM', pmOut: '05:05 PM', otIn: '--', otOut: '--' },
-    { date: '03/05/26', day: 'Fri', amIn: '07:51 AM', amOut: '11:59 AM', pmIn: '12:42 PM', pmOut: '05:00 PM', otIn: '--', otOut: '--' },
-    { date: '03/06/26', day: 'Sat', amIn: '07:58 AM', amOut: '11:59 AM', pmIn: '01:00 PM', pmOut: '05:00 PM', otIn: '--', otOut: '--' },
-    { date: '03/07/26', day: 'Sun', amIn: '07:58 AM', amOut: '11:59 AM', pmIn: '01:00 PM', pmOut: '05:00 PM', otIn: '--', otOut: '--' },
-  ]);
+  // Mocking more data to demonstrate scrolling
+  const [dtrEntries, setDtrEntries] = useState(
+    Array.from({ length: 31 }, (_, i) => ({
+      date: `03/${(i + 1).toString().padStart(2, '0')}/26`,
+      day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(2026, 2, i + 1).getDay()],
+      amIn: '08:00 AM', amOut: '12:00 PM', pmIn: '01:00 PM', pmOut: '05:00 PM', otIn: '--', otOut: '--'
+    }))
+  );
 
   const handleInputChange = (index, field, value) => {
     const updatedEntries = [...dtrEntries];
@@ -19,8 +18,11 @@ const DTREditView = ({ employee, onBack, onSave }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100">
-      <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
+    /* 1. Define a height and flex layout for the main card */
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(100vh-100px)] min-h-[500px]">
+      
+      {/* Header Section - shrink-0 keeps it from collapsing */}
+      <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4 shrink-0">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <ChevronLeft size={24} className="text-gray-600" />
@@ -36,54 +38,56 @@ const DTREditView = ({ employee, onBack, onSave }) => {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => onSave(dtrEntries)}
-            className="flex items-center gap-2 bg-[#449d44] hover:bg-[#398439] text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-sm"
+            className="flex items-center gap-2 bg-[#449d44] hover:bg-[#398439] text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-sm active:scale-95"
           >
             <Save size={18} />
             Save changes
           </button>
-          <button className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all">
+          <button className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all active:scale-95">
             <FileText size={18} />
             Generate Report
           </button>
         </div>
       </div>
 
-      {/* DTR Table */}
-      <div className="p-6 overflow-x-auto">
-        <table className="w-full text-center border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-gray-500 uppercase text-[11px] font-bold tracking-widest">
-              <th className="py-4 px-2">Date</th>
-              <th className="py-4 px-2">Day</th>
-              <th className="py-4 px-2">AM IN</th>
-              <th className="py-4 px-2">AM OUT</th>
-              <th className="py-4 px-2">PM IN</th>
-              <th className="py-4 px-2">PM OUT</th>
-              <th className="py-4 px-2">OT IN</th>
-              <th className="py-4 px-2">OT OUT</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {dtrEntries.map((entry, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                <td className="py-4 text-sm font-medium text-gray-700">{entry.date}</td>
-                <td className="py-4 text-sm text-gray-500">{entry.day}</td>
-                
-                {/* Editable Time Inputs */}
-                {['amIn', 'amOut', 'pmIn', 'pmOut', 'otIn', 'otOut'].map((field) => (
-                  <td key={field} className="py-2 px-1">
-                    <input 
-                      type="text"
-                      value={entry[field]}
-                      onChange={(e) => handleInputChange(idx, field, e.target.value)}
-                      className="w-24 text-center py-1.5 border border-gray-300 rounded-full text-[11px] font-semibold text-gray-600 focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none bg-white transition-all shadow-sm"
-                    />
-                  </td>
-                ))}
+      {/* 2. Scrollable Table Container */}
+      <div className="flex-1 overflow-auto p-6 pt-2">
+        <div className="inline-block min-w-full align-middle">
+          <table className="w-full text-center border-separate border-spacing-0">
+            <thead>
+              <tr className="bg-gray-100 text-gray-500 uppercase text-[11px] font-bold tracking-widest">
+                {/* 3. Use sticky top on the headers */}
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200 first:rounded-tl-lg">Date</th>
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200">Day</th>
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200">AM IN</th>
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200">AM OUT</th>
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200">PM IN</th>
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200">PM OUT</th>
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200">OT IN</th>
+                <th className="sticky top-0 z-20 bg-gray-100 py-4 px-2 border-b border-gray-200 last:rounded-tr-lg">OT OUT</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {dtrEntries.map((entry, idx) => (
+                <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-3 text-sm font-medium text-gray-700 whitespace-nowrap">{entry.date}</td>
+                  <td className="py-3 text-sm text-gray-500">{entry.day}</td>
+                  
+                  {['amIn', 'amOut', 'pmIn', 'pmOut', 'otIn', 'otOut'].map((field) => (
+                    <td key={field} className="py-1 px-1">
+                      <input 
+                        type="text"
+                        value={entry[field]}
+                        onChange={(e) => handleInputChange(idx, field, e.target.value)}
+                        className="w-24 text-center py-1.5 border border-gray-200 rounded-full text-[11px] font-semibold text-gray-600 focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none bg-white transition-all shadow-sm"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -37,9 +37,9 @@ function AdminAccounts() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
+   <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
-        <div className="flex justify-between items-center mb-6 mt-7">
+        <div className="flex flex-row md:items-center justify-between mb-6 gap-4">
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
