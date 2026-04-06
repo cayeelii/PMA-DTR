@@ -24,7 +24,7 @@ function AdminAccounts() {
     return (
         <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
             <div className="p-1 md:p-5 md:mt-0">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center mb-6 mt-7">
                     <div className="relative w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
@@ -47,7 +47,7 @@ function AdminAccounts() {
                     </button>
                 </div>
 
-                <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
+                <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200 mt-10">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-100 text-gray-700">
                             <tr>
