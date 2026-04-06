@@ -17,12 +17,12 @@ const admins = [
 ];
 
 function EmployeeAccounts() {
-  const [activeTab, setActiveTab] = useState("employees");
+  const [activeTab, setActiveTab] = useState("admins");
   const [search, setSearch] = useState("");
   const [employees, setEmployees] = useState(initialEmployees);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const data = activeTab === "employees" ? employees : admins;
+  const data = activeTab === "admins" ? admins : employees;
   const filtered = data.filter((row) =>
     row.name.toLowerCase().includes(search.toLowerCase()) ||
     row.bioId.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,8 +44,11 @@ function EmployeeAccounts() {
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
+        <div className="flex flex-row md:items-center justify-between mb-6 gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-primary">Accounts</h1>
+        </div>
         <div className="flex gap-8 border-b border-gray-200 mb-4 relative">
-          {["employees", "admins"].map((tab) => (
+          {["admins", "employees"].map((tab) => (
             <button
               key={tab}
               className={`relative pb-2 px-1 font-medium transition-colors duration-200 cursor-pointer focus:outline-none
@@ -61,7 +64,9 @@ function EmployeeAccounts() {
             </button>
           ))}
         </div>
-        {activeTab === "employees" ? (
+        {activeTab === "admins" ? (
+          <AdminAccounts />
+        ) : (
           <div>
             <div className="flex justify-between items-center mb-8 mt-8">
               <div className="relative w-64">
@@ -74,20 +79,7 @@ function EmployeeAccounts() {
                   className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
-              <button
-                className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <span>Add User</span>
-              </button>
             </div>
-            <AddUserModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onAddUser={handleAddUser}
-              roleOptions={["Employee"]}
-              departmentOptions={["OMA1", "OMA2", "ICTC", "PMACO"]}
-            />
             <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100 text-gray-700">
@@ -138,8 +130,6 @@ function EmployeeAccounts() {
               </table>
             </div>
           </div>
-        ) : (
-          <AdminAccounts />
         )}
       </div>
     </div>

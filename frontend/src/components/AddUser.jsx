@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { X, User, KeyRound } from "lucide-react";
 
-
 const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin", "Admin", "Employee"], departmentOptions = ["Department 1", "Department 2"] }) => {
   const [formData, setFormData] = useState({
     username: "",
@@ -10,7 +9,6 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
     password: "",
     confirmPassword: ""
   });
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {

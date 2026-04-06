@@ -9,7 +9,6 @@ import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
  */
 function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
-
   
   const getPages = () => {
     const pages = [];

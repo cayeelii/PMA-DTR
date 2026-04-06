@@ -13,7 +13,6 @@ import {
 
 const SidebarLayout = ({ children }) => {
   const [open] = useState(true); 
-
   const baseClass =
     "flex items-center gap-4 px-3 py-2 rounded-lg transition";
   const activeClass = "text-[#FFDD00] bg-white/10";
@@ -134,7 +133,6 @@ const SidebarLayout = ({ children }) => {
               <UserCircle size={28} />
               {open && <span className="text-lg">Juan</span>}
             </div>
-
             {open && (
               <button className="hover:text-red-400 transition">
                 <LogOut size={20} />
