@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Home,
@@ -11,12 +11,47 @@ import {
   LogOut,
 } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const SidebarLayout = ({ children }) => {
-  const [open] = useState(true); 
-  const baseClass =
-    "flex items-center gap-4 px-3 py-2 rounded-lg transition";
+  const [open] = useState(true);
+  const baseClass = "flex items-center gap-4 px-3 py-2 rounded-lg transition";
   const activeClass = "text-[#FFDD00] bg-white/10";
   const inactiveClass = "text-white hover:bg-white/10";
+  const [username, setUsername] = useState("Guest");
+
+  useEffect(() => {
+    //Fetch current user
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/current-user`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.user) {
+          setUsername(data.user.username);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  //Fetch logout
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -43,9 +78,7 @@ const SidebarLayout = ({ children }) => {
                 <NavLink
                   to="/home"
                   className={({ isActive }) =>
-                    `${baseClass} ${
-                      isActive ? activeClass : inactiveClass
-                    }`
+                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
                 >
                   <Home size={22} />
@@ -57,9 +90,7 @@ const SidebarLayout = ({ children }) => {
                 <NavLink
                   to="/dtr"
                   className={({ isActive }) =>
-                    `${baseClass} ${
-                      isActive ? activeClass : inactiveClass
-                    }`
+                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
                 >
                   <FileText size={22} />
@@ -71,9 +102,7 @@ const SidebarLayout = ({ children }) => {
                 <NavLink
                   to="/maintenance"
                   className={({ isActive }) =>
-                    `${baseClass} ${
-                      isActive ? activeClass : inactiveClass
-                    }`
+                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
                 >
                   <Settings size={22} />
@@ -85,9 +114,7 @@ const SidebarLayout = ({ children }) => {
                 <NavLink
                   to="/logs"
                   className={({ isActive }) =>
-                    `${baseClass} ${
-                      isActive ? activeClass : inactiveClass
-                    }`
+                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
                 >
                   <ClipboardList size={22} />
@@ -101,9 +128,7 @@ const SidebarLayout = ({ children }) => {
                 <NavLink
                   to="/signatories"
                   className={({ isActive }) =>
-                    `${baseClass} ${
-                      isActive ? activeClass : inactiveClass
-                    }`
+                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
                 >
                   <PenLine size={22} />
@@ -115,9 +140,7 @@ const SidebarLayout = ({ children }) => {
                 <NavLink
                   to="/accounts"
                   className={({ isActive }) =>
-                    `${baseClass} ${
-                      isActive ? activeClass : inactiveClass
-                    }`
+                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
                 >
                   <Users size={22} />
@@ -131,10 +154,13 @@ const SidebarLayout = ({ children }) => {
           <div className="mt-auto border-t border-white/10 pt-4 flex items-center justify-between px-3">
             <div className="flex items-center gap-3">
               <UserCircle size={28} />
-              {open && <span className="text-lg">Juan</span>}
+              {open && <span className="text-lg">{username}</span>}
             </div>
             {open && (
-              <button className="hover:text-red-400 transition">
+              <button
+                onClick={handleLogout}
+                className="hover:text-red-400 transition"
+              >
                 <LogOut size={20} />
               </button>
             )}
@@ -143,9 +169,7 @@ const SidebarLayout = ({ children }) => {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 bg-[#ECEEF3] p-8">
-        {children}
-      </main>
+      <main className="flex-1 bg-[#ECEEF3] p-8">{children}</main>
     </div>
   );
 };

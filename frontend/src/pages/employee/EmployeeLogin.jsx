@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const bioIdCheck = /^\d{6}$/;
 
 const EmployeeLoginPage = () => {
-  const [credentials, setCredentials] = useState({ bio_id: '', password: '' });
-  const [errorMessage, setErrorMessage] = useState('');
+  const [credentials, setCredentials] = useState({ bio_id: "", password: "" });
+  const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -17,35 +17,35 @@ const EmployeeLoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
     setIsSubmitting(true);
 
     if (!bioIdCheck.test(credentials.bio_id)) {
-      setErrorMessage('Bio ID must be exactly 6 digits.');
+      setErrorMessage("Bio ID must be exactly 6 digits.");
       setIsSubmitting(false);
       return;
     }
 
-    // Employee login authentication
+    //Fetch employee login
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/employee-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
+        credentials: "include",
       });
 
       const data = await response.json();
       const ok = response.ok;
 
       if (!ok) {
-        setErrorMessage(data.error || 'Employee login failed.');
+        setErrorMessage(data.error || "Employee login failed.");
         return;
       }
 
-      localStorage.setItem('employeeUser', JSON.stringify(data.user));
-      navigate('/employee-home');
+      navigate("/employee-home");
     } catch (error) {
-      setErrorMessage('Unable to connect to server.');
+      setErrorMessage("Unable to connect to server.");
     } finally {
       setIsSubmitting(false);
     }
@@ -72,13 +72,17 @@ const EmployeeLoginPage = () => {
 
         <div className="md:w-7/12 bg-[#f4f4f4] p-8 md:p-16 flex flex-col justify-center">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 tracking-tight">WELCOME BACK!</h2>
+            <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
+              WELCOME BACK!
+            </h2>
             <p className="text-gray-500 text-sm mt-1">Sign in to continue</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-gray-600 text-sm font-semibold mb-2">BioID</label>
+              <label className="block text-gray-600 text-sm font-semibold mb-2">
+                BioID
+              </label>
               <input
                 type="text"
                 name="bio_id"
@@ -93,7 +97,9 @@ const EmployeeLoginPage = () => {
             </div>
 
             <div>
-              <label className="block text-gray-600 text-sm font-semibold mb-2">Password</label>
+              <label className="block text-gray-600 text-sm font-semibold mb-2">
+                Password
+              </label>
               <input
                 type="password"
                 name="password"
@@ -116,7 +122,7 @@ const EmployeeLoginPage = () => {
                 disabled={isSubmitting}
                 className="w-full md:w-1/2 bg-[#0b246a] hover:bg-[#00154d] text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95"
               >
-                {isSubmitting ? 'Logging in...' : 'Log In'}
+                {isSubmitting ? "Logging in..." : "Log In"}
               </button>
             </div>
             {errorMessage && (
