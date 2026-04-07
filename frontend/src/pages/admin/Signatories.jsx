@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pencil, Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import AddSignatoryModal from "../../components/AddSignatoryModal";
+import EditSignatoryModal from "../../components/EditSignatoryModal";
 // Start with an empty table
 const PAGE_SIZE = 20;
 function SignatoriesPage() {
@@ -12,6 +13,8 @@ function SignatoriesPage() {
   const [editHead, setEditHead] = useState("");
   const [data, setData] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedSignatory, setSelectedSignatory] = useState(null);
   const filtered = data.filter((row) =>
     row.department.toLowerCase().includes(search.toLowerCase()),
   );
@@ -22,6 +25,27 @@ function SignatoriesPage() {
     setData(prev => [signatory, ...prev]);
     setShowAddModal(false);
     setPage(1);
+  };
+
+  const handleEditClick = (signatory, idx) => {
+    setSelectedSignatory({ ...signatory });
+    setEditIdx(idx);
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = (updatedSignatory) => {
+    const newData = [...data];
+    newData[editIdx] = updatedSignatory;
+    setData(newData);
+    setShowEditModal(false);
+    setEditIdx(null);
+    setSelectedSignatory(null);
+  };
+
+  const handleEditClose = () => {
+    setShowEditModal(false);
+    setEditIdx(null);
+    setSelectedSignatory(null);
   };
 
   return (
@@ -63,6 +87,12 @@ function SignatoriesPage() {
           onClose={() => setShowAddModal(false)}
           onAdd={handleAddSignatory}
         />
+        <EditSignatoryModal
+          isOpen={showEditModal}
+          signatory={selectedSignatory}
+          onClose={handleEditClose}
+          onSave={handleEditSave}
+        />
         <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
@@ -97,61 +127,19 @@ function SignatoriesPage() {
                       className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                     >
                       <td className="px-6 py-4">
-                        {editIdx === globalIdx ? (
-                          <input
-                            className="px-2 py-1 w-32 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
-                            value={editDept}
-                            onChange={(e) => setEditDept(e.target.value)}
-                          />
-                        ) : (
-                          row.department || ""
-                        )}
+                        {row.department || ""}
                       </td>
                       <td className="px-6 py-4">
-                        {editIdx === globalIdx ? (
-                          <input
-                            className="px-2 py-1 w-32 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
-                            value={editHead}
-                            onChange={(e) => setEditHead(e.target.value)}
-                          />
-                        ) : (
-                          row.head || ""
-                        )}
+                        {row.head || ""}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        {editIdx === globalIdx ? (
-                          <>
-                            <button
-                              style={{ backgroundColor: "#142050" }}
-                              className="hover:bg-blue-900 text-white px-3 py-1 rounded w-16 mr-2"
-                              onClick={() => {
-                                const newData = [...data];
-                                newData[globalIdx] = {
-                                  department: editDept,
-                                  head: editHead,
-                                };
-                                setData(newData);
-                                setEditIdx(null);
-                              }}
-                            >
-                              Save
-                            </button>
-                            <button
-                              className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-1 rounded w-16"
-                              onClick={() => setEditIdx(null)}
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            className="text-blue-600 hover:text-blue-800 transition"
-                            title="Edit"
-                          >
-                            <Pencil size={18} />
-                          </button>
-                          
-                        )}
+                        <button
+                          className="text-blue-600 hover:text-blue-800 transition"
+                          title="Edit"
+                          onClick={() => handleEditClick(row, globalIdx)}
+                        >
+                          <Pencil size={18} />
+                        </button>
                       </td>
                     </tr>
                   );

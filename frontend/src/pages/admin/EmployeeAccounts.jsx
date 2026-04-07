@@ -31,7 +31,7 @@ function EmployeeAccounts() {
       }
 
       setEmployees(data);
-    } catch (error) {
+    } catch {
       setEmployeeError("Unable to connect to server.");
     }
   };
@@ -63,7 +63,7 @@ function EmployeeAccounts() {
           return;
         }
         setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
-      } catch (error) {
+      } catch {
         setEmployeeError("Unable to connect to server.");
       } finally {
         setActionUserId(null);
@@ -86,15 +86,11 @@ function EmployeeAccounts() {
       }
 
       setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
-    } catch (error) {
+    } catch {
       setEmployeeError("Unable to connect to server.");
     } finally {
       setActionUserId(null);
     }
-  };
-
-  const handleAddUser = (newEmployee) => {
-    setEmployees((prev) => [...prev, newEmployee]);
   };
 
   // Pagination logic
@@ -132,7 +128,8 @@ function EmployeeAccounts() {
           {activeTab === "admins" ? (
             <AdminAccounts />
           ) : (
-            <div className="mx-6">
+            <div className="ml-10 md:ml-7">
+              <div className="mt-8" />
               <div className="flex justify-between items-center mb-6">
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
