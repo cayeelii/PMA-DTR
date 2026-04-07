@@ -19,15 +19,21 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
       alert("Please select a department.");
       return;
     }
+    let newUser;
     if (formData.role === "Employee" || formData.role === "Staff") {
-      const newEmployee = {
+      newUser = {
         bioId: `EMP${Math.floor(100000 + Math.random() * 900000)}`,
         name: formData.username,
         department: formData.department,
         role: formData.role
       };
-      if (onAddUser) onAddUser(newEmployee);
+    } else {
+      newUser = {
+        user: formData.username,
+        role: formData.role
+      };
     }
+    if (onAddUser) onAddUser(newUser);
     onClose();
     setFormData({ username: "", role: "", department: "", password: "", confirmPassword: "" });
   };
@@ -66,7 +72,7 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value, department: "" })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-451 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="">Choose User Role</option>

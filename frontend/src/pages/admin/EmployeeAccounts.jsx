@@ -1,3 +1,5 @@
+import Pagination from "../../components/Pagination";
+const PAGE_SIZE = 20;
 import { useEffect, useState } from "react";
 import { Search, Check, X } from "lucide-react";
 import AdminAccounts from "./AdminAccounts";
@@ -9,6 +11,7 @@ const admins = [
 ];
 
 function EmployeeAccounts() {
+    const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState("admins");
   const [search, setSearch] = useState("");
   const [employees, setEmployees] = useState([]);
@@ -95,6 +98,15 @@ function EmployeeAccounts() {
     setEmployees((prev) => [...prev, newEmployee]);
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset to first page when search or tab changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeTab]);
+
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
@@ -157,12 +169,12 @@ function EmployeeAccounts() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.length === 0 ? (
+                    {paginated.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No results found.</td>
                       </tr>
                     ) : (
-                      filtered.map((row, idx) => (
+                      paginated.map((row, idx) => (
                         <tr key={row.user_id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                           <td className="text-center px-6 py-4 font-semibold">{row.bio_id}</td>
                           <td className="text-center px-6 py-4">{row.username}</td>
@@ -194,6 +206,12 @@ function EmployeeAccounts() {
                         </tr>
                       ))
                     )}
+                                {/* Pagination Controls */}
+                                <Pagination
+                                  page={page}
+                                  totalPages={totalPages}
+                                  onPageChange={setPage}
+                                />
                   </tbody>
                 </table>
               </div>

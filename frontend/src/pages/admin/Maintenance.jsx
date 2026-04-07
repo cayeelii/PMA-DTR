@@ -1,8 +1,11 @@
+import Pagination from "../../components/Pagination";
+const PAGE_SIZE = 20;
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import MaintenanceModal from "../../components/MaintenanceModal"; 
 
 function MaintenancePage() {
+  const [page, setPage] = useState(1);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, mode: "" });
   const [rows, setRows] = useState([
     { id: 1, date: "01/01/26", remarks: "Holiday" },
@@ -31,6 +34,13 @@ function MaintenancePage() {
     setRows((prev) => [...prev, entryWithId]);
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+  const paginated = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset to first page when rows change
+  // (e.g., after add/remove)
+  // Optionally, you can use useEffect if you want to reset page on add/remove
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
@@ -67,7 +77,7 @@ function MaintenancePage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => (
+              {paginated.map((row, index) => (
                 <tr key={row.id} className={`border-t ${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition`}>
                   <td className="text-center px-8 py-3">{row.date}</td>
                   <td className="text-center px-10 py-3">{row.remarks}</td>
@@ -79,7 +89,16 @@ function MaintenancePage() {
                 </tr>
               ))}
             </tbody>
+
           </table>
+        </div>
+        {/* Pagination Controls */}
+        <div className="flex justify-center mt-4">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
 
         {/* Updated Modal Import Name */}

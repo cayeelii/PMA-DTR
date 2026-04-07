@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Pencil, Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
-const mockData = Array(15).fill({ department: "", head: "" });
-const PAGE_SIZE = 5;
+// Start with an empty table
+const PAGE_SIZE = 20;
 function SignatoriesPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [editIdx, setEditIdx] = useState(null);
   const [editDept, setEditDept] = useState("");
   const [editHead, setEditHead] = useState("");
-  const [data, setData] = useState(mockData);
+  const [data, setData] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newDept, setNewDept] = useState("");
   const [newHead, setNewHead] = useState("");
@@ -56,7 +56,7 @@ function SignatoriesPage() {
 
           <button
             className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setShowAddModal(true)}
           >
             <span>Add Signatory</span>
           </button>

@@ -1,18 +1,23 @@
+import Pagination from "../../components/Pagination";
 import { useState } from "react";
 import { Search, Pencil, Archive } from "lucide-react";
 import AddUserModal from "../../components/AddUser";
 import EditAdminModal from "../../components/EditAdmin";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
 
-const mockData = Array(15).fill({
+
+// Initial mock data
+const initialData = Array(15).fill(null).map(() => ({
   timestamp: "2024-03-27",
   user: "John Doe",
   role: "Admin",
-});
+}));
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 20;
 
 function AdminAccounts() {
+
+  const [users, setUsers] = useState(initialData);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -20,9 +25,21 @@ function AdminAccounts() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  const filtered = mockData.filter((row) =>
+  const filtered = users.filter((row) =>
     row.user.toLowerCase().includes(search.toLowerCase()),
   );
+  // Add user handler
+  const handleAddUser = (newUser) => {
+    setUsers((prev) => [
+      {
+        timestamp: new Date().toISOString().split("T")[0],
+        user: newUser.username || newUser.user || "New User",
+        role: newUser.role || "Admin",
+      },
+      ...prev,
+    ]);
+    setPage(1);
+  };
 
   const handleEdit = (user) => {
     setSelectedUser(user);
@@ -34,6 +51,7 @@ function AdminAccounts() {
     setIsArchiveOpen(true);
   };
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
@@ -87,7 +105,6 @@ function AdminAccounts() {
                 </tr>
               ) : (
                 paginated.map((row, index) => (
-                    
                   <tr
                     key={index}
                     className={`border-t ${
@@ -121,10 +138,18 @@ function AdminAccounts() {
             </tbody>
           </table>
         </div>
+        {/* Pagination Controls */}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
 
       <AddUserModal 
         isOpen={isAddOpen} 
         onClose={() => setIsAddOpen(false)} 
+        onAddUser={handleAddUser}
+        roleOptions={["Admin"]}
       />
       
       <EditAdminModal
