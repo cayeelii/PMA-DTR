@@ -11,7 +11,7 @@ const admins = [
 ];
 
 function EmployeeAccounts() {
-    const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState("admins");
   const [search, setSearch] = useState("");
   const [employees, setEmployees] = useState([]);
@@ -42,42 +42,50 @@ function EmployeeAccounts() {
 
   const data = activeTab === "admins" ? admins : employees;
   const filtered = data.filter((row) =>
-    (activeTab === "admins"
+    activeTab === "admins"
       ? row.name.toLowerCase().includes(search.toLowerCase()) ||
         row.bioId.toLowerCase().includes(search.toLowerCase()) ||
         row.department.toLowerCase().includes(search.toLowerCase())
       : row.username.toLowerCase().includes(search.toLowerCase()) ||
         String(row.bio_id).toLowerCase().includes(search.toLowerCase()) ||
-        row.dept_name.toLowerCase().includes(search.toLowerCase()))
+        row.dept_name.toLowerCase().includes(search.toLowerCase()),
   );
-    const handleApprove = async (userId) => {
-      setActionUserId(userId);
-      setEmployeeError("");
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/users/approve/${userId}`, {
+  const handleApprove = async (userId) => {
+    setActionUserId(userId);
+    setEmployeeError("");
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/approve/${userId}`,
+        {
           method: "PATCH",
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setEmployeeError(data.error || "Failed to approve employee.");
-          return;
-        }
-        setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
-      } catch {
-        setEmployeeError("Unable to connect to server.");
-      } finally {
-        setActionUserId(null);
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to approve employee.");
+        return;
       }
-    };
+      setEmployees((prev) =>
+        prev.filter((employee) => employee.user_id !== userId),
+      );
+    } catch {
+      setEmployeeError("Unable to connect to server.");
+    } finally {
+      setActionUserId(null);
+    }
+  };
 
   const handleReject = async (userId) => {
     setActionUserId(userId);
     setEmployeeError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/reject/${userId}`, {
-        method: "PATCH",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/reject/${userId}`,
+        {
+          method: "PATCH",
+        },
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -85,7 +93,9 @@ function EmployeeAccounts() {
         return;
       }
 
-      setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
+      setEmployees((prev) =>
+        prev.filter((employee) => employee.user_id !== userId),
+      );
     } catch {
       setEmployeeError("Unable to connect to server.");
     } finally {
@@ -105,7 +115,9 @@ function EmployeeAccounts() {
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
         <div className="flex flex-row md:items-center justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary">Accounts</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-primary">
+            Accounts
+          </h1>
         </div>
         <div className="flex gap-8 border-b border-gray-200 mb-4 relative">
           {["admins", "employees"].map((tab) => (
@@ -137,7 +149,7 @@ function EmployeeAccounts() {
                     type="text"
                     placeholder="Search User"
                     value={search}
-                    onChange={e => {
+                    onChange={(e) => {
                       setSearch(e.target.value);
                     }}
                     className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -157,23 +169,45 @@ function EmployeeAccounts() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-100 text-gray-700">
                     <tr>
-                      <th className="text-center px-6 py-4 font-semibold">BIO ID</th>
-                      <th className="text-center px-6 py-4 font-semibold">Name</th>
-                      <th className="text-center px-6 py-4 font-semibold">Department</th>
-                      <th className="text-center px-6 py-4 font-semibold">Approve/Reject</th>
+                      <th className="text-center px-6 py-4 font-semibold">
+                        BIO ID
+                      </th>
+                      <th className="text-center px-6 py-4 font-semibold">
+                        Name
+                      </th>
+                      <th className="text-center px-6 py-4 font-semibold">
+                        Department
+                      </th>
+                      <th className="text-center px-6 py-4 font-semibold">
+                        Approve/Reject
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginated.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No results found.</td>
+                        <td
+                          colSpan={4}
+                          className="px-6 py-8 text-center text-gray-500"
+                        >
+                          No results found.
+                        </td>
                       </tr>
                     ) : (
                       paginated.map((row, idx) => (
-                        <tr key={row.user_id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="text-center px-6 py-4 font-semibold">{row.bio_id}</td>
-                          <td className="text-center px-6 py-4">{row.username}</td>
-                          <td className="text-center px-6 py-4">{row.dept_name}</td>
+                        <tr
+                          key={row.user_id}
+                          className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                        >
+                          <td className="text-center px-6 py-4 font-semibold">
+                            {row.bio_id}
+                          </td>
+                          <td className="text-center px-6 py-4">
+                            {row.username}
+                          </td>
+                          <td className="text-center px-6 py-4">
+                            {row.dept_name}
+                          </td>
                           <td className="text-center px-6 py-4">
                             <div className="flex justify-center gap-3">
                               <button
@@ -184,7 +218,9 @@ function EmployeeAccounts() {
                                 disabled={actionUserId === row.user_id}
                               >
                                 <Check className="w-5 h-5" />
-                                <span className="hidden sm:inline">Approve</span>
+                                <span className="hidden sm:inline">
+                                  Approve
+                                </span>
                               </button>
                               <button
                                 className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200 transition-all duration-150 text-sm"
@@ -201,12 +237,12 @@ function EmployeeAccounts() {
                         </tr>
                       ))
                     )}
-                          {/* Pagination Controls */}
-                           <Pagination
-                            page={page}
-                             totalPages={totalPages}
-                            onPageChange={setPage}
-                          />
+                    {/* Pagination Controls */}
+                    <Pagination
+                      page={page}
+                      totalPages={totalPages}
+                      onPageChange={setPage}
+                    />
                   </tbody>
                 </table>
               </div>
