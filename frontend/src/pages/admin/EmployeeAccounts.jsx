@@ -50,26 +50,25 @@ function EmployeeAccounts() {
         String(row.bio_id).toLowerCase().includes(search.toLowerCase()) ||
         row.dept_name.toLowerCase().includes(search.toLowerCase()))
   );
-// Approve/Reject handlers
-  const handleApprove = async (userId) => {
-    setActionUserId(userId);
-    setEmployeeError("");
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/users/approve/${userId}`, {
-        method: "PATCH",
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setEmployeeError(data.error || "Failed to approve employee.");
-        return;
+    const handleApprove = async (userId) => {
+      setActionUserId(userId);
+      setEmployeeError("");
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/users/approve/${userId}`, {
+          method: "PATCH",
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setEmployeeError(data.error || "Failed to approve employee.");
+          return;
+        }
+        setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
+      } catch (error) {
+        setEmployeeError("Unable to connect to server.");
+      } finally {
+        setActionUserId(null);
       }
-      setEmployees((prev) => prev.filter((employee) => employee.user_id !== userId));
-    } catch (error) {
-      setEmployeeError("Unable to connect to server.");
-    } finally {
-      setActionUserId(null);
-    }
-  };
+    };
 
   const handleReject = async (userId) => {
     setActionUserId(userId);
@@ -102,7 +101,6 @@ function EmployeeAccounts() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Reset to first page when search or tab changes
   useEffect(() => {
     setPage(1);
   }, [search, activeTab]);
@@ -206,12 +204,12 @@ function EmployeeAccounts() {
                         </tr>
                       ))
                     )}
-                                {/* Pagination Controls */}
-                                <Pagination
-                                  page={page}
-                                  totalPages={totalPages}
-                                  onPageChange={setPage}
-                                />
+                          {/* Pagination Controls */}
+                           <Pagination
+                            page={page}
+                             totalPages={totalPages}
+                            onPageChange={setPage}
+                          />
                   </tbody>
                 </table>
               </div>

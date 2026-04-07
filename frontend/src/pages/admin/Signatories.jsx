@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pencil, Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
+import AddSignatoryModal from "../../components/AddSignatoryModal";
 // Start with an empty table
 const PAGE_SIZE = 20;
 function SignatoriesPage() {
@@ -11,22 +12,16 @@ function SignatoriesPage() {
   const [editHead, setEditHead] = useState("");
   const [data, setData] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newDept, setNewDept] = useState("");
-  const [newHead, setNewHead] = useState("");
   const filtered = data.filter((row) =>
     row.department.toLowerCase().includes(search.toLowerCase()),
   );
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleAddSignatory = () => {
-    if (newDept.trim() && newHead.trim()) {
-      setData([{ department: newDept, head: newHead }, ...data]);
-      setShowAddModal(false);
-      setNewDept("");
-      setNewHead("");
-      setPage(1);
-    }
+  const handleAddSignatory = (signatory) => {
+    setData(prev => [signatory, ...prev]);
+    setShowAddModal(false);
+    setPage(1);
   };
 
   return (
@@ -63,53 +58,11 @@ function SignatoriesPage() {
         </div>
 
         {/* Add Signatory Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 w-full max-w-md relative animate-fadeIn">
-              <h2 className="text-2xl font-semibold mb-4">Add Signatory</h2>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Department</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
-                  value={newDept}
-                  onChange={(e) => setNewDept(e.target.value)}
-                  placeholder="Enter department"
-                  autoFocus
-                />
-              </div>
-              <div className="mb-6">
-                <label className="block text-gray-700 mb-1">
-                  Department Head
-                </label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
-                  value={newHead}
-                  onChange={(e) => setNewHead(e.target.value)}
-                  placeholder="Enter department head"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setNewDept("");
-                    setNewHead("");
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded font-semibold"
-                  onClick={handleAddSignatory}
-                  disabled={!newDept.trim() || !newHead.trim()}
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AddSignatoryModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onAdd={handleAddSignatory}
+        />
         <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">

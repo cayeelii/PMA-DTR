@@ -2,6 +2,7 @@ import Pagination from "../../components/Pagination";
 const PAGE_SIZE = 20;
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
+import RemoveMaintenanceModal from "../../components/RemoveMaintenanceModal";
 import MaintenanceModal from "../../components/MaintenanceModal"; 
 
 function MaintenancePage() {
@@ -12,9 +13,16 @@ function MaintenancePage() {
     { id: 2, date: "02/13/26", remarks: "Half-day" },
     { id: 3, date: "02/17/26", remarks: "Holiday" },
   ]);
+  const [removeModal, setRemoveModal] = useState({ isOpen: false, rowId: null });
 
-  const removeRow = (id) => {
-    setRows(rows.filter((row) => row.id !== id));
+
+  const handleRemoveClick = (id) => {
+    setRemoveModal({ isOpen: true, rowId: id });
+  };
+
+  const confirmRemove = () => {
+    setRows(rows.filter((row) => row.id !== removeModal.rowId));
+    setRemoveModal({ isOpen: false, rowId: null });
   };
 
   const openModal = (mode) => {
@@ -34,13 +42,9 @@ function MaintenancePage() {
     setRows((prev) => [...prev, entryWithId]);
   };
 
-  // Pagination logic
   const totalPages = Math.ceil(rows.length / PAGE_SIZE);
   const paginated = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Reset to first page when rows change
-  // (e.g., after add/remove)
-  // Optionally, you can use useEffect if you want to reset page on add/remove
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
@@ -82,10 +86,16 @@ function MaintenancePage() {
                   <td className="text-center px-8 py-3">{row.date}</td>
                   <td className="text-center px-10 py-3">{row.remarks}</td>
                   <td className="px-6 py-3 text-center">
-                    <button onClick={() => removeRow(row.id)} className="text-red-600 hover:text-red-800">
+                    <button onClick={() => handleRemoveClick(row.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 size={18} />
                     </button>
                   </td>
+                        <RemoveMaintenanceModal
+                          isOpen={removeModal.isOpen}
+                          onClose={() => setRemoveModal({ isOpen: false, rowId: null })}
+                          onConfirm={confirmRemove}
+                          entry={rows.find(r => r.id === removeModal.rowId)}
+                        />
                 </tr>
               ))}
             </tbody>
@@ -101,7 +111,7 @@ function MaintenancePage() {
           />
         </div>
 
-        {/* Updated Modal Import Name */}
+        {/* Modal Import Name */}
         {modalConfig.isOpen && (
           <MaintenanceModal 
             mode={modalConfig.mode} 

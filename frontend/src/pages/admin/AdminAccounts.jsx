@@ -6,7 +6,6 @@ import EditAdminModal from "../../components/EditAdmin";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
 
 
-// Initial mock data
 const initialData = Array(15).fill(null).map(() => ({
   timestamp: "2024-03-27",
   user: "John Doe",
@@ -28,7 +27,6 @@ function AdminAccounts() {
   const filtered = users.filter((row) =>
     row.user.toLowerCase().includes(search.toLowerCase()),
   );
-  // Add user handler
   const handleAddUser = (newUser) => {
     setUsers((prev) => [
       {
@@ -138,6 +136,7 @@ function AdminAccounts() {
             </tbody>
           </table>
         </div>
+        
         {/* Pagination Controls */}
         <Pagination
           page={page}
