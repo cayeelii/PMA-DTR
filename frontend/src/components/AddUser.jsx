@@ -1,13 +1,19 @@
 import React, { useState } from "react";
 import { X, User, KeyRound } from "lucide-react";
 
-const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin", "Admin", "Employee"], departmentOptions = ["Department 1", "Department 2"] }) => {
+const AddUserModal = ({
+  isOpen,
+  onClose,
+  onAddUser,
+  roleOptions = ["Super Admin", "Admin", "Employee"],
+  departmentOptions = ["Department 1", "Department 2"],
+}) => {
   const [formData, setFormData] = useState({
     username: "",
     role: "",
     department: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -15,7 +21,10 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
       alert("Passwords do not match");
       return;
     }
-    if ((formData.role === "Employee" || formData.role === "Staff") && !formData.department) {
+    if (
+      (formData.role === "Employee" || formData.role === "Staff") &&
+      !formData.department
+    ) {
       alert("Please select a department.");
       return;
     }
@@ -25,17 +34,24 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
         bioId: `EMP${Math.floor(100000 + Math.random() * 900000)}`,
         name: formData.username,
         department: formData.department,
-        role: formData.role
+        role: formData.role,
       };
     } else {
       newUser = {
-        user: formData.username,
-        role: formData.role
+        username: formData.username,
+        password: formData.password,
+        role: formData.role,
       };
     }
     if (onAddUser) onAddUser(newUser);
     onClose();
-    setFormData({ username: "", role: "", department: "", password: "", confirmPassword: "" });
+    setFormData({
+      username: "",
+      role: "",
+      department: "",
+      password: "",
+      confirmPassword: "",
+    });
   };
 
   if (!isOpen) return null;
@@ -45,7 +61,10 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
       <div className="bg-white rounded-lg p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Add User</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -54,13 +73,17 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Username
+              </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -68,46 +91,66 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">User Role</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                User Role
+              </label>
               <select
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value, department: "" })}
-                className="w-full px-451 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    role: e.target.value,
+                    department: "",
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
                 <option value="">Choose User Role</option>
                 {roleOptions.map((role) => (
-                  <option key={role} value={role}>{role === "Employee" ? "Employee (Staff)" : role}</option>
+                  <option key={role} value={role}>
+                    {role === "Employee" ? "Employee (Staff)" : role}
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* Department field only for Employee/Staff */}
-            { (formData.role === "Employee" || formData.role === "Staff") && (
+            {(formData.role === "Employee" || formData.role === "Staff") && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Department</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Department
+                </label>
                 <select
                   value={formData.department}
-                  onChange={e => setFormData({ ...formData, department: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, department: e.target.value })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="">Select Department</option>
                   {departmentOptions.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
                 </select>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -115,11 +158,15 @@ const AddUserModal = ({ isOpen, onClose, onAddUser, roleOptions = ["Super Admin"
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Confirm Password
+              </label>
               <input
                 type="password"
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, confirmPassword: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />

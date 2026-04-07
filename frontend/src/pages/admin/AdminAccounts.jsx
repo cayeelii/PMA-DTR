@@ -1,22 +1,15 @@
 import Pagination from "../../components/Pagination";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Pencil, Archive } from "lucide-react";
 import AddUserModal from "../../components/AddUser";
 import EditAdminModal from "../../components/EditAdmin";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
 
-
-const initialData = Array(15).fill(null).map(() => ({
-  timestamp: "2024-03-27",
-  user: "John Doe",
-  role: "Admin",
-}));
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const PAGE_SIZE = 20;
 
 function AdminAccounts() {
-
-  const [users, setUsers] = useState(initialData);
+  const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -24,19 +17,64 @@ function AdminAccounts() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/users/admins`);
+        const data = await res.json();
+
+        const formatted = data.map((u) => ({
+          timestamp: u.created_at.split("T")[0],
+          user: u.username,
+          role: u.role,
+        }));
+
+        setUsers(formatted);
+      } catch (err) {
+        console.error("Failed to fetch admins:", err);
+      }
+    };
+
+    fetchAdmins();
+  }, []);
+
   const filtered = users.filter((row) =>
     row.user.toLowerCase().includes(search.toLowerCase()),
   );
-  const handleAddUser = (newUser) => {
-    setUsers((prev) => [
-      {
-        timestamp: new Date().toISOString().split("T")[0],
-        user: newUser.username || newUser.user || "New User",
-        role: newUser.role || "Admin",
-      },
-      ...prev,
-    ]);
-    setPage(1);
+
+  //Fetch add admin
+  const handleAddUser = async (newUser) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: newUser.username,
+          password: newUser.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error);
+
+      const refresh = await fetch(`${API_BASE_URL}/api/users/admins`);
+      const refreshedData = await refresh.json();
+
+      const formatted = refreshedData.map((u) => ({
+        timestamp: u.created_at ? u.created_at.split("T")[0] : "-",
+        user: u.username,
+        role: u.role,
+      }));
+
+      setUsers(formatted);
+      setPage(1);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add admin");
+    }
   };
 
   const handleEdit = (user) => {
@@ -53,7 +91,7 @@ function AdminAccounts() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-   <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
+    <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
         <div className="flex flex-row md:items-center justify-between mb-6 gap-4">
           <div className="relative w-64">
@@ -72,9 +110,8 @@ function AdminAccounts() {
 
           <button
             className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
-          onClick={() => setIsAddOpen(true)} 
-        >
-          
+            onClick={() => setIsAddOpen(true)}
+          >
             <span>Add User</span>
           </button>
         </div>
@@ -136,7 +173,7 @@ function AdminAccounts() {
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination Controls */}
         <Pagination
           page={page}
@@ -144,29 +181,29 @@ function AdminAccounts() {
           onPageChange={setPage}
         />
 
-      <AddUserModal 
-        isOpen={isAddOpen} 
-        onClose={() => setIsAddOpen(false)} 
-        onAddUser={handleAddUser}
-        roleOptions={["Admin"]}
-      />
-      
-      <EditAdminModal
-        isOpen={isEditOpen}
-        user={selectedUser}
-        onClose={() => setIsEditOpen(false)}
-      />
+        <AddUserModal
+          isOpen={isAddOpen}
+          onClose={() => setIsAddOpen(false)}
+          onAddUser={handleAddUser}
+          roleOptions={["Admin"]}
+        />
 
-      <ArchiveAdminModal
-        isOpen={isArchiveOpen}
-        user={selectedUser}
-        onClose={() => setIsArchiveOpen(false)}
-        onConfirm={() => {
-          console.log("Archived", selectedUser);
-          setIsArchiveOpen(false);
-        }}
-      />
-    </div>
+        <EditAdminModal
+          isOpen={isEditOpen}
+          user={selectedUser}
+          onClose={() => setIsEditOpen(false)}
+        />
+
+        <ArchiveAdminModal
+          isOpen={isArchiveOpen}
+          user={selectedUser}
+          onClose={() => setIsArchiveOpen(false)}
+          onConfirm={() => {
+            console.log("Archived", selectedUser);
+            setIsArchiveOpen(false);
+          }}
+        />
+      </div>
     </div>
   );
 }
