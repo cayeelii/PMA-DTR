@@ -9,7 +9,6 @@ const ImportFile = ({ onUpload }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // ✅ Aligned with backend: using "file" as the key
     const formData = new FormData();
     formData.append("file", file); 
 
@@ -19,18 +18,15 @@ const ImportFile = ({ onUpload }) => {
       const response = await fetch(`${API_BASE_URL}/api/dtr/import`, {
         method: "POST",
         body: formData,
-        // Note: Do not set Content-Type header; fetch sets it for FormData
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        // ✅ Aligned with backend response key: result.insertedRows
         alert(`Success: ${result.insertedRows || 0} rows imported.`);
         
         if (onUpload) onUpload(file);
       } else {
-        // ✅ Aligned with backend error key: result.message
         alert(`Error: ${result.message || "Upload failed"}`);
       }
 
