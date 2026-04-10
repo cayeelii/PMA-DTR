@@ -8,6 +8,7 @@ import MaintenancePage from "./pages/Maintenance";
 import LogsPage from "./pages/Logs";
 import SignatoriesPage from "./pages/Signatories";
 import AccountsPage from "./pages/Accounts";
+import ChangePasswordPage from "./pages/ChangePassword.jsx";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
                 <Route path="/logs" element={<LogsPage />} />
                 <Route path="/signatories" element={<SignatoriesPage />} />
                 <Route path="/accounts" element={<AccountsPage />} />
+                <Route path="/change-password" element={<ChangePasswordPage />} />
                 
                 <Route path="/" element={<Navigate to="/home" />} />
               </Routes>

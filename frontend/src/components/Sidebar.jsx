@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Home,
   FileText,
@@ -8,11 +8,13 @@ import {
   PenLine,
   Users,
   UserCircle,
-  LogOut,
+  MoreVertical, 
 } from "lucide-react";
 
 const SidebarLayout = ({ children }) => {
-  const [open] = useState(true); 
+  const [open] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false); 
+  const navigate = useNavigate(); 
 
   const baseClass =
     "flex items-center gap-4 px-3 py-2 rounded-lg transition";
@@ -20,7 +22,7 @@ const SidebarLayout = ({ children }) => {
   const inactiveClass = "text-white hover:bg-white/10";
 
   return (
-    <div className="flex min-h-screen">
+<div className="flex h-screen overflow-hidden">
       {/* SIDEBAR */}
       <aside
         className={`bg-[#0F1E4D] text-white transition-all duration-300 ${
@@ -129,16 +131,49 @@ const SidebarLayout = ({ children }) => {
           </nav>
 
           {/* USER SECTION */}
-          <div className="mt-auto border-t border-white/10 pt-4 flex items-center justify-between px-3">
-            <div className="flex items-center gap-3">
-              <UserCircle size={28} />
-              {open && <span className="text-lg">Juan</span>}
+          <div className="mt-auto border-t border-white/10 pt-4 px-3 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <UserCircle size={28} />
+                {open && (
+                  <div>
+                    <span className="text-lg">Juan</span>
+                    <div className="text-sm text-gray-300">admin</div>
+                  </div>
+                )}
+              </div>
+              {open && (
+                <button
+                  className="p-1 rounded hover:bg-white/10 hover:text-gray-300 transition"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                >
+                  <MoreVertical size={20} />
+                </button>
+              )}
             </div>
 
-            {open && (
-              <button className="hover:text-red-400 transition">
-                <LogOut size={20} />
-              </button>
+            {/* Dropdown Menu */}
+            {showDropdown && open && (
+              <div className="absolute bottom-full right-0 mb-2 bg-white text-black rounded shadow-lg p-2 w-48">
+                <button
+                  className="block w-full text-left px-3 py-2 text-lg hover:bg-gray-100 rounded"
+                  onClick={() => {
+                    navigate("/change-password");
+                    setShowDropdown(false);
+                  }}
+                >
+                  Change Password
+                </button>
+                <button
+                  className="block w-full text-left px-3 py-2 text-lg text-red-500 hover:bg-red-50 rounded"
+                  onClick={() => {
+                    console.log("Logout clicked");
+                    setShowDropdown(false);
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
             )}
           </div>
         </div>
