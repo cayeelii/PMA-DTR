@@ -1,6 +1,30 @@
 const db = require("../../config/db");
 const XLSX = require("xlsx");
 
+const formatDateOnly = (value) => {
+  if (!value) return null;
+
+  // If Excel gives a Date object
+  if (value instanceof Date) {
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  }
+
+  // If string MM/DD/YYYY
+  if (typeof value === "string") {
+    const parts = value.trim().split("/");
+
+    if (parts.length === 3) {
+      const [month, day, year] = parts;
+      const pad = (n) => String(n).padStart(2, "0");
+
+      return `${year}-${pad(month)}-${pad(day)}`;
+    }
+  }
+
+  return null;
+};
+
 const importDTR = (req, res) => {
   try {
     if (!req.files || !req.files.file) {
@@ -35,7 +59,7 @@ const importDTR = (req, res) => {
       row["Date_Time"],
       row["Machine Loc"],
       row["Type"],
-      row["DateOnly"],
+      formatDateOnly(row["DateOnly"]), 
       row["TimeOnly"],
       row["AMPM Type"],
       row["Status"] || null,
@@ -64,6 +88,7 @@ const importDTR = (req, res) => {
         insertedRows: result.affectedRows,
       });
     });
+
   } catch (error) {
     console.error("Import Error:", error);
     res.status(500).json({
@@ -72,4 +97,26 @@ const importDTR = (req, res) => {
   }
 };
 
-module.exports = { importDTR };
+// Get Departments
+const getDepartments = (req, res) => {
+  const sql = `
+   SELECT 
+      TRIM(dept_name) AS name,
+      COUNT(DISTINCT bio_id) AS employees
+    FROM raw_logs
+    WHERE dept_name IS NOT NULL AND dept_name != ''
+    GROUP BY TRIM(dept_name)
+    ORDER BY name ASC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("DB Error:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
+
+    res.json(results);
+  });
+};
+
+module.exports = { importDTR, getDepartments };

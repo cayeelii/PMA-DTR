@@ -54,6 +54,7 @@ app.use("/api/signatories", adminSignatoryRoutes);
 app.use("/api/dtr", dtrRoute);
 app.use("/api/activity-logs", activityLogsRoute);
 
+
 app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
 });
