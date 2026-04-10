@@ -42,8 +42,8 @@ app.use(
 );
 
 const authRoutes = require("./routes/authRoute");
-const adminUsersRoute = require("./routes/admin/adminUsersRoute");
-const adminSignatoryRoutes = require("./routes/admin/adminSignatoriesRoute");
+const adminUsersRoute = require("./routes/admin/usersRoute");
+const adminSignatoryRoutes = require("./routes/admin/signatoriesRoute");
 const dtrRoute = require("./routes/admin/dtrRoute");
 const activityLogsRoute = require("./routes/admin/activityLogsRoute");
 

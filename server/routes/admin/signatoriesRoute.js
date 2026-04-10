@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const adminSignatoriesRoute = require("../../controllers/admin/adminSignatoriesController");
+const adminSignatoriesRoute = require("../../controllers/admin/signatoriesController");
 
 //GET /signatories/departments
 router.get("/departments", adminSignatoriesRoute.getDepartments);

@@ -119,4 +119,35 @@ const getDepartments = (req, res) => {
   });
 };
 
-module.exports = { importDTR, getDepartments };
+// Get Employees by Department
+const getEmployeesByDepartment = (req, res) => {
+  const { department } = req.query;
+
+  if (!department) {
+    return res.status(400).json({ message: "Department is required" });
+  }
+
+  const sql = `
+    SELECT 
+      bio_id AS id,
+      MAX(name) AS name
+    FROM raw_logs
+    WHERE TRIM(dept_name) = TRIM(?)
+    GROUP BY bio_id
+    ORDER BY name ASC
+  `;
+
+  db.query(sql, [department], (err, results) => {
+    if (err) {
+      console.error("DB Error:", err);
+      return res.status(500).json({
+        message: "Database error",
+        error: err.sqlMessage || err.message,
+      });
+    }
+
+    res.json(results);
+  });
+};
+
+module.exports = { importDTR, getDepartments, getEmployeesByDepartment };

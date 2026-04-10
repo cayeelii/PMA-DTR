@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const adminActivityLogsController = require("../../controllers/admin/adminActivityLogsController");
+const adminActivityLogsController = require("../../controllers/admin/activityLogsController");
 
 //GET /activity-logs
 router.get("/", adminActivityLogsController.getActivityLogs);

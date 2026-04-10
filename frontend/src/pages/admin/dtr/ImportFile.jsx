@@ -72,7 +72,7 @@ const ImportFile = ({ onUpload }) => {
         )}
         
         <p className="text-gray-500 font-medium text-center mt-4">
-          {isUploading ? "Processing..." : "Click or drag to upload DTR"}
+          {isUploading ? "Processing..." : "Import File"}
         </p>
       </div>
     </div>
