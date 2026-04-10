@@ -29,7 +29,7 @@ const importDTR = (req, res) => {
     }
 
     const values = data.map((row) => [
-      row["Dept"], // ✅ FIXED
+      row["Dept"],
       row["NAME"],
       row["BIOID"],
       row["Date_Time"],
