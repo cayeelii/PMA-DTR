@@ -28,7 +28,7 @@ const EmployeeLoginPage = () => {
 
     //Fetch employee login
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/employee-login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/employeeLogin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),

@@ -73,8 +73,8 @@ const register = (req, res) => {
   });
 };
 
-//Login user
-const login = (req, res) => {
+//Admin login
+const adminLogin = (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -90,7 +90,7 @@ const login = (req, res) => {
   }
 
   const sql = `
-    SELECT user_id, username, password, role, bio_id 
+    SELECT user_id, username, password, role, bio_id, active_session_id
     FROM users 
     WHERE username = ? 
     LIMIT 1
@@ -98,10 +98,7 @@ const login = (req, res) => {
 
   db.query(sql, [username], (err, results) => {
     if (err) {
-      console.error("Database error:", err.sqlMessage);
-      return res.status(500).json({
-        message: "Database error",
-      });
+      return res.status(500).json({ message: "Database error" });
     }
 
     if (results.length === 0) {
@@ -120,12 +117,25 @@ const login = (req, res) => {
       });
     }
 
+    const sessionId = req.session.id;
+
+    if (user.active_session_id && user.active_session_id !== sessionId) {
+      return res.status(403).json({
+        message: "User already logged.",
+      });
+    }
+
     req.session.user = {
       user_id: user.user_id,
       username: user.username,
       role: user.role,
       bio_id: user.bio_id,
     };
+
+    db.query("UPDATE users SET active_session_id = ? WHERE user_id = ?", [
+      sessionId,
+      user.user_id,
+    ]);
 
     return res.json({
       message: "Login successful",
@@ -139,10 +149,7 @@ const employeeLogin = (req, res) => {
   const schema = Joi.object({
     bio_id: Joi.string()
       .pattern(/^\d{6}$/)
-      .required()
-      .messages({
-        "string.pattern.base": "Bio ID must be exactly 6 digits",
-      }),
+      .required(),
     password: Joi.string().required(),
   });
 
@@ -153,23 +160,23 @@ const employeeLogin = (req, res) => {
   }
 
   const { bio_id, password } = value;
+
   const sql = `
-    SELECT user_id, username, bio_id, password, role, status
+    SELECT user_id, username, bio_id, password, role, status, active_session_id
     FROM users
     WHERE bio_id = ? AND role = 'employee'
     LIMIT 1
   `;
 
   db.query(sql, [bio_id], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
+    if (err) return res.status(500).json({ error: err.message });
 
     if (!results.length) {
       return res.status(401).json({ error: "Invalid BioID or password." });
     }
 
     const user = results[0];
+
     const isPasswordValid = bcrypt.compareSync(password, user.password);
 
     if (!isPasswordValid) {
@@ -182,6 +189,14 @@ const employeeLogin = (req, res) => {
       });
     }
 
+    const sessionId = req.session.id;
+
+    if (user.active_session_id && user.active_session_id !== sessionId) {
+      return res.status(403).json({
+        error: "User already logged in.",
+      });
+    }
+
     req.session.user = {
       user_id: user.user_id,
       username: user.username,
@@ -189,6 +204,11 @@ const employeeLogin = (req, res) => {
       bio_id: user.bio_id,
       status: user.status,
     };
+
+    db.query("UPDATE users SET active_session_id = ? WHERE user_id = ?", [
+      sessionId,
+      user.user_id,
+    ]);
 
     return res.json({
       message: "Employee login successful",
@@ -199,6 +219,14 @@ const employeeLogin = (req, res) => {
 
 //Logout user
 const logout = (req, res) => {
+  const userId = req.session.user?.user_id;
+
+  if (userId) {
+    db.query("UPDATE users SET active_session_id = NULL WHERE user_id = ?", [
+      userId,
+    ]);
+  }
+
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ message: "Logout failed" });
@@ -219,4 +247,10 @@ const getCurrentUser = (req, res) => {
   }
 };
 
-module.exports = { register, login, employeeLogin, logout, getCurrentUser };
+module.exports = {
+  register,
+  adminLogin,
+  employeeLogin,
+  logout,
+  getCurrentUser,
+};
