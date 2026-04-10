@@ -3,6 +3,7 @@ const PAGE_SIZE = 20;
 import { useEffect, useState } from "react";
 import { Search, Check, X } from "lucide-react";
 import AdminAccounts from "./AdminAccounts";
+import { saveActivityLog } from "../../utils/activityLogs";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const admins = [
@@ -50,7 +51,8 @@ function EmployeeAccounts() {
         String(row.bio_id).toLowerCase().includes(search.toLowerCase()) ||
         row.dept_name.toLowerCase().includes(search.toLowerCase()),
   );
-  const handleApprove = async (userId) => {
+  const handleApprove = async (employee) => {
+    const userId = employee.user_id;
     setActionUserId(userId);
     setEmployeeError("");
     try {
@@ -68,6 +70,16 @@ function EmployeeAccounts() {
       setEmployees((prev) =>
         prev.filter((employee) => employee.user_id !== userId),
       );
+      try {
+        // Activity Log for account approval.
+        await saveActivityLog({
+          action: "Approved Employee Account",
+          details: `Approved employee account for ${employee.username} from ${employee.dept_name} (BIO ID: ${employee.bio_id}).`,
+          targetBioId: employee.bio_id || null,
+        });
+      } catch (err) {
+        console.error("Failed to save activity log:", err);
+      }
     } catch {
       setEmployeeError("Unable to connect to server.");
     } finally {
@@ -75,7 +87,8 @@ function EmployeeAccounts() {
     }
   };
 
-  const handleReject = async (userId) => {
+  const handleReject = async (employee) => {
+    const userId = employee.user_id;
     setActionUserId(userId);
     setEmployeeError("");
 
@@ -96,6 +109,16 @@ function EmployeeAccounts() {
       setEmployees((prev) =>
         prev.filter((employee) => employee.user_id !== userId),
       );
+      try {
+        // Activity Log for account rejection
+        await saveActivityLog({
+          action: "Rejected Employee Account",
+          details: `Rejected employee account for ${employee.username} from ${employee.dept_name} (BIO ID: ${employee.bio_id}).`,
+          targetBioId: employee.bio_id || null,
+        });
+      } catch (err) {
+        console.error("Failed to save activity log:", err);
+      }
     } catch {
       setEmployeeError("Unable to connect to server.");
     } finally {
@@ -213,7 +236,7 @@ function EmployeeAccounts() {
                               <button
                                 className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-200 transition-all duration-150 text-sm"
                                 title="Approve"
-                                onClick={() => handleApprove(row.user_id)}
+                                onClick={() => handleApprove(row)}
                                 aria-label="Approve"
                                 disabled={actionUserId === row.user_id}
                               >
@@ -225,7 +248,7 @@ function EmployeeAccounts() {
                               <button
                                 className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200 transition-all duration-150 text-sm"
                                 title="Reject"
-                                onClick={() => handleReject(row.user_id)}
+                                onClick={() => handleReject(row)}
                                 aria-label="Reject"
                                 disabled={actionUserId === row.user_id}
                               >

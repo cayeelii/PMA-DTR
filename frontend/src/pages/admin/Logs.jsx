@@ -1,47 +1,87 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
+import { fetchActivityLogs } from "../../utils/activityLogs";
+import { isSuperAdmin } from "../../utils/roles";
 
 const PAGE_SIZE = 5;
-
-const mockLogs = [
-  {
-    id: 1,
-    timestamp: "Mar 03, 2026 - 10:15 AM",
-    user: "Juan",
-    action: "Created Holiday Schedule",
-    details: "2026-03-15 marked as Holiday",
-  },
-  {
-    id: 2,
-    timestamp: "Mar 02, 2026 - 08:01 AM",
-    user: "Juan",
-    action: "Updated Time In",
-    details: "Employee: Jessie Tanongan; Time In changed from 8:20 AM to 8:00 AM",
-  },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function LogsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [logs, setLogs] = useState([]);
+  const [error, setError] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
+
+  useEffect(() => {
+    // Activity Logs role check (superadmin only).
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/current-user`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+
+        if (res.ok && data.user) {
+          setUserRole(data.user.role);
+        }
+      } catch (err) {
+        console.error("Failed to fetch current user:", err);
+      } finally {
+        setIsCheckingRole(false);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    // Activity Logs fetch.
+    const loadLogs = async () => {
+      try {
+        setError("");
+        const data = await fetchActivityLogs();
+        setLogs(data);
+      } catch (err) {
+        console.error("Failed to load activity logs:", err);
+        setError("Failed to load activity logs.");
+      }
+    };
+
+    loadLogs();
+  }, []);
 
   const filteredLogs = useMemo(() => {
     const searchText = search.toLowerCase().trim();
 
     if (!searchText) {
-      return mockLogs;
+      return logs;
     }
 
-    return mockLogs.filter((log) =>
-      [log.timestamp, log.user, log.action, log.details]
+    return logs.filter((log) =>
+      [
+        log.created_at,
+        log.username,
+        log.action_performed,
+        log.action_details,
+        log.target_bio_id,
+      ]
         .join(" ")
         .toLowerCase()
-        .includes(searchText)
+        .includes(searchText),
     );
-  }, [search]);
+  }, [logs, search]);
   
   const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
   const paginatedLogs = filteredLogs.slice((page - 1) * PAGE_SIZE,page * PAGE_SIZE);
+
+  // Redirect users who are not superadmin.
+  if (!isSuperAdmin(userRole)) {
+    return <Navigate to="/home" replace />;
+  }
 
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
@@ -72,6 +112,10 @@ function LogsPage() {
           </div>
         </div>
 
+        {error && (
+          <p className="mb-4 text-sm text-red-600">{error}</p>
+        )}
+
         {/* Table */}
         <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
           <table className="w-full text-sm">
@@ -96,15 +140,19 @@ function LogsPage() {
               ) : (
                 paginatedLogs.map((log, index) => (
                   <tr
-                    key={log.id}
+                    key={log.activity_id}
                     className={`border-t ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50"
                     }`}
                   >
-                    <td className="w-52 px-6 py-4 whitespace-nowrap">{log.timestamp}</td>
-                    <td className="w-24 pl-3 pr-4 py-4 whitespace-nowrap">{log.user}</td>
-                    <td className="pl-3 pr-6 py-4">{log.action}</td>
-                    <td className="px-6 py-4">{log.details}</td>
+                    <td className="w-52 px-6 py-4 whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleString()}
+                    </td>
+                    <td className="w-24 pl-3 pr-4 py-4 whitespace-nowrap">
+                      {log.username}
+                    </td>
+                    <td className="pl-3 pr-6 py-4">{log.action_performed}</td>
+                    <td className="px-6 py-4">{log.action_details}</td>
                   </tr>
                 ))
               )}

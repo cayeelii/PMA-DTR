@@ -10,6 +10,8 @@ import {
   UserCircle,
   LogOut,
 } from "lucide-react";
+// Check if the current user is superadmin.
+import { isSuperAdmin } from "../utils/roles";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -19,9 +21,10 @@ const SidebarLayout = ({ children }) => {
   const activeClass = "text-[#FFDD00] bg-white/10";
   const inactiveClass = "text-white hover:bg-white/10";
   const [username, setUsername] = useState("Guest");
+  const [userRole, setUserRole] = useState("");
 
   useEffect(() => {
-    //Fetch current user
+    // Current user (for sidebar + role checks).
     const fetchUser = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/auth/current-user`, {
@@ -30,6 +33,7 @@ const SidebarLayout = ({ children }) => {
         const data = await res.json();
         if (res.ok && data.user) {
           setUsername(data.user.username);
+          setUserRole(data.user.role);
         }
       } catch (err) {
         console.error("Failed to fetch user:", err);
@@ -110,17 +114,20 @@ const SidebarLayout = ({ children }) => {
                 </NavLink>
               </li>
 
-              <li>
-                <NavLink
-                  to="/logs"
-                  className={({ isActive }) =>
-                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
-                  }
-                >
-                  <ClipboardList size={22} />
-                  {open && <span className="text-lg">Logs</span>}
-                </NavLink>
-              </li>
+              {isSuperAdmin(userRole) && (
+                // Activity Logs (superadmin only).
+                <li>
+                  <NavLink
+                    to="/logs"
+                    className={({ isActive }) =>
+                      `${baseClass} ${isActive ? activeClass : inactiveClass}`
+                    }
+                  >
+                    <ClipboardList size={22} />
+                    {open && <span className="text-lg">Logs</span>}
+                  </NavLink>
+                </li>
+              )}
 
               <hr className="border-white/20 my-4" />
 

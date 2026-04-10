@@ -4,6 +4,7 @@ import { Search, Pencil, Archive } from "lucide-react";
 import AddUserModal from "../../components/AddUser";
 import EditAdminModal from "../../components/EditAdmin";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
+import { saveActivityLog } from "../../utils/activityLogs";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const PAGE_SIZE = 20;
@@ -71,6 +72,15 @@ function AdminAccounts() {
 
       setUsers(formatted);
       setPage(1);
+      try {
+        // Activity Log for adding admin accounts.
+        await saveActivityLog({
+          action: "Created Admin Account",
+          details: `Created admin account for ${newUser.username}.`,
+        });
+      } catch (err) {
+        console.error("Failed to save activity log:", err);
+      }
     } catch (err) {
       console.error(err);
       alert("Failed to add admin");
@@ -192,16 +202,14 @@ function AdminAccounts() {
           isOpen={isEditOpen}
           user={selectedUser}
           onClose={() => setIsEditOpen(false)}
+          onSave={() => setIsEditOpen(false)}
         />
 
         <ArchiveAdminModal
           isOpen={isArchiveOpen}
           user={selectedUser}
           onClose={() => setIsArchiveOpen(false)}
-          onConfirm={() => {
-            console.log("Archived", selectedUser);
-            setIsArchiveOpen(false);
-          }}
+          onConfirm={() => setIsArchiveOpen(false)}
         />
       </div>
     </div>

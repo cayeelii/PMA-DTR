@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CloudDownload, Loader2 } from "lucide-react";
+import { saveActivityLog } from "../../../utils/activityLogs";
 
 const ImportFile = ({ onUpload }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -24,6 +25,16 @@ const ImportFile = ({ onUpload }) => {
 
       if (response.ok) {
         alert(`Success: ${result.insertedRows || 0} rows imported.`);
+
+        try {
+          // Activity Log for DTR import.
+          await saveActivityLog({
+            action: "Imported DTR File",
+            details: `Imported DTR file ${file.name}.`,
+          });
+        } catch (err) {
+          console.error("Failed to save activity log:", err);
+        }
         
         if (onUpload) onUpload(file);
       } else {
