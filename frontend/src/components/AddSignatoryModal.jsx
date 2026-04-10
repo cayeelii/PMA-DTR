@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 
-  const AddSignatoryModal = ({ isOpen, onClose, onAdd }) => {
+const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
   const [newDept, setNewDept] = useState("");
   const [newHead, setNewHead] = useState("");
 
   const handleAdd = () => {
-    if (newDept.trim() && newHead.trim()) {
-      onAdd({ department: newDept, head: newHead });
+    if (newDept && newHead.trim()) {
+      onAdd({ department: Number(newDept), head: newHead });
       setNewDept("");
       setNewHead("");
     }
@@ -24,25 +24,37 @@ import React, { useState } from "react";
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 w-full max-w-md relative animate-fadeIn">
         <h2 className="text-2xl font-semibold mb-4">Add Signatory</h2>
+
+        {/* Department Dropdown */}
         <div className="mb-4">
           <label className="block text-gray-700 mb-1">Department</label>
-          <input
+
+          <select
             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
             value={newDept}
-            onChange={e => setNewDept(e.target.value)}
-            placeholder="Enter department"
-            autoFocus
-          />
+            onChange={(e) => setNewDept(e.target.value)}
+          >
+            <option value="">Select department</option>
+
+            {departments.map((dept) => (
+              <option key={dept.dept_id} value={dept.dept_id}>
+                {dept.dept_name}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {/* Department Head */}
         <div className="mb-6">
           <label className="block text-gray-700 mb-1">Department Head</label>
           <input
             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
             value={newHead}
-            onChange={e => setNewHead(e.target.value)}
+            onChange={(e) => setNewHead(e.target.value)}
             placeholder="Enter department head"
           />
         </div>
+
         <div className="flex justify-end gap-2">
           <button
             className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded"
@@ -50,10 +62,11 @@ import React, { useState } from "react";
           >
             Cancel
           </button>
+
           <button
             className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded font-semibold"
             onClick={handleAdd}
-            disabled={!newDept.trim() || !newHead.trim()}
+            disabled={!newDept || !newHead.trim()}
           >
             Add
           </button>

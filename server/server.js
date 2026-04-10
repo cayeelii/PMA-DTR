@@ -43,11 +43,13 @@ app.use(
 
 const authRoutes = require("./routes/authRoute");
 const adminUsersRoute = require("./routes/admin/adminUsersRoute");
+const adminSignatoryRoutes = require("./routes/admin/adminSignatoriesRoute");
 const dtrRoute = require("./routes/admin/dtrRoute");
 
 //Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", adminUsersRoute);
+app.use("/api/signatories", adminSignatoryRoutes);
 app.use("/api/dtr", dtrRoute);
 
 app.listen(PORT, HOST, () => {

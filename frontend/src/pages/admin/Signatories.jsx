@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Pencil, Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import AddSignatoryModal from "../../components/AddSignatoryModal";
 import EditSignatoryModal from "../../components/EditSignatoryModal";
-// Start with an empty table
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const PAGE_SIZE = 20;
 function SignatoriesPage() {
   const [search, setSearch] = useState("");
@@ -15,16 +17,87 @@ function SignatoriesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSignatory, setSelectedSignatory] = useState(null);
+  const [departments, setDepartments] = useState([]);
+
+  //Fetch all departments
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/signatories/departments`);
+        const data = await res.json();
+        setDepartments(data);
+      } catch (err) {
+        console.error("Failed to load departments:", err);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
   const filtered = data.filter((row) =>
     row.department.toLowerCase().includes(search.toLowerCase()),
   );
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const handleAddSignatory = (signatory) => {
-    setData(prev => [signatory, ...prev]);
-    setShowAddModal(false);
-    setPage(1);
+  //Fetch all signatories
+  useEffect(() => {
+    const fetchSignatories = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/signatories`);
+        const data = await res.json();
+
+        setData(
+          data.map((item) => ({
+            signatory_id: item.signatory_id,
+            dept_id: item.dept_id,
+            department: item.dept_name,
+            head: item.head_name,
+          })),
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchSignatories();
+  }, []);
+
+  //Fetch add signatory
+  const handleAddSignatory = async (signatory) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/signatories/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dept_id: signatory.department,
+          head_name: signatory.head,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to add signatory");
+      }
+
+      setData((prev) => [
+        {
+          department:
+            departments.find((d) => d.dept_id == signatory.department)
+              ?.dept_name || "",
+          head: signatory.head,
+        },
+        ...prev,
+      ]);
+
+      setShowAddModal(false);
+      setPage(1);
+    } catch (err) {
+      console.error(err.message);
+    }
   };
 
   const handleEditClick = (signatory, idx) => {
@@ -33,13 +106,44 @@ function SignatoriesPage() {
     setShowEditModal(true);
   };
 
-  const handleEditSave = (updatedSignatory) => {
-    const newData = [...data];
-    newData[editIdx] = updatedSignatory;
-    setData(newData);
-    setShowEditModal(false);
-    setEditIdx(null);
-    setSelectedSignatory(null);
+  //Fetch update signatory
+  const handleEditSave = async (updated) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/signatories/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          signatory_id: selectedSignatory.signatory_id,
+          dept_id: updated.dept_id,
+          head_name: updated.head,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
+      setData((prev) =>
+        prev.map((item) =>
+          item.signatory_id === selectedSignatory.signatory_id
+            ? {
+                ...item,
+                dept_id: updated.dept_id,
+                department:
+                  departments.find((d) => d.dept_id == updated.dept_id)
+                    ?.dept_name || "",
+                head: updated.head,
+              }
+            : item,
+        ),
+      );
+
+      setShowEditModal(false);
+      setSelectedSignatory(null);
+    } catch (err) {
+      console.error(err.message);
+    }
   };
 
   const handleEditClose = () => {
@@ -86,12 +190,14 @@ function SignatoriesPage() {
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onAdd={handleAddSignatory}
+          departments={departments}
         />
         <EditSignatoryModal
           isOpen={showEditModal}
           signatory={selectedSignatory}
           onClose={handleEditClose}
           onSave={handleEditSave}
+          departments={departments}
         />
         <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
           <table className="w-full text-sm">
@@ -126,12 +232,8 @@ function SignatoriesPage() {
                       key={idx}
                       className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                     >
-                      <td className="px-6 py-4">
-                        {row.department || ""}
-                      </td>
-                      <td className="px-6 py-4">
-                        {row.head || ""}
-                      </td>
+                      <td className="px-6 py-4">{row.department || ""}</td>
+                      <td className="px-6 py-4">{row.head || ""}</td>
                       <td className="px-6 py-4 text-center">
                         <button
                           className="text-blue-600 hover:text-blue-800 transition"
