@@ -4,13 +4,13 @@ const XLSX = require("xlsx");
 const formatDateOnly = (value) => {
   if (!value) return null;
 
-  // If Excel gives a Date object
+  // FORMAT: YYYY-MM-DD
   if (value instanceof Date) {
     const pad = (n) => String(n).padStart(2, "0");
     return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
   }
 
-  // If string MM/DD/YYYY
+  // String MM/DD/YYYY
   if (typeof value === "string") {
     const parts = value.trim().split("/");
 

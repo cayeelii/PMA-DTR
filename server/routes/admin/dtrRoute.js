@@ -3,7 +3,6 @@ const router = express.Router();
 
 const dtrController = require("../../controllers/admin/dtrController");
 
-//POST /dtr/import
 router.post("/import", dtrController.importDTR);
 router.get("/departments", dtrController.getDepartments);
 
