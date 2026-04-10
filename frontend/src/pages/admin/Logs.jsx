@@ -78,6 +78,11 @@ function LogsPage() {
   const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
   const paginatedLogs = filteredLogs.slice((page - 1) * PAGE_SIZE,page * PAGE_SIZE);
 
+  // Wait for the current user role before checking access.
+  if (isCheckingRole) {
+    return <div className="p-6 text-gray-600">Loading...</div>;
+  }
+
   // Redirect users who are not superadmin.
   if (!isSuperAdmin(userRole)) {
     return <Navigate to="/home" replace />;

@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 
-const activityLogsController = require("../../controllers/activityLogsController");
+const adminActivityLogsController = require("../../controllers/admin/adminActivityLogsController");
 
 //GET /activity-logs
-router.get("/", activityLogsController.getActivityLogs);
+router.get("/", adminActivityLogsController.getActivityLogs);
 //POST /activity-logs
-router.post("/", activityLogsController.createActivityLog);
+router.post("/", adminActivityLogsController.createActivityLog);
 
 module.exports = router;
