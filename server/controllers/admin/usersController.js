@@ -1,6 +1,12 @@
 const db = require("../../config/db");
 const bcrypt = require("bcrypt");
 
+const normalizeRole = (role) =>
+  String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+
 //Get all pending accounts
 const getPendingUsers = (req, res) => {
   const sql = `
@@ -9,6 +15,23 @@ const getPendingUsers = (req, res) => {
     JOIN departments d ON u.dept_id = d.dept_id
     WHERE u.status = 'pending' 
     AND u.role = 'employee'
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+};
+
+//Get all approved employee accounts
+const getApprovedEmployees = (req, res) => {
+  const sql = `
+    SELECT u.user_id, u.username, u.bio_id, u.role, u.status, u.created_at, d.dept_name
+    FROM users u
+    JOIN departments d ON u.dept_id = d.dept_id
+    WHERE u.status = 'approved'
+    AND u.role = 'employee'
+    ORDER BY u.created_at DESC
   `;
 
   db.query(sql, (err, results) => {
@@ -45,14 +68,31 @@ const rejectUser = (req, res) => {
   });
 };
 
-//Add admin
+//Add admin or superadmin
 const addAdminUser = async (req, res) => {
-  const { username, password, dept_id } = req.body;
+  const { username, password, role, dept_id } = req.body;
+  const currentUserRole = normalizeRole(req.session?.user?.role);
 
   if (!username || !password) {
     return res
       .status(400)
       .json({ error: "Username and password are required" });
+  }
+
+  const normalizedRole = normalizeRole(role || "admin");
+
+  if (!["admin", "superadmin"].includes(currentUserRole)) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  if (!["admin", "superadmin"].includes(normalizedRole)) {
+    return res.status(400).json({ error: "Invalid role selected" });
+  }
+
+  if (currentUserRole === "admin" && normalizedRole !== "admin") {
+    return res.status(403).json({
+      error: "Admins can only create admin accounts.",
+    });
   }
 
   const passwordRegex =
@@ -66,7 +106,6 @@ const addAdminUser = async (req, res) => {
   }
 
   try {
-    const role = "admin";
     const status = "approved";
     const created_at = new Date();
 
@@ -88,14 +127,21 @@ const addAdminUser = async (req, res) => {
 
       db.query(
         sql,
-        [username, hashedPassword, role, status, created_at, dept_id || null],
+        [
+          username,
+          hashedPassword,
+          normalizedRole,
+          status,
+          created_at,
+          dept_id || null,
+        ],
         (err, result) => {
           if (err) {
             return res.status(500).json({ error: err.message });
           }
 
           res.json({
-            message: "Admin user added successfully",
+            message: "User added successfully",
             user_id: result.insertId,
           });
         },
@@ -109,14 +155,22 @@ const addAdminUser = async (req, res) => {
 
 //Get all admin users
 const getAllAdmins = (req, res) => {
+  const currentUserRole = normalizeRole(req.session?.user?.role);
+
+  if (!["admin", "superadmin"].includes(currentUserRole)) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
   const sql = `
     SELECT user_id, username, role, status, created_at
     FROM users
-    WHERE role = 'admin'
+    WHERE role ${currentUserRole === "superadmin" ? "IN ('admin', 'superadmin')" : "= ?"}
     ORDER BY created_at DESC
   `;
 
-  db.query(sql, (err, results) => {
+  const queryParams = currentUserRole === "superadmin" ? [] : [currentUserRole];
+
+  db.query(sql, queryParams, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
@@ -124,6 +178,7 @@ const getAllAdmins = (req, res) => {
 
 module.exports = {
   getPendingUsers,
+  getApprovedEmployees,
   approveUser,
   rejectUser,
   addAdminUser,

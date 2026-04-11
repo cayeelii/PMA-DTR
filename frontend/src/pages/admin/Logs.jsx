@@ -5,7 +5,7 @@ import Pagination from "../../components/Pagination";
 import { fetchActivityLogs } from "../../utils/activityLogs";
 import { isSuperAdmin } from "../../utils/roles";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function LogsPage() {
@@ -74,9 +74,16 @@ function LogsPage() {
         .includes(searchText),
     );
   }, [logs, search]);
-  
+
   const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
-  const paginatedLogs = filteredLogs.slice((page - 1) * PAGE_SIZE,page * PAGE_SIZE);
+  const paginatedLogs = filteredLogs.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   // Wait for the current user role before checking access.
   if (isCheckingRole) {

@@ -1,23 +1,24 @@
 import Pagination from "../../components/Pagination";
 const PAGE_SIZE = 20;
 import { useEffect, useState } from "react";
-import { Search, Check, X } from "lucide-react";
+import { Search } from "lucide-react";
 import AdminAccounts from "./AdminAccounts";
+import AddEmployeeModal from "../../components/AddEmployee";
+import PendingEmployeesModal from "../../components/PendingEmployeesModal";
 import { saveActivityLog } from "../../utils/activityLogs";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-const admins = [
-  { bioId: "ADM1001", name: "Admin1", department: "IT" },
-  { bioId: "ADM1002", name: "Admin2", department: "HR" },
-];
 
 function EmployeeAccounts() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState("admins");
   const [search, setSearch] = useState("");
-  const [employees, setEmployees] = useState([]);
+  const [pendingEmployees, setPendingEmployees] = useState([]);
+  const [approvedEmployees, setApprovedEmployees] = useState([]);
   const [employeeError, setEmployeeError] = useState("");
   const [actionUserId, setActionUserId] = useState(null);
+  const [isPendingOpen, setIsPendingOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [departments, setDepartments] = useState([]);
 
   const fetchPendingEmployees = async () => {
     setEmployeeError("");
@@ -31,25 +32,56 @@ function EmployeeAccounts() {
         return;
       }
 
-      setEmployees(data);
+      setPendingEmployees(data);
     } catch {
       setEmployeeError("Unable to connect to server.");
     }
   };
 
+  const fetchApprovedEmployees = async () => {
+    setEmployeeError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/employees/approved`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to load approved employees.");
+        return;
+      }
+
+      setApprovedEmployees(data);
+    } catch {
+      setEmployeeError("Unable to connect to server.");
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/signatories/departments`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(data.error || "Failed to load departments.");
+        return;
+      }
+
+      setDepartments(data);
+    } catch (err) {
+      console.error("Failed to load departments:", err);
+    }
+  };
+
   useEffect(() => {
     fetchPendingEmployees();
+    fetchApprovedEmployees();
+    fetchDepartments();
   }, []);
 
-  const data = activeTab === "admins" ? admins : employees;
-  const filtered = data.filter((row) =>
-    activeTab === "admins"
-      ? row.name.toLowerCase().includes(search.toLowerCase()) ||
-        row.bioId.toLowerCase().includes(search.toLowerCase()) ||
-        row.department.toLowerCase().includes(search.toLowerCase())
-      : row.username.toLowerCase().includes(search.toLowerCase()) ||
-        String(row.bio_id).toLowerCase().includes(search.toLowerCase()) ||
-        row.dept_name.toLowerCase().includes(search.toLowerCase()),
+  const filteredApprovedEmployees = approvedEmployees.filter((employee) =>
+    employee.username.toLowerCase().includes(search.toLowerCase()) ||
+      String(employee.bio_id).toLowerCase().includes(search.toLowerCase()) ||
+      employee.dept_name.toLowerCase().includes(search.toLowerCase()),
   );
   const handleApprove = async (employee) => {
     const userId = employee.user_id;
@@ -67,9 +99,13 @@ function EmployeeAccounts() {
         setEmployeeError(data.error || "Failed to approve employee.");
         return;
       }
-      setEmployees((prev) =>
+      setPendingEmployees((prev) =>
         prev.filter((employee) => employee.user_id !== userId),
       );
+      setApprovedEmployees((prev) => [
+        { ...employee, status: "approved" },
+        ...prev,
+      ]);
       try {
         // Activity Log for account approval.
         await saveActivityLog({
@@ -106,7 +142,7 @@ function EmployeeAccounts() {
         return;
       }
 
-      setEmployees((prev) =>
+      setPendingEmployees((prev) =>
         prev.filter((employee) => employee.user_id !== userId),
       );
       try {
@@ -127,12 +163,50 @@ function EmployeeAccounts() {
   };
 
   // Pagination logic
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil(filteredApprovedEmployees.length / PAGE_SIZE);
+  const paginatedApprovedEmployees = filteredApprovedEmployees.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   useEffect(() => {
     setPage(1);
   }, [search, activeTab]);
+
+  const openPendingModal = async () => {
+    setIsPendingOpen(true);
+    await fetchPendingEmployees();
+  };
+
+  const handleAddEmployee = async (newUser) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: newUser.username,
+          bio_id: newUser.bio_id,
+          password: newUser.password,
+          department: newUser.department,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to add employee.");
+      }
+
+      await fetchPendingEmployees();
+      setIsAddOpen(false);
+      alert(data.message || "Employee added successfully.");
+    } catch (err) {
+      console.error(err);
+      throw new Error(err.message || "Failed to add employee.");
+    }
+  };
 
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
@@ -165,12 +239,12 @@ function EmployeeAccounts() {
           ) : (
             <div className="ml-10 md:ml-7">
               <div className="mt-8" />
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-6 gap-4">
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
-                    placeholder="Search User"
+                    placeholder="Search Employee"
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
@@ -178,11 +252,19 @@ function EmployeeAccounts() {
                     className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   />
                 </div>
-                <div
-                  className="px-5 py-1.5 rounded-lg font-medium flex items-center gap-2 invisible select-none"
-                  style={{ width: 140, height: 70 }}
-                >
-                  <span>Add User</span>
+                <div className="flex items-center gap-4">
+                  <button
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+                    onClick={openPendingModal}
+                  >
+                    Pending ({pendingEmployees.length})
+                  </button>
+                  <button
+                    className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
+                    onClick={() => setIsAddOpen(true)}
+                  >
+                    <span>Add User</span>
+                  </button>
                 </div>
               </div>
               {employeeError && (
@@ -201,77 +283,66 @@ function EmployeeAccounts() {
                       <th className="text-center px-6 py-4 font-semibold">
                         Department
                       </th>
-                      <th className="text-center px-6 py-4 font-semibold">
-                        Approve/Reject
-                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paginated.length === 0 ? (
+                    {paginatedApprovedEmployees.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={4}
+                          colSpan={3}
                           className="px-6 py-8 text-center text-gray-500"
                         >
-                          No results found.
+                          No approved employees found.
                         </td>
                       </tr>
                     ) : (
-                      paginated.map((row, idx) => (
+                      paginatedApprovedEmployees.map((employee, idx) => (
                         <tr
-                          key={row.user_id}
+                          key={employee.user_id}
                           className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                         >
                           <td className="text-center px-6 py-4 font-semibold">
-                            {row.bio_id}
+                            {employee.bio_id}
                           </td>
                           <td className="text-center px-6 py-4">
-                            {row.username}
+                            {employee.username}
                           </td>
                           <td className="text-center px-6 py-4">
-                            {row.dept_name}
-                          </td>
-                          <td className="text-center px-6 py-4">
-                            <div className="flex justify-center gap-3">
-                              <button
-                                className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-200 transition-all duration-150 text-sm"
-                                title="Approve"
-                                onClick={() => handleApprove(row)}
-                                aria-label="Approve"
-                                disabled={actionUserId === row.user_id}
-                              >
-                                <Check className="w-5 h-5" />
-                                <span className="hidden sm:inline">
-                                  Approve
-                                </span>
-                              </button>
-                              <button
-                                className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200 transition-all duration-150 text-sm"
-                                title="Reject"
-                                onClick={() => handleReject(row)}
-                                aria-label="Reject"
-                                disabled={actionUserId === row.user_id}
-                              >
-                                <X className="w-5 h-5" />
-                                <span className="hidden sm:inline">Reject</span>
-                              </button>
-                            </div>
+                            {employee.dept_name}
                           </td>
                         </tr>
                       ))
                     )}
-                    {/* Pagination Controls */}
-                    <Pagination
-                      page={page}
-                      totalPages={totalPages}
-                      onPageChange={setPage}
-                    />
                   </tbody>
                 </table>
+              </div>
+              <div className="mt-4 flex justify-center">
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
               </div>
             </div>
           )}
         </div>
+
+        <PendingEmployeesModal
+          isOpen={isPendingOpen}
+          onClose={() => setIsPendingOpen(false)}
+          employees={pendingEmployees}
+          employeeError={employeeError}
+          actionUserId={actionUserId}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
+
+        <AddEmployeeModal
+          isOpen={isAddOpen}
+          onClose={() => setIsAddOpen(false)}
+          onAddUser={handleAddEmployee}
+          departmentOptions={departments.map((dept) => dept.dept_name)}
+        />
       </div>
     </div>
   );

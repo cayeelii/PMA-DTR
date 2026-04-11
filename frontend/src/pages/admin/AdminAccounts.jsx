@@ -1,13 +1,24 @@
 import Pagination from "../../components/Pagination";
 import { useState, useEffect } from "react";
 import { Search, Pencil, Archive } from "lucide-react";
-import AddUserModal from "../../components/AddUser";
+import AddAdminModal from "../../components/AddAdmin";
 import EditAdminModal from "../../components/EditAdmin";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
 import { saveActivityLog } from "../../utils/activityLogs";
+import { normalizeRole, isSuperAdmin } from "../../utils/roles";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const PAGE_SIZE = 20;
+
+// Display stored role 
+const formatRoleLabel = (role) => {
+  const normalizedRole = normalizeRole(role);
+
+  if (normalizedRole === "superadmin") return "Super Admin";
+  if (normalizedRole === "admin") return "Admin";
+
+  return role || "";
+};
 
 function AdminAccounts() {
   const [users, setUsers] = useState([]);
@@ -17,11 +28,31 @@ function AdminAccounts() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [userRole, setUserRole] = useState("");
 
   useEffect(() => {
+    // Load the current session role for add-user permissions.
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/current-user`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+
+        if (res.ok && data.user) {
+          setUserRole(data.user.role);
+        }
+      } catch (err) {
+        console.error("Failed to fetch current user:", err);
+      }
+    };
+
+    // Load only the admin list allowed for the current role.
     const fetchAdmins = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/users/admins`);
+        const res = await fetch(`${API_BASE_URL}/api/users/admins`, {
+          credentials: "include",
+        });
         const data = await res.json();
 
         const formatted = data.map((u) => ({
@@ -36,6 +67,7 @@ function AdminAccounts() {
       }
     };
 
+    fetchCurrentUser();
     fetchAdmins();
   }, []);
 
@@ -51,9 +83,11 @@ function AdminAccounts() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           username: newUser.username,
           password: newUser.password,
+          role: newUser.role,
         }),
       });
 
@@ -61,7 +95,9 @@ function AdminAccounts() {
 
       if (!res.ok) throw new Error(data.error);
 
-      const refresh = await fetch(`${API_BASE_URL}/api/users/admins`);
+      const refresh = await fetch(`${API_BASE_URL}/api/users/admins`, {
+        credentials: "include",
+      });
       const refreshedData = await refresh.json();
 
       const formatted = refreshedData.map((u) => ({
@@ -73,17 +109,17 @@ function AdminAccounts() {
       setUsers(formatted);
       setPage(1);
       try {
-        // Activity Log for adding admin accounts.
+        const createdRole = newUser.role === "superadmin" ? "Super Admin" : "Admin";
         await saveActivityLog({
-          action: "Created Admin Account",
-          details: `Created admin account for ${newUser.username}.`,
+          action: `Created ${createdRole} Account`,
+          details: `Created ${createdRole.toLowerCase()} account for ${newUser.username}.`,
         });
       } catch (err) {
         console.error("Failed to save activity log:", err);
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to add admin");
+      throw new Error(err.message || "Failed to add user");
     }
   };
 
@@ -97,6 +133,10 @@ function AdminAccounts() {
     setIsArchiveOpen(true);
   };
 
+  // Super admins can create both admin types. Admins can only create admins.
+  const roleOptions = isSuperAdmin(userRole)
+    ? ["Admin", "Super Admin"]
+    : ["Admin"];
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -158,7 +198,9 @@ function AdminAccounts() {
                   >
                     <td className="text-center px-6 py-4">{row.timestamp}</td>
                     <td className="text-center px-6 py-4">{row.user}</td>
-                    <td className="text-center px-6 py-4">{row.role}</td>
+                    <td className="text-center px-6 py-4">
+                      {formatRoleLabel(row.role)}
+                    </td>
                     <td className="text-center px-6 py-4">
                       <div className="flex justify-center gap-3">
                         <button
@@ -191,11 +233,11 @@ function AdminAccounts() {
           onPageChange={setPage}
         />
 
-        <AddUserModal
+        <AddAdminModal
           isOpen={isAddOpen}
           onClose={() => setIsAddOpen(false)}
           onAddUser={handleAddUser}
-          roleOptions={["Admin"]}
+          roleOptions={roleOptions}
         />
 
         <EditAdminModal
