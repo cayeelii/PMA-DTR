@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Home,
   FileText,
@@ -9,28 +9,44 @@ import {
   Users,
   UserCircle,
   LogOut,
+  MoreVertical,
 } from "lucide-react";
+
+
 // Check if the current user is superadmin.
 import { isSuperAdmin } from "../utils/roles";
 
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 const SidebarLayout = ({ children }) => {
   const [open] = useState(true);
-  const baseClass = "flex items-center gap-4 px-3 py-2 rounded-lg transition";
-  const activeClass = "text-[#FFDD00] bg-white/10";
-  const inactiveClass = "text-white hover:bg-white/10";
+  const [showDropdown, setShowDropdown] = useState(false);
+
+
   const [username, setUsername] = useState("Guest");
   const [userRole, setUserRole] = useState("");
 
+
+  const navigate = useNavigate();
+
+
+  const baseClass =
+    "flex items-center gap-4 px-3 py-2 rounded-lg transition";
+  const activeClass = "text-[#FFDD00] bg-white/10";
+  const inactiveClass = "text-white hover:bg-white/10";
+
+
   useEffect(() => {
-    // Current user (for sidebar + role checks).
     const fetchUser = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/auth/current-user`, {
           credentials: "include",
         });
         const data = await res.json();
+
+
         if (res.ok && data.user) {
           setUsername(data.user.username);
           setUserRole(data.user.role);
@@ -40,10 +56,12 @@ const SidebarLayout = ({ children }) => {
       }
     };
 
+
     fetchUser();
   }, []);
 
-  //Fetch logout
+
+  // Logout function
   const handleLogout = async () => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
@@ -51,14 +69,16 @@ const SidebarLayout = ({ children }) => {
         credentials: "include",
       });
 
+
       window.location.href = "/login";
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       {/* SIDEBAR */}
       <aside
         className={`bg-[#0F1E4D] text-white transition-all duration-300 ${
@@ -75,6 +95,7 @@ const SidebarLayout = ({ children }) => {
             />
           </div>
 
+
           {/* NAV LINKS */}
           <nav className="flex-1 px-2">
             <ul className="space-y-2">
@@ -90,6 +111,7 @@ const SidebarLayout = ({ children }) => {
                 </NavLink>
               </li>
 
+
               <li>
                 <NavLink
                   to="/dtr"
@@ -101,6 +123,7 @@ const SidebarLayout = ({ children }) => {
                   {open && <span className="text-lg">DTR</span>}
                 </NavLink>
               </li>
+
 
               <li>
                 <NavLink
@@ -114,8 +137,9 @@ const SidebarLayout = ({ children }) => {
                 </NavLink>
               </li>
 
+
+              {/* SUPERADMIN ONLY */}
               {isSuperAdmin(userRole) && (
-                // Activity Logs (superadmin only).
                 <li>
                   <NavLink
                     to="/logs"
@@ -129,7 +153,9 @@ const SidebarLayout = ({ children }) => {
                 </li>
               )}
 
+
               <hr className="border-white/20 my-4" />
+
 
               <li>
                 <NavLink
@@ -142,6 +168,7 @@ const SidebarLayout = ({ children }) => {
                   {open && <span className="text-lg">Signatories</span>}
                 </NavLink>
               </li>
+
 
               <li>
                 <NavLink
@@ -157,28 +184,71 @@ const SidebarLayout = ({ children }) => {
             </ul>
           </nav>
 
+
           {/* USER SECTION */}
-          <div className="mt-auto border-t border-white/10 pt-4 flex items-center justify-between px-3">
-            <div className="flex items-center gap-3">
-              <UserCircle size={28} />
-              {open && <span className="text-lg">{username}</span>}
+          <div className="mt-auto border-t border-white/10 pt-4 px-3 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <UserCircle size={28} />
+                {open && (
+                  <div>
+                    <span className="text-lg">{username}</span>
+                    <div className="text-sm text-gray-300">
+                      {userRole}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+
+              {open && (
+                <button
+                  className="p-1 rounded hover:bg-white/10 hover:text-gray-300 transition"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                >
+                  <MoreVertical size={20} />
+                </button>
+              )}
             </div>
-            {open && (
-              <button
-                onClick={handleLogout}
-                className="hover:text-red-400 transition"
-              >
-                <LogOut size={20} />
-              </button>
+
+
+            {/* DROPDOWN MENU (MERGED FEATURE) */}
+            {showDropdown && open && (
+              <div className="absolute bottom-full right-0 mb-2 bg-white text-black rounded shadow-lg p-2 w-48">
+                <button
+                  className="block w-full text-left px-3 py-2 text-lg hover:bg-gray-100 rounded"
+                  onClick={() => {
+                    navigate("/change-password");
+                    setShowDropdown(false);
+                  }}
+                >
+                  Change Password
+                </button>
+
+
+                <button
+                  className="block w-full text-left px-3 py-2 text-lg text-red-500 hover:bg-red-50 rounded"
+                  onClick={() => {
+                    handleLogout();
+                    setShowDropdown(false);
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
             )}
           </div>
         </div>
       </aside>
 
+
       {/* MAIN CONTENT */}
-      <main className="flex-1 bg-[#ECEEF3] p-8">{children}</main>
+      <main className="flex-1 bg-[#ECEEF3] p-8">
+        {children}
+      </main>
     </div>
   );
 };
+
 
 export default SidebarLayout;
