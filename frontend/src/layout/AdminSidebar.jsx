@@ -14,7 +14,7 @@ import {
 
 
 // Check if the current user is superadmin.
-import { isSuperAdmin } from "../utils/roles";
+import { formatRoleLabel, isSuperAdmin } from "../utils/roles";
 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -194,7 +194,7 @@ const SidebarLayout = ({ children }) => {
                   <div>
                     <span className="text-lg">{username}</span>
                     <div className="text-sm text-gray-300">
-                      {userRole}
+                      {formatRoleLabel(userRole)}
                     </div>
                   </div>
                 )}

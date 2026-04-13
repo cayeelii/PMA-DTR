@@ -5,20 +5,10 @@ import AddAdminModal from "../../components/AddAdmin";
 import EditAdminModal from "../../components/EditAdmin";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
 import { saveActivityLog } from "../../utils/activityLogs";
-import { normalizeRole, isSuperAdmin } from "../../utils/roles";
+import { formatRoleLabel, isSuperAdmin } from "../../utils/roles";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const PAGE_SIZE = 20;
-
-// Display stored role 
-const formatRoleLabel = (role) => {
-  const normalizedRole = normalizeRole(role);
-
-  if (normalizedRole === "superadmin") return "Super Admin";
-  if (normalizedRole === "admin") return "Admin";
-
-  return role || "";
-};
 
 function AdminAccounts() {
   const [users, setUsers] = useState([]);
@@ -29,6 +19,7 @@ function AdminAccounts() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userRole, setUserRole] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     // Load the current session role for add-user permissions.
@@ -41,6 +32,7 @@ function AdminAccounts() {
 
         if (res.ok && data.user) {
           setUserRole(data.user.role);
+          setCurrentUserId(data.user.user_id);
         }
       } catch (err) {
         console.error("Failed to fetch current user:", err);
@@ -56,6 +48,7 @@ function AdminAccounts() {
         const data = await res.json();
 
         const formatted = data.map((u) => ({
+          user_id: u.user_id,
           timestamp: u.created_at.split("T")[0],
           user: u.username,
           role: u.role,
@@ -101,6 +94,7 @@ function AdminAccounts() {
       const refreshedData = await refresh.json();
 
       const formatted = refreshedData.map((u) => ({
+        user_id: u.user_id,
         timestamp: u.created_at ? u.created_at.split("T")[0] : "-",
         user: u.username,
         role: u.role,
@@ -189,9 +183,13 @@ function AdminAccounts() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((row, index) => (
+                paginated.map((row, index) => {
+                  const canArchiveUser =
+                    currentUserId !== null && row.user_id !== currentUserId;
+
+                  return (
                   <tr
-                    key={index}
+                    key={row.user_id}
                     className={`border-t ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50"
                     } hover:bg-blue-50 transition`}
@@ -210,17 +208,20 @@ function AdminAccounts() {
                         >
                           <Pencil size={18} />
                         </button>
-                        <button
-                          className="text-red-600 hover:text-red-800 transition"
-                          title="Archive"
-                          onClick={() => handleArchive(row)}
-                        >
-                          <Archive size={18} />
-                        </button>
+                        {canArchiveUser && (
+                          <button
+                            className="text-red-600 hover:text-red-800 transition"
+                            title="Archive"
+                            onClick={() => handleArchive(row)}
+                          >
+                            <Archive size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
