@@ -72,7 +72,7 @@ function SignatoriesPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          dept_id: signatory.department,
+          dept_name: signatory.department,
           head_name: signatory.head,
         }),
       });
@@ -85,9 +85,9 @@ function SignatoriesPage() {
 
       setData((prev) => [
         {
-          department:
-            departments.find((d) => d.dept_id == signatory.department)
-              ?.dept_name || "",
+          signatory_id: data.signatory_id,
+          dept_id: data.dept_id,
+          department: signatory.department.toUpperCase(),
           head: signatory.head,
         },
         ...prev,
@@ -97,6 +97,7 @@ function SignatoriesPage() {
       setPage(1);
     } catch (err) {
       console.error(err.message);
+      alert(err.message);
     }
   };
 
@@ -143,6 +144,7 @@ function SignatoriesPage() {
       setSelectedSignatory(null);
     } catch (err) {
       console.error(err.message);
+      alert(err.message);
     }
   };
 
@@ -232,8 +234,12 @@ function SignatoriesPage() {
                       key={idx}
                       className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                     >
-                      <td className="px-6 py-4">{row.department || ""}</td>
-                      <td className="px-6 py-4">{row.head || ""}</td>
+                      <td className="px-6 py-4 text-center">
+                        {row.department || ""}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {row.head || ""}
+                      </td>
                       <td className="px-6 py-4 text-center">
                         <button
                           className="text-blue-600 hover:text-blue-800 transition"

@@ -29,40 +29,64 @@ const getSignatories = (req, res) => {
 
 //Add signatory
 const addSignatory = (req, res) => {
-  const { dept_id, head_name } = req.body;
+  const { dept_name, head_name } = req.body;
 
-  if (!dept_id || !head_name) {
+  const deptName = dept_name.toUpperCase();
+
+  if (!deptName || !head_name) {
     return res.status(400).json({
       error: "Department and head name are required",
     });
   }
 
-  const checkSql = `
-    SELECT * FROM signatories WHERE dept_id = ?
-  `;
+  const checkDeptSql = `SELECT * FROM departments WHERE dept_name = ?`;
 
-  db.query(checkSql, [dept_id], (err, rows) => {
+  db.query(checkDeptSql, [deptName], (err, deptRows) => {
     if (err) return res.status(500).json({ error: err.message });
 
-    if (rows.length > 0) {
-      return res.status(400).json({
-        error: "This department already has a signatory",
+    const handleInsertSignatory = (dept_id) => {
+      const checkSignatorySql = `SELECT * FROM signatories WHERE dept_id = ?`;
+
+      db.query(checkSignatorySql, [dept_id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (rows.length > 0) {
+          return res.status(400).json({
+            error: "This department already has a signatory",
+          });
+        }
+
+        const insertSql = `
+          INSERT INTO signatories (dept_id, head_name)
+          VALUES (?, ?)
+        `;
+
+        db.query(insertSql, [dept_id, head_name], (err, result) => {
+          if (err) return res.status(500).json({ error: err.message });
+
+          res.json({
+            message: "Signatory added successfully",
+            signatory_id: result.insertId,
+            dept_id,
+          });
+        });
+      });
+    };
+
+    if (deptRows.length > 0) {
+      handleInsertSignatory(deptRows[0].dept_id);
+    } else {
+      const insertDeptSql = `
+        INSERT INTO departments (dept_name)
+        VALUES (?)
+      `;
+
+      db.query(insertDeptSql, [deptName], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        handleInsertSignatory(result.insertId);
       });
     }
-
-    const sql = `
-      INSERT INTO signatories (dept_id, head_name)
-      VALUES (?, ?)
-    `;
-
-    db.query(sql, [dept_id, head_name], (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-
-      res.json({
-        message: "Signatory added successfully",
-        signatory_id: result.insertId,
-      });
-    });
   });
 };
 
@@ -76,16 +100,31 @@ const updateSignatory = (req, res) => {
     });
   }
 
-  const sql = `
-    UPDATE signatories
-    SET dept_id = ?, head_name = ?
-    WHERE signatory_id = ?
+  const checkSql = `
+    SELECT * FROM signatories 
+    WHERE dept_id = ? AND signatory_id != ?
   `;
 
-  db.query(sql, [dept_id, head_name, signatory_id], (err) => {
+  db.query(checkSql, [dept_id, signatory_id], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
 
-    res.json({ message: "Signatory updated successfully" });
+    if (rows.length > 0) {
+      return res.status(400).json({
+        error: "This department already has a signatory",
+      });
+    }
+
+    const sql = `
+      UPDATE signatories
+      SET dept_id = ?, head_name = ?
+      WHERE signatory_id = ?
+    `;
+
+    db.query(sql, [dept_id, head_name, signatory_id], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      res.json({ message: "Signatory updated successfully" });
+    });
   });
 };
 

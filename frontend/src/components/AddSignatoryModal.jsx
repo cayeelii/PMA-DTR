@@ -5,8 +5,11 @@ const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
   const [newHead, setNewHead] = useState("");
 
   const handleAdd = () => {
-    if (newDept && newHead.trim()) {
-      onAdd({ department: Number(newDept), head: newHead });
+    const dept = newDept.trim();
+    const head = newHead.trim();
+
+    if (dept && head) {
+      onAdd({ department: dept, head: head });
       setNewDept("");
       setNewHead("");
     }
@@ -25,23 +28,16 @@ const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 w-full max-w-md relative animate-fadeIn">
         <h2 className="text-2xl font-semibold mb-4">Add Signatory</h2>
 
-        {/* Department Dropdown */}
+        {/* Department */}
         <div className="mb-4">
           <label className="block text-gray-700 mb-1">Department</label>
-
-          <select
+          <input
+            type="text"
             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
             value={newDept}
             onChange={(e) => setNewDept(e.target.value)}
-          >
-            <option value="">Select department</option>
-
-            {departments.map((dept) => (
-              <option key={dept.dept_id} value={dept.dept_id}>
-                {dept.dept_name}
-              </option>
-            ))}
-          </select>
+            placeholder="Enter department name"
+          />
         </div>
 
         {/* Department Head */}
