@@ -93,6 +93,14 @@ function SignatoriesPage() {
         ...prev,
       ]);
 
+      setDepartments((prev) => [
+        ...prev,
+        {
+          dept_id: data.dept_id,
+          dept_name: signatory.department.toUpperCase(),
+        },
+      ]);
+
       setShowAddModal(false);
       setPage(1);
     } catch (err) {
