@@ -24,6 +24,7 @@ const register = (req, res) => {
     department: Joi.string().trim().min(2).max(100).required(),
   });
 
+
   const { error, value } = schema.validate(req.body);
 
   if (error) {
@@ -73,37 +74,29 @@ const register = (req, res) => {
   });
 };
 
-//Admin login
-const adminLogin = (req, res) => {
-  const { username, password } = req.body;
+// Merged ADMIN & EMPLOYEE LOGIN
+const login = (req, res) => {
+  const { username, bio_id, password } = req.body;
 
-  if (!username || !password) {
+  if ((!username && !bio_id) || !password) {
     return res.status(400).json({
-      message: "Username and password are required",
-    });
-  }
-
-  if (req.session.user) {
-    return res.status(403).json({
-      message: `User ${req.session.user.username} is already logged in.`,
+      message: "Username/BioID and password are required",
     });
   }
 
   const sql = `
-    SELECT user_id, username, password, role, bio_id, active_session_id
-    FROM users 
-    WHERE username = ? 
+    SELECT user_id, username, bio_id, password, role, status, active_session_id
+    FROM users
+    WHERE username = ? OR bio_id = ?
     LIMIT 1
   `;
 
-  db.query(sql, [username], (err, results) => {
-    if (err) {
-      return res.status(500).json({ message: "Database error" });
-    }
+  db.query(sql, [username || null, bio_id || null], (err, results) => {
+    if (err) return res.status(500).json({ message: "Database error" });
 
     if (results.length === 0) {
       return res.status(401).json({
-        message: "Invalid username or password",
+        message: "Invalid credentials",
       });
     }
 
@@ -113,7 +106,14 @@ const adminLogin = (req, res) => {
 
     if (!isMatch) {
       return res.status(401).json({
-        message: "Invalid username or password",
+        message: "Invalid credentials",
+      });
+    }
+
+    //Employee approval check
+    if (user.role === "employee" && user.status !== "approved") {
+      return res.status(403).json({
+        message: "Account pending approval",
       });
     }
 
@@ -121,7 +121,7 @@ const adminLogin = (req, res) => {
 
     if (user.active_session_id && user.active_session_id !== sessionId) {
       return res.status(403).json({
-        message: "User already logged.",
+        message: "User already logged in",
       });
     }
 
@@ -139,80 +139,7 @@ const adminLogin = (req, res) => {
 
     return res.json({
       message: "Login successful",
-      user: req.session.user,
-    });
-  });
-};
-
-//Employee login
-const employeeLogin = (req, res) => {
-  const schema = Joi.object({
-    bio_id: Joi.string()
-      .pattern(/^\d{6}$/)
-      .required(),
-    password: Joi.string().required(),
-  });
-
-  const { error, value } = schema.validate(req.body);
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
-
-  const { bio_id, password } = value;
-
-  const sql = `
-    SELECT user_id, username, bio_id, password, role, status, active_session_id
-    FROM users
-    WHERE bio_id = ? AND role = 'employee'
-    LIMIT 1
-  `;
-
-  db.query(sql, [bio_id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    if (!results.length) {
-      return res.status(401).json({ error: "Invalid BioID or password." });
-    }
-
-    const user = results[0];
-
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: "Invalid BioID or password." });
-    }
-
-    if (user.status !== "approved") {
-      return res.status(403).json({
-        error: "Your account is pending admin approval.",
-      });
-    }
-
-    const sessionId = req.session.id;
-
-    if (user.active_session_id && user.active_session_id !== sessionId) {
-      return res.status(403).json({
-        error: "User already logged in.",
-      });
-    }
-
-    req.session.user = {
-      user_id: user.user_id,
-      username: user.username,
-      role: user.role,
-      bio_id: user.bio_id,
-      status: user.status,
-    };
-
-    db.query("UPDATE users SET active_session_id = ? WHERE user_id = ?", [
-      sessionId,
-      user.user_id,
-    ]);
-
-    return res.json({
-      message: "Employee login successful",
-      user: req.session.user,
+      user: req.session.user, 
     });
   });
 };
@@ -307,8 +234,7 @@ const changePassword = async (req, res) => {
 
 module.exports = {
   register,
-  adminLogin,
-  employeeLogin,
+  login,
   logout,
   getCurrentUser,
   changePassword,

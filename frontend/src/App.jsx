@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 
 // Layouts
 import AdminLayout from "./layout/AdminSidebar.jsx";
+import EmployeeLayout from "./layout/EmployeeSidebar.jsx";
 
 // Admin Pages
 import LoginPage from "./pages/admin/Login";
@@ -30,7 +31,7 @@ function App() {
         <Route path="/employee-register" element={<EmployeeRegisterPage />} />
 
         {/* Employee App */}
-        <Route path="/employee/*">
+        <Route path="/employee/*" element={<EmployeeLayout />}>
           <Route index element={<Navigate to="/employee/home" />} />
           <Route path="home" element={<EmployeeHomePage />} />
         </Route>

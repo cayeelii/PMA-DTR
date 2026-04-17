@@ -17,32 +17,32 @@ const LoginPage = () => {
   };
 
   //Fetch login
-  const handleLogin = async (e) => {
-    e.preventDefault();
+ const handleLogin = async (e) => {
+  e.preventDefault();
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/adminLogin`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(credentials),
-        credentials: "include",
-      });
+  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  });
 
-      const data = await response.json();
+  const data = await res.json();
 
-      if (!response.ok) {
-        alert(data.message);
-        return;
-      }
+  if (res.ok && data.user) {
+    const role = data.user.role?.toLowerCase();
 
-       navigate("/admin/home");
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Server error");
+    if (role === "employee") {
+      navigate("/employee/home"); // ✅ FIXED
+    } else {
+      navigate("/admin/home");
     }
-  };
+  } else {
+    console.error("Login failed");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4">
