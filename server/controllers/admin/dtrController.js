@@ -155,8 +155,6 @@ const getEmployeeDTR = (req, res) => {
   try {
     const { bio_id, month, year } = req.query;
 
-    console.log("QUERY:", req.query);
-
     if (!bio_id || !month || !year) {
       return res.status(400).json({
         message: "Missing parameters",
@@ -186,14 +184,12 @@ const getEmployeeDTR = (req, res) => {
 
     db.query(sql, [bio_id, month, year], (err, results) => {
       if (err) {
-        console.error("DTR Fetch Error:", err);
-        return res.status(500).json({
-          message: "Database error",
-          error: err.message,
-        });
-      }
-
-      console.log("DTR RESULTS:", results);
+      console.error("DB Error:", err);
+      return res.status(500).json({
+        message: "Database error",
+        error: err.sqlMessage || err.message,
+      });
+    }
 
       res.json(results);
     });

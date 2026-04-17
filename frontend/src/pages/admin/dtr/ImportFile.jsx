@@ -35,6 +35,8 @@ const ImportFile = ({ onUpload }) => {
         } catch (err) {
           console.error("Failed to save activity log:", err);
         }
+
+        localStorage.setItem("dtr_fileName", file.name);
         
         if (onUpload) onUpload(file);
       } else {
