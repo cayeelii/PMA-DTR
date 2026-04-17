@@ -150,4 +150,59 @@ const getEmployeesByDepartment = (req, res) => {
   });
 };
 
-module.exports = { importDTR, getDepartments, getEmployeesByDepartment };
+// Get Employee DTR
+const getEmployeeDTR = (req, res) => {
+  try {
+    const { bio_id, month, year } = req.query;
+
+    console.log("QUERY:", req.query);
+
+    if (!bio_id || !month || !year) {
+      return res.status(400).json({
+        message: "Missing parameters",
+      });
+    }
+
+    const sql = `
+      SELECT 
+        date_only AS date,
+
+        MAX(CASE WHEN TRIM(ampm_type) = 'AM IN' THEN time_only END) AS amIn,
+        MAX(CASE WHEN TRIM(ampm_type) = 'AM OUT' THEN time_only END) AS amOut,
+        MAX(CASE WHEN TRIM(ampm_type) = 'PM IN' THEN time_only END) AS pmIn,
+        MAX(CASE WHEN TRIM(ampm_type) = 'PM OUT' THEN time_only END) AS pmOut,
+        MAX(CASE WHEN TRIM(ampm_type) = 'OT IN' THEN time_only END) AS otIn,
+        MAX(CASE WHEN TRIM(ampm_type) = 'OT OUT' THEN time_only END) AS otOut
+
+      FROM raw_logs
+      WHERE bio_id = ?
+        AND date_only IS NOT NULL
+        AND MONTH(date_only) = ?
+        AND YEAR(date_only) = ?
+
+      GROUP BY date_only
+      ORDER BY date_only ASC
+    `;
+
+    db.query(sql, [bio_id, month, year], (err, results) => {
+      if (err) {
+        console.error("DTR Fetch Error:", err);
+        return res.status(500).json({
+          message: "Database error",
+          error: err.message,
+        });
+      }
+
+      console.log("DTR RESULTS:", results);
+
+      res.json(results);
+    });
+
+  } catch (error) {
+    console.error("Server Crash:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = { importDTR, getDepartments, getEmployeesByDepartment, getEmployeeDTR };
