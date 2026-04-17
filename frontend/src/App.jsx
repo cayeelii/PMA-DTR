@@ -1,11 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import SidebarLayout from "./layout/AdminSidebar.jsx";
 
+// Layouts
+import AdminLayout from "./layout/AdminSidebar.jsx";
 
+// Admin Pages
 import LoginPage from "./pages/admin/Login";
-import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
-import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
-import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
 import HomePage from "./pages/admin/Home";
 import DTRPage from "./pages/admin/dtr/DTRManagement.jsx";
 import MaintenancePage from "./pages/admin/Maintenance";
@@ -14,50 +13,45 @@ import SignatoriesPage from "./pages/admin/Signatories";
 import AccountsPage from "./pages/admin/Accounts";
 import ChangePasswordPage from "./pages/admin/ChangePassword.jsx";
 
+// Employee Pages
+import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
+import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
+import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
 
 function App() {
   return (
-      <Router>
-          <Routes>
-              <Route path="/" element={<Navigate to="/login" />} />
-              <Route path="/login" element={<LoginPage />} />
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" />} />
 
+        {/* Auth */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/employee-login" element={<EmployeeLoginPage />} />
+        <Route path="/employee-register" element={<EmployeeRegisterPage />} />
 
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/employee-login" element={<EmployeeLoginPage />} />
-              <Route
-                  path="/employee-register"
-                  element={<EmployeeRegisterPage />}
-              />
-              <Route path="/employee-home" element={<EmployeeHomePage />} />
+        {/* Employee App */}
+        <Route path="/employee/*">
+          <Route index element={<Navigate to="/employee/home" />} />
+          <Route path="home" element={<EmployeeHomePage />} />
+        </Route>
 
+        {/* Admin App */}
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/home" />} />
+          <Route path="home" element={<HomePage />} />
+          <Route path="dtr" element={<DTRPage />} />
+          <Route path="maintenance" element={<MaintenancePage />} />
+          <Route path="logs" element={<LogsPage />} />
+          <Route path="signatories" element={<SignatoriesPage />} />
+          <Route path="accounts" element={<AccountsPage />} />
+          <Route path="change-password" element={<ChangePasswordPage />} />
+        </Route>
 
-              <Route
-                  path="/*"
-                  element={
-                      <SidebarLayout>
-                          <Routes>
-                              <Route path="/home" element={<HomePage />} />
-                              <Route path="/dtr" element={<DTRPage />} />
-                              <Route path="/maintenance" element={<MaintenancePage />} />
-                              <Route path="/logs" element={<LogsPage />} />
-                              <Route path="/signatories" element={<SignatoriesPage />} />
-                              <Route path="/accounts" element={<AccountsPage />} />
-                              <Route path="/" element={<Navigate to="/home" />} />
-                              <Route path="/change-password" element={<ChangePasswordPage />} />
+        <Route path="*" element={<Navigate to="/login" />} />
 
-
-                          </Routes>
-                      </SidebarLayout>
-                  }
-              />
-
-
-              <Route path="*" element={<Navigate to="/login" />} />
-          </Routes>
-      </Router>
+      </Routes>
+    </Router>
   );
 }
-
 
 export default App;

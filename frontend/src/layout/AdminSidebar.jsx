@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Home,
   FileText,
@@ -20,7 +20,7 @@ import { formatRoleLabel, isSuperAdmin } from "../utils/roles";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
-const SidebarLayout = ({ children }) => {
+export default function AdminSidebar() {
   const [open] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -101,7 +101,7 @@ const SidebarLayout = ({ children }) => {
             <ul className="space-y-2">
               <li>
                 <NavLink
-                  to="/home"
+                  to="/admin/home"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -114,7 +114,7 @@ const SidebarLayout = ({ children }) => {
 
               <li>
                 <NavLink
-                  to="/dtr"
+                  to="/admin/dtr"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -127,7 +127,7 @@ const SidebarLayout = ({ children }) => {
 
               <li>
                 <NavLink
-                  to="/maintenance"
+                  to="/admin/maintenance"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -142,7 +142,7 @@ const SidebarLayout = ({ children }) => {
               {isSuperAdmin(userRole) && (
                 <li>
                   <NavLink
-                    to="/logs"
+                    to="/admin/logs"
                     className={({ isActive }) =>
                       `${baseClass} ${isActive ? activeClass : inactiveClass}`
                     }
@@ -159,7 +159,7 @@ const SidebarLayout = ({ children }) => {
 
               <li>
                 <NavLink
-                  to="/signatories"
+                  to="/admin/signatories"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -172,7 +172,7 @@ const SidebarLayout = ({ children }) => {
 
               <li>
                 <NavLink
-                  to="/accounts"
+                  to="/admin/accounts"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -218,7 +218,7 @@ const SidebarLayout = ({ children }) => {
                 <button
                   className="block w-full text-left px-3 py-2 text-lg hover:bg-gray-100 rounded"
                   onClick={() => {
-                    navigate("/change-password");
+                    navigate("/admin/change-password");
                     setShowDropdown(false);
                   }}
                 >
@@ -244,11 +244,8 @@ const SidebarLayout = ({ children }) => {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 bg-[#ECEEF3] p-8">
-        {children}
+        <Outlet />
       </main>
     </div>
   );
 };
-
-
-export default SidebarLayout;

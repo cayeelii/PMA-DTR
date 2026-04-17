@@ -92,7 +92,7 @@ function LogsPage() {
 
   // Redirect users who are not superadmin.
   if (!isSuperAdmin(userRole)) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/admin/home" replace />;
   }
 
   return (

@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -35,8 +37,7 @@ const LoginPage = () => {
         return;
       }
 
-      // Redirect to home
-      window.location.href = "/home";
+       navigate("/admin/home");
     } catch (error) {
       console.error("Login error:", error);
       alert("Server error");
