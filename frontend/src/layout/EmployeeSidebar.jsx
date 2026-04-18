@@ -84,7 +84,7 @@ export default function EmployeeSidebar() {
               {/* HOME */}
               <li>
                 <NavLink
-                  to="/employee/EmployeeHome"
+                  to="/employee/employee-home"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -97,7 +97,7 @@ export default function EmployeeSidebar() {
               {/* DTR */}
               <li>
                 <NavLink
-                  to="/employee/EmployeeDTR"
+                  to="/employee/employee-dtr"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -110,7 +110,7 @@ export default function EmployeeSidebar() {
               {/* LOGS */}
               <li>
                 <NavLink
-                  to="/employee/EmployeeLogs"
+                  to="/employee/employee-logs"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -123,7 +123,7 @@ export default function EmployeeSidebar() {
               {/* PROFILE */}
               <li>
                 <NavLink
-                  to="/employee/EmployeeProfile"
+                  to="/employee/employee-profile"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }

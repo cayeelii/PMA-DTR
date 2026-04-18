@@ -18,6 +18,7 @@ import ChangePasswordPage from "./pages/admin/ChangePassword.jsx";
 import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
 import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
 import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
+import EmployeeProfilePage from "./pages/employee/EmployeeProfile.jsx";
 
 function App() {
   return (
@@ -32,8 +33,9 @@ function App() {
 
         {/* Employee App */}
         <Route path="/employee/*" element={<EmployeeLayout />}>
-          <Route index element={<Navigate to="/employee/home" />} />
-          <Route path="home" element={<EmployeeHomePage />} />
+          <Route index element={<Navigate to="/employee/employee-home" />} />
+          <Route path="employee-home" element={<EmployeeHomePage />} />
+          <Route path="employee-profile" element={<EmployeeProfilePage />} />
         </Route>
 
         {/* Admin App */}
