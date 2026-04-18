@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, User, KeyRound, ChevronDown } from "lucide-react";
+import { X, User, KeyRound, ChevronDown, IdCard } from "lucide-react";
 
 const AddEmployeeModal = ({
   isOpen,
@@ -10,8 +10,10 @@ const AddEmployeeModal = ({
   // Use the same password rule as the backend.
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+  const bioIdRegex = /^\d{6}$/;
   const [formData, setFormData] = useState({
     username: "",
+    bio_id: "",
     department: "",
     password: "",
     confirmPassword: "",
@@ -21,6 +23,10 @@ const AddEmployeeModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!bioIdRegex.test(formData.bio_id)) {
+      setErrorMessage("Bio ID must be exactly 6 digits.");
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage("Passwords do not match.");
       return;
@@ -36,10 +42,9 @@ const AddEmployeeModal = ({
       return;
     }
 
-    // Make a 6-digit bio ID for the new employee.
     const newUser = {
       username: formData.username,
-      bio_id: String(Math.floor(100000 + Math.random() * 900000)),
+      bio_id: formData.bio_id,
       department: formData.department,
       password: formData.password,
     };
@@ -49,6 +54,7 @@ const AddEmployeeModal = ({
       setErrorMessage("");
       setFormData({
         username: "",
+        bio_id: "",
         department: "",
         password: "",
         confirmPassword: "",
@@ -77,7 +83,7 @@ const AddEmployeeModal = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Username
               </label>
@@ -91,6 +97,31 @@ const AddEmployeeModal = ({
                     setFormData({ ...formData, username: e.target.value });
                   }}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Bio ID
+              </label>
+              <div className="relative">
+                <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.bio_id}
+                  onChange={(e) => {
+                    setErrorMessage("");
+                    setFormData({
+                      ...formData,
+                      bio_id: e.target.value.replace(/\D/g, "").slice(0, 6),
+                    });
+                  }}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter 6-digit Bio ID"
+                  pattern="\d{6}"
+                  title="Bio ID must be exactly 6 digits."
                   required
                 />
               </div>

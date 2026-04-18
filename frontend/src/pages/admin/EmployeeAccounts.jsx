@@ -1,10 +1,12 @@
 import Pagination from "../../components/Pagination";
 const PAGE_SIZE = 20;
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Archive } from "lucide-react";
 import AdminAccounts from "./AdminAccounts";
 import AddEmployeeModal from "../../components/AddEmployee";
 import PendingEmployeesModal from "../../components/PendingEmployeesModal";
+import ArchiveAdminModal from "../../components/ArchiveAdmin";
+import ArchivedUsersModal from "../../components/ArchivedUsersModal";
 import { saveActivityLog } from "../../utils/activityLogs";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -18,6 +20,10 @@ function EmployeeAccounts() {
   const [actionUserId, setActionUserId] = useState(null);
   const [isPendingOpen, setIsPendingOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [isArchivedListOpen, setIsArchivedListOpen] = useState(false);
+  const [archivedEmployees, setArchivedEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
 
   const fetchPendingEmployees = async () => {
@@ -56,6 +62,27 @@ function EmployeeAccounts() {
     }
   };
 
+  const fetchArchivedEmployees = async () => {
+    setEmployeeError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/archived?role=employee`,
+        { credentials: "include" },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to load archived employees.");
+        return;
+      }
+
+      setArchivedEmployees(data);
+    } catch {
+      setEmployeeError("Unable to connect to server.");
+    }
+  };
+
   const fetchDepartments = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/signatories/departments`);
@@ -75,6 +102,7 @@ function EmployeeAccounts() {
   useEffect(() => {
     fetchPendingEmployees();
     fetchApprovedEmployees();
+    fetchArchivedEmployees();
     fetchDepartments();
   }, []);
 
@@ -178,13 +206,116 @@ function EmployeeAccounts() {
     await fetchPendingEmployees();
   };
 
+  const openArchiveModal = (employee) => {
+    setArchiveTarget({
+      user_id: employee.user_id,
+      user: employee.username,
+      bio_id: employee.bio_id,
+      dept_name: employee.dept_name,
+    });
+    setIsArchiveOpen(true);
+  };
+
+  const handleArchiveEmployee = async (target) => {
+    if (!target) return;
+
+    setActionUserId(target.user_id);
+    setEmployeeError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/archive/${target.user_id}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to archive employee.");
+        return;
+      }
+
+      setApprovedEmployees((prev) =>
+        prev.filter((emp) => emp.user_id !== target.user_id),
+      );
+
+      await fetchArchivedEmployees();
+
+      try {
+        await saveActivityLog({
+          action: "Archived Employee Account",
+          details: `Archived employee account for ${target.user} from ${target.dept_name} (BIO ID: ${target.bio_id}).`,
+          targetBioId: target.bio_id || null,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
+    } catch {
+      setEmployeeError("Unable to connect to server.");
+    } finally {
+      setActionUserId(null);
+      setIsArchiveOpen(false);
+    }
+  };
+
+  const handleRestoreEmployee = async (user) => {
+    if (!user) return;
+
+    setActionUserId(user.user_id);
+    setEmployeeError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/restore/${user.user_id}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmployeeError(data.error || "Failed to restore employee.");
+        return;
+      }
+
+      setArchivedEmployees((prev) =>
+        prev.filter((emp) => emp.user_id !== user.user_id),
+      );
+
+      await fetchApprovedEmployees();
+
+      try {
+        await saveActivityLog({
+          action: "Restored Employee Account",
+          details: `Restored employee account for ${user.username} from ${user.dept_name || "Unassigned"} (BIO ID: ${user.bio_id}).`,
+          targetBioId: user.bio_id || null,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
+    } catch {
+      setEmployeeError("Unable to connect to server.");
+    } finally {
+      setActionUserId(null);
+    }
+  };
+
+  const openArchivedListModal = async () => {
+    setIsArchivedListOpen(true);
+    await fetchArchivedEmployees();
+  };
+
   const handleAddEmployee = async (newUser) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/add-employee`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           username: newUser.username,
           bio_id: newUser.bio_id,
@@ -199,7 +330,17 @@ function EmployeeAccounts() {
         throw new Error(data.error || "Failed to add employee.");
       }
 
-      await fetchPendingEmployees();
+      try {
+        await saveActivityLog({
+          action: "Added Employee Account",
+          details: `Added approved employee account ${newUser.username} from ${newUser.department} (BIO ID: ${newUser.bio_id}).`,
+          targetBioId: newUser.bio_id || null,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
+
+      await fetchApprovedEmployees();
       setIsAddOpen(false);
       alert(data.message || "Employee added successfully.");
     } catch (err) {
@@ -260,6 +401,12 @@ function EmployeeAccounts() {
                     Pending ({pendingEmployees.length})
                   </button>
                   <button
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+                    onClick={openArchivedListModal}
+                  >
+                    Archived ({archivedEmployees.length})
+                  </button>
+                  <button
                     className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
                     onClick={() => setIsAddOpen(true)}
                   >
@@ -283,13 +430,16 @@ function EmployeeAccounts() {
                       <th className="text-center px-6 py-4 font-semibold">
                         Department
                       </th>
+                      <th className="text-center px-6 py-4 font-semibold">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedApprovedEmployees.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={3}
+                          colSpan={4}
                           className="px-6 py-8 text-center text-gray-500"
                         >
                           No approved employees found.
@@ -309,6 +459,18 @@ function EmployeeAccounts() {
                           </td>
                           <td className="text-center px-6 py-4">
                             {employee.dept_name}
+                          </td>
+                          <td className="text-center px-6 py-4">
+                            <div className="flex justify-center">
+                              <button
+                                className="text-red-600 hover:text-red-800 transition disabled:opacity-50"
+                                title="Archive"
+                                disabled={actionUserId === employee.user_id}
+                                onClick={() => openArchiveModal(employee)}
+                              >
+                                <Archive size={18} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -342,6 +504,23 @@ function EmployeeAccounts() {
           onClose={() => setIsAddOpen(false)}
           onAddUser={handleAddEmployee}
           departmentOptions={departments.map((dept) => dept.dept_name)}
+        />
+
+        <ArchiveAdminModal
+          isOpen={isArchiveOpen}
+          user={archiveTarget}
+          onClose={() => setIsArchiveOpen(false)}
+          onConfirm={handleArchiveEmployee}
+        />
+
+        <ArchivedUsersModal
+          isOpen={isArchivedListOpen}
+          onClose={() => setIsArchivedListOpen(false)}
+          users={archivedEmployees}
+          error={employeeError}
+          actionUserId={actionUserId}
+          onRestore={handleRestoreEmployee}
+          variant="employee"
         />
       </div>
     </div>

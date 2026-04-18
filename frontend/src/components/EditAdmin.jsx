@@ -26,7 +26,7 @@ const EditAdminModal = ({ user, isOpen, onClose, onSave }) => {
                         </label>
                         <input
                             type="text"
-                            value={formData.user}
+                            value={formData.user || ""}
                             onChange={(e) =>
                                 setFormData({
                                     ...formData,
@@ -35,24 +35,6 @@ const EditAdminModal = ({ user, isOpen, onClose, onSave }) => {
                             }
                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#FFDD00] focus:border-transparent outline-none transition-all"
                         />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            Role
-                        </label>
-                        <select
-                            value={formData.role}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    role: e.target.value,
-                                })
-                            }
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#FFDD00] outline-none"
-                        >
-                            <option value="Admin">Admin</option>
-                            <option value="Employee">Employee</option>
-                        </select>
                     </div>
                 </div>
 

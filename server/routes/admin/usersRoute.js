@@ -15,8 +15,20 @@ router.patch("/approve/:user_id", adminUserController.approveUser);
 //PATCH /users/reject/:user_id
 router.patch("/reject/:user_id", adminUserController.rejectUser);
 
+//PATCH /users/archive/:user_id
+router.patch("/archive/:user_id", adminUserController.archiveUser);
+
+//GET /users/archived?role=employee|admin
+router.get("/archived", adminUserController.getArchivedUsers);
+
+//PATCH /users/restore/:user_id
+router.patch("/restore/:user_id", adminUserController.restoreUser);
+
 //POST /users/add
 router.post("/add", adminUserController.addAdminUser);
+
+//POST /users/add-employee  (admin creates approved employee)
+router.post("/add-employee", adminUserController.addEmployee);
 
 // GET /users/admins
 router.get("/admins", adminUserController.getAllAdmins);

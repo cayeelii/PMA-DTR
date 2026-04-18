@@ -1,5 +1,6 @@
 const db = require("../../config/db");
 const bcrypt = require("bcrypt");
+const Joi = require("joi");
 
 const normalizeRole = (role) =>
   String(role || "")
@@ -65,6 +66,126 @@ const rejectUser = (req, res) => {
     if (result.affectedRows === 0)
       return res.status(404).json({ error: "User not found" });
     res.json({ message: "User rejected successfully" });
+  });
+};
+
+//Get archived users
+const getArchivedUsers = (req, res) => {
+  const currentUserRole = normalizeRole(req.session?.user?.role);
+
+  if (!["admin", "superadmin"].includes(currentUserRole)) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  const roleFilter = normalizeRole(req.query.role);
+
+  let whereRole = "";
+  const params = [];
+
+  if (roleFilter === "employee") {
+    whereRole = "u.role = 'employee'";
+  } else if (roleFilter === "admin") {
+    // Regular admins only see archived admins, superadmins see both.
+    whereRole =
+      currentUserRole === "superadmin"
+        ? "u.role IN ('admin', 'superadmin')"
+        : "u.role = 'admin'";
+  } else {
+    return res.status(400).json({ error: "Missing or invalid role filter" });
+  }
+
+  const sql = `
+    SELECT u.user_id, u.username, u.bio_id, u.role, u.status, u.created_at, d.dept_name
+    FROM users u
+    LEFT JOIN departments d ON u.dept_id = d.dept_id
+    WHERE u.status = 'archived'
+      AND ${whereRole}
+    ORDER BY u.created_at DESC
+  `;
+
+  db.query(sql, params, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+};
+
+//Restore archived user
+const restoreUser = (req, res) => {
+  const { user_id } = req.params;
+  const currentUserRole = normalizeRole(req.session?.user?.role);
+
+  if (!["admin", "superadmin"].includes(currentUserRole)) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  const lookupSql = "SELECT role FROM users WHERE user_id = ? LIMIT 1";
+
+  db.query(lookupSql, [user_id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0)
+      return res.status(404).json({ error: "User not found" });
+
+    const targetRole = normalizeRole(results[0].role);
+
+    if (currentUserRole === "admin" && targetRole === "superadmin") {
+      return res.status(403).json({
+        error: "Admins cannot restore super admin accounts.",
+      });
+    }
+
+    const sql =
+      "UPDATE users SET status = 'approved' WHERE user_id = ? AND status = 'archived'";
+
+    db.query(sql, [user_id], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (result.affectedRows === 0)
+        return res
+          .status(404)
+          .json({ error: "User not found or not archived" });
+      res.json({ message: "User restored successfully" });
+    });
+  });
+};
+
+//Archive user (admin or employee)
+const archiveUser = (req, res) => {
+  const { user_id } = req.params;
+  const currentUserRole = normalizeRole(req.session?.user?.role);
+  const currentUserId = req.session?.user?.user_id;
+
+  if (!["admin", "superadmin"].includes(currentUserRole)) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  if (String(currentUserId) === String(user_id)) {
+    return res.status(400).json({ error: "You cannot archive your own account." });
+  }
+
+  // Prevent regular admins from archiving super admins.
+  const lookupSql = "SELECT role FROM users WHERE user_id = ? LIMIT 1";
+
+  db.query(lookupSql, [user_id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0)
+      return res.status(404).json({ error: "User not found" });
+
+    const targetRole = normalizeRole(results[0].role);
+
+    if (currentUserRole === "admin" && targetRole === "superadmin") {
+      return res.status(403).json({
+        error: "Admins cannot archive super admin accounts.",
+      });
+    }
+
+    const sql =
+      "UPDATE users SET status = 'archived', active_session_id = NULL WHERE user_id = ?";
+
+    db.query(sql, [user_id], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (result.affectedRows === 0)
+        return res.status(404).json({ error: "User not found" });
+      res.json({ message: "User archived successfully" });
+    });
   });
 };
 
@@ -153,6 +274,78 @@ const addAdminUser = async (req, res) => {
   }
 };
 
+//Admin-created employee
+const addEmployee = async (req, res) => {
+  const schema = Joi.object({
+    username: Joi.string()
+      .pattern(/^[a-zA-Z\s'-]{3,50}$/)
+      .required(),
+    bio_id: Joi.string()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        "string.pattern.base": "Bio ID must be exactly 6 digits",
+      }),
+    password: Joi.string()
+      .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
+      .required()
+      .messages({
+        "string.pattern.base":
+          "Password must be at least 8 characters and include uppercase, lowercase, number, and special character",
+      }),
+    department: Joi.string().trim().min(2).max(100).required(),
+  });
+
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
+  const { username, bio_id, password, department } = value;
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const checkDeptSql =
+      "SELECT dept_id FROM departments WHERE dept_name = ? LIMIT 1";
+
+    db.query(checkDeptSql, [department], (err, deptResult) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const dept_id = deptResult[0]?.dept_id ?? null;
+
+      const sql = `
+        INSERT INTO users (username, bio_id, password, role, status, dept_id)
+        VALUES (?, ?, ?, 'employee', 'approved', ?)
+      `;
+
+      db.query(
+        sql,
+        [username, bio_id, hashedPassword, dept_id],
+        (err, result) => {
+          if (err) {
+            if (err.code === "ER_DUP_ENTRY") {
+              return res
+                .status(400)
+                .json({ error: "Username or Bio ID already exists." });
+            }
+            return res.status(500).json({ error: err.message });
+          }
+
+          res.json({
+            message: "Employee added successfully.",
+            user_id: result.insertId,
+          });
+        },
+      );
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 //Get all admin users
 const getAllAdmins = (req, res) => {
   const currentUserRole = normalizeRole(req.session?.user?.role);
@@ -165,6 +358,7 @@ const getAllAdmins = (req, res) => {
     SELECT user_id, username, role, status, created_at
     FROM users
     WHERE role ${currentUserRole === "superadmin" ? "IN ('admin', 'superadmin')" : "= ?"}
+      AND (status IS NULL OR status != 'archived')
     ORDER BY created_at DESC
   `;
 
@@ -179,8 +373,12 @@ const getAllAdmins = (req, res) => {
 module.exports = {
   getPendingUsers,
   getApprovedEmployees,
+  getArchivedUsers,
   approveUser,
   rejectUser,
+  archiveUser,
+  restoreUser,
   addAdminUser,
+  addEmployee,
   getAllAdmins,
 };

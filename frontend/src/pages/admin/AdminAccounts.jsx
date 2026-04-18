@@ -4,6 +4,7 @@ import { Search, Pencil, Archive } from "lucide-react";
 import AddAdminModal from "../../components/AddAdmin";
 import EditAdminModal from "../../components/EditAdmin";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
+import ArchivedUsersModal from "../../components/ArchivedUsersModal";
 import { saveActivityLog } from "../../utils/activityLogs";
 import { formatRoleLabel, isSuperAdmin } from "../../utils/roles";
 
@@ -17,6 +18,10 @@ function AdminAccounts() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isArchivedListOpen, setIsArchivedListOpen] = useState(false);
+  const [archivedAdmins, setArchivedAdmins] = useState([]);
+  const [archiveListError, setArchiveListError] = useState("");
+  const [actionUserId, setActionUserId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userRole, setUserRole] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -62,7 +67,30 @@ function AdminAccounts() {
 
     fetchCurrentUser();
     fetchAdmins();
+    fetchArchivedAdmins();
   }, []);
+
+  const fetchArchivedAdmins = async () => {
+    setArchiveListError("");
+
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/users/archived?role=admin`,
+        { credentials: "include" },
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        setArchiveListError(data.error || "Failed to load archived admins.");
+        return;
+      }
+
+      setArchivedAdmins(data);
+    } catch (err) {
+      console.error("Failed to fetch archived admins:", err);
+      setArchiveListError("Unable to connect to server.");
+    }
+  };
 
   const filtered = users.filter((row) =>
     row.user.toLowerCase().includes(search.toLowerCase()),
@@ -122,9 +150,105 @@ function AdminAccounts() {
     setIsEditOpen(true);
   };
 
+  // Open the archive confirmation modal for the selected user.
   const handleArchive = (user) => {
     setSelectedUser(user);
     setIsArchiveOpen(true);
+  };
+
+  // Archive the admin: call API, update lists, log the action, close modal.
+  const handleArchiveAdmin = async (user) => {
+    if (!user) return;
+
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/users/archive/${user.user_id}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Failed to archive user.");
+        return;
+      }
+
+      // Remove from active list and refresh the archived list.
+      setUsers((prev) => prev.filter((u) => u.user_id !== user.user_id));
+      await fetchArchivedAdmins();
+
+      try {
+        await saveActivityLog({
+          action: "Archived Admin Account",
+          details: `Archived ${formatRoleLabel(user.role).toLowerCase()} account for ${user.user}.`,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Unable to connect to server.");
+    } finally {
+      setIsArchiveOpen(false);
+    }
+  };
+
+  const handleRestoreAdmin = async (user) => {
+    if (!user) return;
+
+    setActionUserId(user.user_id);
+    setArchiveListError("");
+
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/users/restore/${user.user_id}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        },
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        setArchiveListError(data.error || "Failed to restore user.");
+        return;
+      }
+
+      setArchivedAdmins((prev) =>
+        prev.filter((u) => u.user_id !== user.user_id),
+      );
+
+      setUsers((prev) => [
+        {
+          user_id: user.user_id,
+          timestamp: user.created_at ? user.created_at.split("T")[0] : "-",
+          user: user.username,
+          role: user.role,
+        },
+        ...prev,
+      ]);
+
+      try {
+        await saveActivityLog({
+          action: "Restored Admin Account",
+          details: `Restored ${formatRoleLabel(user.role).toLowerCase()} account for ${user.username}.`,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
+    } catch (err) {
+      console.error(err);
+      setArchiveListError("Unable to connect to server.");
+    } finally {
+      setActionUserId(null);
+    }
+  };
+
+  const openArchivedListModal = async () => {
+    setIsArchivedListOpen(true);
+    await fetchArchivedAdmins();
   };
 
   // Super admins can create both admin types. Admins can only create admins.
@@ -152,12 +276,20 @@ function AdminAccounts() {
             />
           </div>
 
-          <button
-            className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
-            onClick={() => setIsAddOpen(true)}
-          >
-            <span>Add User</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+              onClick={openArchivedListModal}
+            >
+              Archived ({archivedAdmins.length})
+            </button>
+            <button
+              className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-5 py-1.5 rounded-lg font-medium shadow flex items-center gap-2"
+              onClick={() => setIsAddOpen(true)}
+            >
+              <span>Add User</span>
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200 mt-10">
@@ -252,7 +384,17 @@ function AdminAccounts() {
           isOpen={isArchiveOpen}
           user={selectedUser}
           onClose={() => setIsArchiveOpen(false)}
-          onConfirm={() => setIsArchiveOpen(false)}
+          onConfirm={handleArchiveAdmin}
+        />
+
+        <ArchivedUsersModal
+          isOpen={isArchivedListOpen}
+          onClose={() => setIsArchivedListOpen(false)}
+          users={archivedAdmins}
+          error={archiveListError}
+          actionUserId={actionUserId}
+          onRestore={handleRestoreAdmin}
+          variant="admin"
         />
       </div>
     </div>
