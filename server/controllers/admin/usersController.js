@@ -127,11 +127,14 @@ const restoreUser = (req, res) => {
 
     const targetRole = normalizeRole(results[0].role);
 
-    if (currentUserRole === "admin" && targetRole === "superadmin") {
+    // Admins can only restore employees.
+    if (currentUserRole === "admin" && targetRole !== "employee") {
       return res.status(403).json({
-        error: "Admins cannot restore super admin accounts.",
+        error: "Admins can only restore employee accounts.",
       });
     }
+
+    // Super admins can restore any role.
 
     const sql =
       "UPDATE users SET status = 'approved' WHERE user_id = ? AND status = 'archived'";
@@ -177,12 +180,7 @@ const archiveUser = (req, res) => {
       });
     }
 
-    // Super admins can only archive admins and super admins.
-    if (currentUserRole === "superadmin" && targetRole === "employee") {
-      return res.status(403).json({
-        error: "Super admins cannot archive employee accounts.",
-      });
-    }
+    // Super admins can archive any role.
 
     const sql =
       "UPDATE users SET status = 'archived', active_session_id = NULL WHERE user_id = ?";

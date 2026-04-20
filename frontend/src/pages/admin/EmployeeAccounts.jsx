@@ -479,7 +479,9 @@ function EmployeeAccounts() {
                           </td>
                           <td className="text-center px-6 py-4">
                             <div className="flex justify-center">
-                              {normalizeRole(userRole) === "admin" && (
+                              {["admin", "superadmin"].includes(
+                                normalizeRole(userRole),
+                              ) && (
                                 <button
                                   className="text-red-600 hover:text-red-800 transition disabled:opacity-50"
                                   title="Archive"
