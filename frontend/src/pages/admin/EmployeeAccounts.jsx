@@ -8,12 +8,14 @@ import PendingEmployeesModal from "../../components/PendingEmployeesModal";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
 import ArchivedUsersModal from "../../components/ArchivedUsersModal";
 import { saveActivityLog } from "../../utils/activityLogs";
+import { normalizeRole } from "../../utils/roles";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function EmployeeAccounts() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState("admins");
   const [search, setSearch] = useState("");
+  const [userRole, setUserRole] = useState("");
   const [pendingEmployees, setPendingEmployees] = useState([]);
   const [approvedEmployees, setApprovedEmployees] = useState([]);
   const [employeeError, setEmployeeError] = useState("");
@@ -100,6 +102,21 @@ function EmployeeAccounts() {
   };
 
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/current-user`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.user) {
+          setUserRole(data.user.role || "");
+        }
+      } catch (err) {
+        console.error("Failed to fetch current user:", err);
+      }
+    };
+
+    fetchCurrentUser();
     fetchPendingEmployees();
     fetchApprovedEmployees();
     fetchArchivedEmployees();
@@ -138,7 +155,7 @@ function EmployeeAccounts() {
         // Activity Log for account approval.
         await saveActivityLog({
           action: "Approved Employee Account",
-          details: `Approved employee account for ${employee.username} from ${employee.dept_name} (BIO ID: ${employee.bio_id}).`,
+          details: `Approved employee "${employee.username}" (BIO ID: ${employee.bio_id})${employee.dept_name ? ` from Department "${employee.dept_name}"` : ""}.`,
           targetBioId: employee.bio_id || null,
         });
       } catch (err) {
@@ -177,7 +194,7 @@ function EmployeeAccounts() {
         // Activity Log for account rejection
         await saveActivityLog({
           action: "Rejected Employee Account",
-          details: `Rejected employee account for ${employee.username} from ${employee.dept_name} (BIO ID: ${employee.bio_id}).`,
+          details: `Rejected employee "${employee.username}" (BIO ID: ${employee.bio_id})${employee.dept_name ? ` from Department "${employee.dept_name}"` : ""}.`,
           targetBioId: employee.bio_id || null,
         });
       } catch (err) {
@@ -245,8 +262,8 @@ function EmployeeAccounts() {
 
       try {
         await saveActivityLog({
-          action: "Archived Employee Account",
-          details: `Archived employee account for ${target.user} from ${target.dept_name} (BIO ID: ${target.bio_id}).`,
+          action: "Archived Employee",
+          details: `Archived employee "${target.user}" (BIO ID: ${target.bio_id})${target.dept_name ? ` from Department "${target.dept_name}"` : ""}.`,
           targetBioId: target.bio_id || null,
         });
       } catch (logErr) {
@@ -289,8 +306,8 @@ function EmployeeAccounts() {
 
       try {
         await saveActivityLog({
-          action: "Restored Employee Account",
-          details: `Restored employee account for ${user.username} from ${user.dept_name || "Unassigned"} (BIO ID: ${user.bio_id}).`,
+          action: "Restored Employee",
+          details: `Restored employee "${user.username}" (BIO ID: ${user.bio_id})${user.dept_name ? ` to Department "${user.dept_name}"` : ""}.`,
           targetBioId: user.bio_id || null,
         });
       } catch (logErr) {
@@ -332,8 +349,8 @@ function EmployeeAccounts() {
 
       try {
         await saveActivityLog({
-          action: "Added Employee Account",
-          details: `Added approved employee account ${newUser.username} from ${newUser.department} (BIO ID: ${newUser.bio_id}).`,
+          action: "Created User",
+          details: `Created Employee user "${newUser.username}" (BIO ID: ${newUser.bio_id})${newUser.department ? ` for Department "${newUser.department}"` : ""}.`,
           targetBioId: newUser.bio_id || null,
         });
       } catch (logErr) {
@@ -462,14 +479,16 @@ function EmployeeAccounts() {
                           </td>
                           <td className="text-center px-6 py-4">
                             <div className="flex justify-center">
-                              <button
-                                className="text-red-600 hover:text-red-800 transition disabled:opacity-50"
-                                title="Archive"
-                                disabled={actionUserId === employee.user_id}
-                                onClick={() => openArchiveModal(employee)}
-                              >
-                                <Archive size={18} />
-                              </button>
+                              {normalizeRole(userRole) === "admin" && (
+                                <button
+                                  className="text-red-600 hover:text-red-800 transition disabled:opacity-50"
+                                  title="Archive"
+                                  disabled={actionUserId === employee.user_id}
+                                  onClick={() => openArchiveModal(employee)}
+                                >
+                                  <Archive size={18} />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

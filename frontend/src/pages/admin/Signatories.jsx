@@ -3,6 +3,7 @@ import { Pencil, Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import AddSignatoryModal from "../../components/AddSignatoryModal";
 import EditSignatoryModal from "../../components/EditSignatoryModal";
+import { saveActivityLog } from "../../utils/activityLogs";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -103,6 +104,15 @@ function SignatoriesPage() {
 
       setShowAddModal(false);
       setPage(1);
+
+      try {
+        await saveActivityLog({
+          action: "Added Signatory",
+          details: `Added Department Head "${signatory.head}" for Department "${signatory.department.toUpperCase()}".`,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
     } catch (err) {
       console.error(err.message);
       alert(err.message);
@@ -133,15 +143,18 @@ function SignatoriesPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error);
 
+      const previousHead = selectedSignatory.head;
+      const previousDept = selectedSignatory.department;
+      const newDept =
+        departments.find((d) => d.dept_id == updated.dept_id)?.dept_name || "";
+
       setData((prev) =>
         prev.map((item) =>
           item.signatory_id === selectedSignatory.signatory_id
             ? {
                 ...item,
                 dept_id: updated.dept_id,
-                department:
-                  departments.find((d) => d.dept_id == updated.dept_id)
-                    ?.dept_name || "",
+                department: newDept,
                 head: updated.head,
               }
             : item,
@@ -150,6 +163,21 @@ function SignatoriesPage() {
 
       setShowEditModal(false);
       setSelectedSignatory(null);
+
+      try {
+        const didChangeHead = previousHead !== updated.head;
+
+        // Only log Department Head changes.
+        if (didChangeHead) {
+          const departmentName = newDept || previousDept || "Unknown";
+          await saveActivityLog({
+            action: "Updated Signatory",
+            details: `Changed Department Head for Department "${departmentName}" from "${previousHead}" to "${updated.head}".`,
+          });
+        }
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
     } catch (err) {
       console.error(err.message);
       alert(err.message);

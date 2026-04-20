@@ -147,7 +147,7 @@ const restoreUser = (req, res) => {
   });
 };
 
-//Archive user (admin or employee)
+//Archive user
 const archiveUser = (req, res) => {
   const { user_id } = req.params;
   const currentUserRole = normalizeRole(req.session?.user?.role);
@@ -161,7 +161,6 @@ const archiveUser = (req, res) => {
     return res.status(400).json({ error: "You cannot archive your own account." });
   }
 
-  // Prevent regular admins from archiving super admins.
   const lookupSql = "SELECT role FROM users WHERE user_id = ? LIMIT 1";
 
   db.query(lookupSql, [user_id], (err, results) => {
@@ -171,9 +170,17 @@ const archiveUser = (req, res) => {
 
     const targetRole = normalizeRole(results[0].role);
 
-    if (currentUserRole === "admin" && targetRole === "superadmin") {
+    // Admins can only archive employees.
+    if (currentUserRole === "admin" && targetRole !== "employee") {
       return res.status(403).json({
-        error: "Admins cannot archive super admin accounts.",
+        error: "Admins can only archive employee accounts.",
+      });
+    }
+
+    // Super admins can only archive admins and super admins.
+    if (currentUserRole === "superadmin" && targetRole === "employee") {
+      return res.status(403).json({
+        error: "Super admins cannot archive employee accounts.",
       });
     }
 
