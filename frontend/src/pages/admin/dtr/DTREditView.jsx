@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, Save, FileText } from "lucide-react";
 
-const DTREditView = ({ employee, onBack, onSave }) => {
+const DTREditView = ({ employee, onBack, onSave, onGenerateReport }) => {
     const [dtrEntries, setDtrEntries] = useState([]);
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -135,7 +135,10 @@ const DTREditView = ({ employee, onBack, onSave }) => {
                     >
                         <Save size={18} /> Save changes
                     </button>
-                    <button className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all active:scale-95">
+                    <button
+                        className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all active:scale-95"
+                        onClick={() => onGenerateReport && onGenerateReport(dtrEntries)}
+                    >
                         <FileText size={18} /> Generate Report
                     </button>
                 </div>

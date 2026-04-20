@@ -4,6 +4,7 @@ import UploadView from "./ImportFile";
 import DepartmentView from "./DepartmentView";
 import EmployeeView from "./EmployeeView";
 import DTREditView from "./DTREditView";
+import ReportPreview from "./ReportPreview";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -14,6 +15,7 @@ const DTRManagement = () => {
     const [fileName, setFileName] = useState(() => {
         return localStorage.getItem("dtr_fileName") || "";
     });
+    const [reportData, setReportData] = useState(null); // { dtrRows, employee }
 
     // Restore state on page load
     useEffect(() => {
@@ -163,6 +165,18 @@ const DTRManagement = () => {
                                 console.log("Data to save:", updatedData);
                                 setStep(3);
                             }}
+                            onGenerateReport={(dtrRows) => {
+                                setReportData({ dtrRows, employee: selectedEmployee });
+                                setStep(5);
+                            }}
+                        />
+                    )}
+
+                    {step === 5 && reportData && (
+                        <ReportPreview
+                            onBack={() => setStep(4)}
+                            dtrRows={reportData.dtrRows}
+                            employee={reportData.employee}
                         />
                     )}
                 </div>
