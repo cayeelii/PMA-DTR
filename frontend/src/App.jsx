@@ -7,6 +7,7 @@ import {
 
 // Layouts
 import AdminLayout from "./layout/AdminSidebar.jsx";
+import EmployeeLayout from "./layout/EmployeeSidebar.jsx";
 
 // Admin Pages
 import LoginPage from "./pages/admin/Login";
@@ -22,6 +23,7 @@ import ChangePasswordPage from "./pages/admin/ChangePassword.jsx";
 import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
 import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
 import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
+import EmployeeProfilePage from "./pages/employee/EmployeeProfile.jsx";
 
 function App() {
   return (
@@ -35,9 +37,10 @@ function App() {
         <Route path="/employee-register" element={<EmployeeRegisterPage />} />
 
         {/* Employee App */}
-        <Route path="/employee/*">
+        <Route path="/employee/*" element={<EmployeeLayout />}>
           <Route index element={<Navigate to="/employee/home" />} />
           <Route path="home" element={<EmployeeHomePage />} />
+          <Route path="employee-profile" element={<EmployeeProfilePage />} />
         </Route>
 
         {/* Admin App */}
