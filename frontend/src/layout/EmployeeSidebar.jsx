@@ -53,7 +53,7 @@ export default function EmployeeSidebar() {
         credentials: "include",
       });
 
-      window.location.href = "/login";
+      window.location.href = "/employee-login";
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -149,17 +149,6 @@ export default function EmployeeSidebar() {
             {/* DROPDOWN */}
             {showDropdown && open && (
               <div className="absolute bottom-full right-0 mb-2 bg-white text-black rounded shadow-lg p-2 w-48">
-                //TSAKA KONA LIPAT UNG CHANGEPASS FUNCTION PAGTAPOS NI KHEN SA
-                PROFILE PAGE NI EMPLOYEE :)
-                {/* <button
-                  className="block w-full text-left px-3 py-2 text-lg hover:bg-gray-100 rounded"
-                  onClick={() => {
-                    navigate("/admin/change-password");
-                    setShowDropdown(false);
-                  }}
-                >
-                  Change Password
-                </button> */}
                 <button
                   className="block w-full text-left px-3 py-2 text-lg text-red-500 hover:bg-red-50 rounded"
                   onClick={() => {

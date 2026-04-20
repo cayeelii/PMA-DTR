@@ -1,7 +1,10 @@
 import React from "react";
 import { User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const EmployeeProfilePage = () => {
+  const navigate = useNavigate(); 
+  
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
@@ -59,7 +62,12 @@ const EmployeeProfilePage = () => {
 
         {/* Change Password Button */}
         <div className="flex justify-center mt-8">
-          <button className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-7 py-2 rounded-lg text-xl font-medium shadow-lg border-none focus:outline-none">
+          <button className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-7 py-2 rounded-lg text-xl font-medium shadow-lg border-none focus:outline-none"
+            onClick={() => {
+                    navigate("/employee/employee-change-password");
+                    setShowDropdown(false);
+                  }}
+          >
             Change Password
           </button>
         </div>

@@ -24,6 +24,7 @@ import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
 import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
 import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
 import EmployeeProfilePage from "./pages/employee/EmployeeProfile.jsx";
+import EmployeeChangePasswordPage from "./pages/employee/EmployeeChangePassword.jsx";
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
           <Route index element={<Navigate to="/employee/home" />} />
           <Route path="home" element={<EmployeeHomePage />} />
           <Route path="employee-profile" element={<EmployeeProfilePage />} />
+          <Route path="employee-change-password" element={<EmployeeChangePasswordPage />} />
         </Route>
 
         {/* Admin App */}

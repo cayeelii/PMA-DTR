@@ -56,7 +56,7 @@ const ChangePassword = () => {
 
       alert("You've successfully changed your password");
 
-      navigate("/admin/home");
+      navigate("/employee/home");
 
     } catch (error) {
       console.error(error);
@@ -123,7 +123,7 @@ const ChangePassword = () => {
             <button
               type="button"
               className="px-4 py-2 bg-white text-black border rounded hover:bg-gray-100"
-              onClick={() => navigate("/admin/home")}
+              onClick={() => navigate("/employee/home")}
             >
               Cancel
             </button>
