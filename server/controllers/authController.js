@@ -162,9 +162,11 @@ const employeeLogin = (req, res) => {
   const { bio_id, password } = value;
 
   const sql = `
-    SELECT user_id, username, bio_id, password, role, status, active_session_id
-    FROM users
-    WHERE bio_id = ? AND role = 'employee'
+    SELECT u.user_id, u.username, u.bio_id, u.password, u.role, u.status,
+          u.active_session_id, u.dept_id, d.dept_name
+    FROM users u
+    LEFT JOIN departments d ON u.dept_id = d.dept_id
+    WHERE u.bio_id = ? AND u.role = 'employee'
     LIMIT 1
   `;
 
@@ -203,6 +205,7 @@ const employeeLogin = (req, res) => {
       role: user.role,
       bio_id: user.bio_id,
       status: user.status,
+      department: user.dept_name, 
     };
 
     db.query("UPDATE users SET active_session_id = ? WHERE user_id = ?", [
