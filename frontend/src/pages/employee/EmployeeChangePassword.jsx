@@ -123,7 +123,7 @@ const ChangePassword = () => {
             <button
               type="button"
               className="px-4 py-2 bg-white text-black border rounded hover:bg-gray-100"
-              onClick={() => navigate("/employee/home")}
+              onClick={() => navigate("/employee/employee-profile")}
             >
               Cancel
             </button>
