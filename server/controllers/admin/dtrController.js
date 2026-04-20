@@ -25,6 +25,7 @@ const formatDateOnly = (value) => {
   return null;
 };
 
+// Import DTR
 const importDTR = (req, res) => {
   try {
     if (!req.files || !req.files.file) {
@@ -200,5 +201,66 @@ const getEmployeeDTR = (req, res) => {
   }
 };
 
+const updateEmployeeDTR = async (req, res) => {
+    const entries = req.body;
 
-module.exports = { importDTR, getDepartments, getEmployeesByDepartment, getEmployeeDTR };
+    // Basic validation
+    if (!Array.isArray(entries) || entries.length === 0) {
+        return res.status(400).json({
+            error: "Invalid or empty payload",
+        });
+    }
+
+    try {
+        for (const entry of entries) {
+            const {
+                bio_id,
+                date,
+                amIn,
+                amOut,
+                pmIn,
+                pmOut,
+                otIn,
+                otOut,
+            } = entry;
+
+            if (!bio_id || !date) continue;
+
+            await db.query(
+                `
+                UPDATE employee_dtr
+                SET 
+                    amIn = ?, 
+                    amOut = ?, 
+                    pmIn = ?, 
+                    pmOut = ?, 
+                    otIn = ?, 
+                    otOut = ?
+                WHERE bio_id = ? AND date = ?
+                `,
+                [
+                    amIn || null,
+                    amOut || null,
+                    pmIn || null,
+                    pmOut || null,
+                    otIn || null,
+                    otOut || null,
+                    bio_id,
+                    date,
+                ]
+            );
+        }
+
+        return res.status(200).json({
+            message: "DTR updated successfully",
+        });
+    } catch (error) {
+        console.error("UPDATE DTR ERROR:", error);
+
+        return res.status(500).json({
+            error: "Failed to update DTR",
+        });
+    }
+};
+
+module.exports = { importDTR, getDepartments, getEmployeesByDepartment, getEmployeeDTR, updateEmployeeDTR };

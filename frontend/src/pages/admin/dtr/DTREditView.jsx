@@ -18,6 +18,62 @@ const DTREditView = ({ employee, onBack, onSave, onGenerateReport }) => {
         return `${hour.toString().padStart(2, "0")}:${minute} ${suffix}`;
     };
 
+    const convertTo24Hour = (time) => {
+    if (!time) return null;
+
+    const [timePart, modifier] = time.split(" ");
+    if (!timePart || !modifier) return null;
+
+    let [hours, minutes] = timePart.split(":");
+    hours = parseInt(hours);
+
+    if (modifier === "PM" && hours !== 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    return `${hours.toString().padStart(2, "0")}:${minutes}:00`;
+};
+
+const handleSaveClick = async () => {
+    try {
+        const bioId = employee?.bio_id || employee?.id;
+
+        const payload = dtrEntries.map((entry) => ({
+            bio_id: bioId,
+            date: entry.rawDate,
+            amIn: convertTo24Hour(entry.amIn),
+            amOut: convertTo24Hour(entry.amOut),
+            pmIn: convertTo24Hour(entry.pmIn),
+            pmOut: convertTo24Hour(entry.pmOut),
+            otIn: convertTo24Hour(entry.otIn),
+            otOut: convertTo24Hour(entry.otOut),
+        }));
+
+        console.log("FINAL PAYLOAD:", payload);
+        
+        const res = await fetch(`${API_BASE_URL}/api/dtr/update-dtr`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error("SERVER ERROR:", errorText);
+            throw new Error(errorText);
+        }
+
+        const data = await res.json();
+        console.log("SAVE RESPONSE:", data);
+
+        alert("DTR successfully updated!");
+    } catch (err) {
+        console.error("FULL ERROR:", err);
+        alert(err.message || "Failed to save changes");
+    }
+};
+
     useEffect(() => {
         console.log("EMPLOYEE:", employee);
 
@@ -57,15 +113,16 @@ const DTREditView = ({ employee, onBack, onSave, onGenerateReport }) => {
                         if (isNaN(dateObj.getTime())) return null;
 
                         return {
-                            date: `${(dateObj.getMonth() + 1)
-                                .toString()
-                                .padStart(2, "0")}/${dateObj
-                                .getDate()
-                                .toString()
-                                .padStart(2, "0")}/${dateObj
-                                .getFullYear()
-                                .toString()
-                                .slice(-2)}`,
+                            rawDate: row.date, 
+    date: `${(dateObj.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}/${dateObj
+        .getDate()
+        .toString()
+        .padStart(2, "0")}/${dateObj
+        .getFullYear()
+        .toString()
+        .slice(-2)}`,
 
                             day: [
                                 "Sun",
@@ -103,9 +160,6 @@ const DTREditView = ({ employee, onBack, onSave, onGenerateReport }) => {
         setDtrEntries(updated);
     };
 
-    const handleSaveClick = () => {
-        if (onSave) onSave(dtrEntries);
-    };
 
     return (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(80vh-80px)] min-h-[300px]">
