@@ -22,8 +22,7 @@ export default function EmployeeSidebar() {
 
   const navigate = useNavigate();
 
-  const baseClass =
-    "flex items-center gap-4 px-3 py-2 rounded-lg transition";
+  const baseClass = "flex items-center gap-4 px-3 py-2 rounded-lg transition";
   const activeClass = "text-[#FFDD00] bg-white/10";
   const inactiveClass = "text-white hover:bg-white/10";
 
@@ -107,19 +106,6 @@ export default function EmployeeSidebar() {
                 </NavLink>
               </li>
 
-              {/* LOGS */}
-              <li>
-                <NavLink
-                  to="/employee/employee-logs"
-                  className={({ isActive }) =>
-                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
-                  }
-                >
-                  <ClipboardList size={22} />
-                  {open && <span className="text-lg">Logs</span>}
-                </NavLink>
-              </li>
-
               {/* PROFILE */}
               <li>
                 <NavLink
@@ -163,9 +149,8 @@ export default function EmployeeSidebar() {
             {/* DROPDOWN */}
             {showDropdown && open && (
               <div className="absolute bottom-full right-0 mb-2 bg-white text-black rounded shadow-lg p-2 w-48">
-               
-                 //TSAKA KONA LIPAT UNG CHANGEPASS FUNCTION PAGTAPOS NI KHEN SA PROFILE PAGE NI EMPLOYEE :)
-
+                //TSAKA KONA LIPAT UNG CHANGEPASS FUNCTION PAGTAPOS NI KHEN SA
+                PROFILE PAGE NI EMPLOYEE :)
                 {/* <button
                   className="block w-full text-left px-3 py-2 text-lg hover:bg-gray-100 rounded"
                   onClick={() => {
@@ -175,7 +160,6 @@ export default function EmployeeSidebar() {
                 >
                   Change Password
                 </button> */}
-
                 <button
                   className="block w-full text-left px-3 py-2 text-lg text-red-500 hover:bg-red-50 rounded"
                   onClick={() => {

@@ -43,7 +43,7 @@ const EmployeeLoginPage = () => {
         return;
       }
 
-      navigate("/employee-home");
+      navigate("/employee/home");
     } catch (error) {
       setErrorMessage("Unable to connect to server.");
     } finally {

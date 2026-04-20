@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 // Layouts
 import AdminLayout from "./layout/AdminSidebar.jsx";
@@ -33,8 +38,8 @@ function App() {
 
         {/* Employee App */}
         <Route path="/employee/*" element={<EmployeeLayout />}>
-          <Route index element={<Navigate to="/employee/employee-home" />} />
-          <Route path="employee-home" element={<EmployeeHomePage />} />
+          <Route index element={<Navigate to="/employee/home" />} />
+          <Route path="home" element={<EmployeeHomePage />} />
           <Route path="employee-profile" element={<EmployeeProfilePage />} />
         </Route>
 
@@ -51,7 +56,6 @@ function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/login" />} />
-
       </Routes>
     </Router>
   );
