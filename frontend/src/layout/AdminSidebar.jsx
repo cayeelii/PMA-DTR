@@ -8,35 +8,28 @@ import {
   PenLine,
   Users,
   UserCircle,
+  Clock8,
   LogOut,
   MoreVertical,
 } from "lucide-react";
 
-
 // Check if the current user is superadmin.
 import { formatRoleLabel, isSuperAdmin } from "../utils/roles";
 
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 
 export default function AdminSidebar() {
   const [open] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
 
-
   const [username, setUsername] = useState("Guest");
   const [userRole, setUserRole] = useState("");
 
-
   const navigate = useNavigate();
 
-
-  const baseClass =
-    "flex items-center gap-4 px-3 py-2 rounded-lg transition";
+  const baseClass = "flex items-center gap-4 px-3 py-2 rounded-lg transition";
   const activeClass = "text-[#FFDD00] bg-white/10";
   const inactiveClass = "text-white hover:bg-white/10";
-
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -45,7 +38,6 @@ export default function AdminSidebar() {
           credentials: "include",
         });
         const data = await res.json();
-
 
         if (res.ok && data.user) {
           setUsername(data.user.username);
@@ -56,10 +48,8 @@ export default function AdminSidebar() {
       }
     };
 
-
     fetchUser();
   }, []);
-
 
   // Logout function
   const handleLogout = async () => {
@@ -69,13 +59,11 @@ export default function AdminSidebar() {
         credentials: "include",
       });
 
-
       window.location.href = "/login";
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
-
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -95,7 +83,6 @@ export default function AdminSidebar() {
             />
           </div>
 
-
           {/* NAV LINKS */}
           <nav className="flex-1 px-2">
             <ul className="space-y-2">
@@ -111,7 +98,6 @@ export default function AdminSidebar() {
                 </NavLink>
               </li>
 
-
               <li>
                 <NavLink
                   to="/admin/dtr"
@@ -123,7 +109,6 @@ export default function AdminSidebar() {
                   {open && <span className="text-lg">DTR</span>}
                 </NavLink>
               </li>
-
 
               <li>
                 <NavLink
@@ -137,6 +122,17 @@ export default function AdminSidebar() {
                 </NavLink>
               </li>
 
+              <li>
+                <NavLink
+                  to="/admin/schedule"
+                  className={({ isActive }) =>
+                    `${baseClass} ${isActive ? activeClass : inactiveClass}`
+                  }
+                >
+                  <Clock8 size={22} />
+                  {open && <span className="text-lg">Schedule</span>}
+                </NavLink>
+              </li>
 
               {/* SUPERADMIN ONLY */}
               {isSuperAdmin(userRole) && (
@@ -153,9 +149,7 @@ export default function AdminSidebar() {
                 </li>
               )}
 
-
               <hr className="border-white/20 my-4" />
-
 
               <li>
                 <NavLink
@@ -168,7 +162,6 @@ export default function AdminSidebar() {
                   {open && <span className="text-lg">Signatories</span>}
                 </NavLink>
               </li>
-
 
               <li>
                 <NavLink
@@ -183,7 +176,6 @@ export default function AdminSidebar() {
               </li>
             </ul>
           </nav>
-
 
           {/* USER SECTION */}
           <div className="mt-auto border-t border-white/10 pt-4 px-3 relative">
@@ -200,7 +192,6 @@ export default function AdminSidebar() {
                 )}
               </div>
 
-
               {open && (
                 <button
                   className="p-1 rounded hover:bg-white/10 hover:text-gray-300 transition"
@@ -210,7 +201,6 @@ export default function AdminSidebar() {
                 </button>
               )}
             </div>
-
 
             {/* DROPDOWN MENU (MERGED FEATURE) */}
             {showDropdown && open && (
@@ -224,7 +214,6 @@ export default function AdminSidebar() {
                 >
                   Change Password
                 </button>
-
 
                 <button
                   className="block w-full text-left px-3 py-2 text-lg text-red-500 hover:bg-red-50 rounded"
@@ -241,11 +230,10 @@ export default function AdminSidebar() {
         </div>
       </aside>
 
-
       {/* MAIN CONTENT */}
       <main className="flex-1 bg-[#ECEEF3] p-8">
         <Outlet />
       </main>
     </div>
   );
-};
+}
