@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, Save, FileText } from "lucide-react";
 
-const DTREditView = ({ employee, onBack, onSave, onGenerateReport }) => {
+const DTREditView = ({ employee, onBack, onGenerateReport }) => {
     const [dtrEntries, setDtrEntries] = useState([]);
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -19,27 +19,96 @@ const DTREditView = ({ employee, onBack, onSave, onGenerateReport }) => {
     };
 
     const convertTo24Hour = (time) => {
-    if (!time) return null;
+        if (!time || typeof time !== "string") return null;
 
-    const [timePart, modifier] = time.split(" ");
-    if (!timePart || !modifier) return null;
+        const parts = time.trim().split(" ");
+        if (parts.length !== 2) return null;
 
-    let [hours, minutes] = timePart.split(":");
-    hours = parseInt(hours);
+        const [timePart, modifier] = parts;
+        let [hours, minutes] = timePart.split(":");
 
-    if (modifier === "PM" && hours !== 12) hours += 12;
-    if (modifier === "AM" && hours === 12) hours = 0;
+        hours = parseInt(hours);
+        minutes = parseInt(minutes);
 
-    return `${hours.toString().padStart(2, "0")}:${minutes}:00`;
-};
+        if (isNaN(hours) || isNaN(minutes)) return null;
 
-const handleSaveClick = async () => {
+        if (modifier === "PM" && hours !== 12) hours += 12;
+        if (modifier === "AM" && hours === 12) hours = 0;
+
+        return `${hours.toString().padStart(2, "0")}:${minutes
+            .toString()
+            .padStart(2, "0")}:00`;
+    };
+
+    const loadDTR = useCallback(async () => {
+        try {
+            const bioId = employee?.bio_id || employee?.id;
+            if (!bioId) return;
+
+            const month = 2;
+            const year = 2026;
+
+            const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}&month=${month}&year=${year}`;
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (!Array.isArray(data)) return;
+
+            const formatted = data
+                .map((row) => {
+                    const dateObj = new Date(row.date);
+                    if (isNaN(dateObj.getTime())) return null;
+
+                    return {
+                        rawDate: row.date,
+                        date: `${(dateObj.getMonth() + 1)
+                            .toString()
+                            .padStart(2, "0")}/${dateObj
+                            .getDate()
+                            .toString()
+                            .padStart(2, "0")}/${dateObj
+                            .getFullYear()
+                            .toString()
+                            .slice(-2)}`,
+
+                        day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+                            dateObj.getDay()
+                        ],
+
+                        amIn: formatTime(row.amIn),
+                        amOut: formatTime(row.amOut),
+                        pmIn: formatTime(row.pmIn),
+                        pmOut: formatTime(row.pmOut),
+                        otIn: formatTime(row.otIn),
+                        otOut: formatTime(row.otOut),
+                    };
+                })
+                .filter(Boolean);
+
+            setDtrEntries(formatted);
+        } catch (err) {
+            console.error("LOAD DTR ERROR:", err);
+        }
+    }, [employee, API_BASE_URL]);
+
+    useEffect(() => {
+        loadDTR();
+    }, [loadDTR]);
+
+    const handleInputChange = (index, field, value) => {
+        const updated = [...dtrEntries];
+        updated[index][field] = value;
+        setDtrEntries(updated);
+    };
+
+   const handleSaveClick = async () => {
     try {
         const bioId = employee?.bio_id || employee?.id;
 
         const payload = dtrEntries.map((entry) => ({
             bio_id: bioId,
-            date: entry.rawDate,
+            date: entry.rawDate ? entry.rawDate.split("T")[0] : null,
             amIn: convertTo24Hour(entry.amIn),
             amOut: convertTo24Hour(entry.amOut),
             pmIn: convertTo24Hour(entry.pmIn),
@@ -48,118 +117,23 @@ const handleSaveClick = async () => {
             otOut: convertTo24Hour(entry.otOut),
         }));
 
-        console.log("FINAL PAYLOAD:", payload);
-        
         const res = await fetch(`${API_BASE_URL}/api/dtr/update-dtr`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
 
-        if (!res.ok) {
-            const errorText = await res.text();
-            console.error("SERVER ERROR:", errorText);
-            throw new Error(errorText);
-        }
-
         const data = await res.json();
-        console.log("SAVE RESPONSE:", data);
 
-        alert("DTR successfully updated!");
+        if (!res.ok) throw new Error(data.details || data.error);
+
+        alert("Saved successfully!");
+
     } catch (err) {
-        console.error("FULL ERROR:", err);
-        alert(err.message || "Failed to save changes");
+        console.error(err);
+        alert(err.message);
     }
 };
-
-    useEffect(() => {
-        console.log("EMPLOYEE:", employee);
-
-        const bioId = employee?.bio_id || employee?.id;
-
-        console.log("Resolved bioId:", bioId);
-        console.log("API_BASE_URL:", API_BASE_URL);
-
-        if (!bioId) {
-            console.log("No valid bioId found");
-            return;
-        }
-
-        const loadDTR = async () => {
-            try {
-                const month = 2;
-                const year = 2026;
-
-                const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}&month=${month}&year=${year}`;
-                console.log("FETCHING:", url);
-
-                const res = await fetch(url);
-                const data = await res.json();
-
-                console.log("API DATA:", data);
-
-                if (!Array.isArray(data)) {
-                    console.error("Invalid response:", data);
-                    setDtrEntries([]);
-                    return;
-                }
-
-                const formatted = data
-                    .filter((row) => row?.date)
-                    .map((row) => {
-                        const dateObj = new Date(row.date);
-                        if (isNaN(dateObj.getTime())) return null;
-
-                        return {
-                            rawDate: row.date, 
-    date: `${(dateObj.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${dateObj
-        .getDate()
-        .toString()
-        .padStart(2, "0")}/${dateObj
-        .getFullYear()
-        .toString()
-        .slice(-2)}`,
-
-                            day: [
-                                "Sun",
-                                "Mon",
-                                "Tue",
-                                "Wed",
-                                "Thu",
-                                "Fri",
-                                "Sat",
-                            ][dateObj.getDay()],
-
-                            amIn: formatTime(row.amIn),
-                            amOut: formatTime(row.amOut),
-                            pmIn: formatTime(row.pmIn),
-                            pmOut: formatTime(row.pmOut),
-                            otIn: formatTime(row.otIn),
-                            otOut: formatTime(row.otOut),
-                        };
-                    })
-                    .filter(Boolean);
-
-                console.log("FORMATTED:", formatted);
-                setDtrEntries(formatted);
-            } catch (err) {
-                console.error("Failed to fetch DTR:", err);
-            }
-        };
-
-        loadDTR();
-    }, [employee]);
-
-    const handleInputChange = (index, field, value) => {
-        const updated = [...dtrEntries];
-        updated[index][field] = value;
-        setDtrEntries(updated);
-    };
-
 
     return (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(80vh-80px)] min-h-[300px]">
@@ -191,7 +165,9 @@ const handleSaveClick = async () => {
                     </button>
                     <button
                         className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all active:scale-95"
-                        onClick={() => onGenerateReport && onGenerateReport(dtrEntries)}
+                        onClick={() =>
+                            onGenerateReport && onGenerateReport(dtrEntries)
+                        }
                     >
                         <FileText size={18} /> Generate Report
                     </button>

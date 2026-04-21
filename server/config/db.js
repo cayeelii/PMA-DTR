@@ -1,5 +1,5 @@
 require("dotenv").config();
-const mysql = require("mysql2");
+const mysql = require("mysql2/promise");
 
 //Create the DB connection
 const db = mysql.createPool({
@@ -10,12 +10,14 @@ const db = mysql.createPool({
 });
 
 //Connect to MySQL
-db.getConnection((err, connection) => {
-  if (err) {
-    console.error("Database connection failed:", err);
-  } else {
+(async () => {
+  try {
+    const connection = await db.getConnection();
     console.log("Connected to database");
+    connection.release();
+  } catch (err) {
+    console.error("Database connection failed:", err);
   }
-});
+})();
 
 module.exports = db;
