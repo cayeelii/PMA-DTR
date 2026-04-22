@@ -3,6 +3,9 @@ import { ChevronLeft, Save, FileText } from "lucide-react";
 
 const DTREditView = ({ employee, onBack, onGenerateReport }) => {
   const [dtrEntries, setDtrEntries] = useState([]);
+  // Snapshot from last load, used to detect edited rows on save.
+  const [initialEntries, setInitialEntries] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const formatTime = (time) => {
@@ -96,6 +99,7 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
         .filter(Boolean);
 
       setDtrEntries(formatted);
+      setInitialEntries(formatted.map((r) => ({ ...r })));
     } catch (err) {
       console.error("LOAD DTR ERROR:", err);
     }
@@ -106,18 +110,37 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
   }, [loadDTR]);
 
   const handleInputChange = (index, field, value) => {
-    const updated = [...dtrEntries];
-    updated[index][field] = value;
-    setDtrEntries(updated);
+    setDtrEntries((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    );
+  };
+
+  const TIME_FIELDS = ["amIn", "amOut", "pmIn", "pmOut", "otIn", "otOut"];
+
+  const isRowChanged = (current, original) => {
+    if (!original) return true;
+    return TIME_FIELDS.some((f) => (current[f] || "") !== (original[f] || ""));
   };
 
   const handleSaveClick = async () => {
+    if (isSaving) return;
     try {
+      setIsSaving(true);
       const bioId = employee?.bio_id || employee?.id;
 
-      const payload = dtrEntries.map((entry) => ({
+      const changedEntries = dtrEntries.filter((entry, i) =>
+        isRowChanged(entry, initialEntries[i]),
+      );
+
+      if (changedEntries.length === 0) {
+        alert("No changes to save.");
+        return;
+      }
+
+      // Send all changed rows in ONE request
+      const payload = changedEntries.map((entry) => ({
         bio_id: bioId,
-        date: entry.rawDate ? entry.rawDate.split("T")[0] : null,
+        date: entry.rawDate ? String(entry.rawDate).split("T")[0] : null,
         amIn: convertTo24Hour(entry.amIn),
         amOut: convertTo24Hour(entry.amOut),
         pmIn: convertTo24Hour(entry.pmIn),
@@ -133,13 +156,24 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.details || data.error);
 
-      alert("Saved successfully!");
+      await loadDTR();
+
+      const misses = Array.isArray(data.misses) ? data.misses : [];
+      if (misses.length > 0) {
+        const list = misses.map((m) => `• ${m.date} — ${m.type}`).join("\n");
+        alert(
+          `Saved ${changedEntries.length} row(s), but these had no matching record to update:\n\n${list}`,
+        );
+      } else {
+        alert(`Saved ${changedEntries.length} row(s) successfully!`);
+      }
     } catch (err) {
       console.error(err);
       alert(err.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -167,9 +201,14 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSaveClick}
-            className="flex items-center gap-2 bg-[#449d44] hover:bg-[#398439] text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-sm active:scale-95"
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg font-semibold transition-all shadow-sm active:scale-95 ${
+              isSaving
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-[#449d44] hover:bg-[#398439] text-white"
+            }`}
           >
-            <Save size={18} /> Save changes
+            <Save size={18} /> {isSaving ? "Saving..." : "Save changes"}
           </button>
           <button
             className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all active:scale-95"

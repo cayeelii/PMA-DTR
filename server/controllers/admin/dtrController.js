@@ -155,17 +155,16 @@ const getEmployeeDTR = (req, res) => {
   try {
     const { bio_id, month, year } = req.query;
 
-    console.log("QUERY:", req.query);
-
     if (!bio_id || !month || !year) {
       return res.status(400).json({
         message: "Missing parameters",
       });
     }
 
+    // Return date as plain "YYYY-MM-DD" to avoid mysql2 timezone conversion.
     const sql = `
       SELECT 
-        date_only AS date,
+        DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
 
         MAX(CASE WHEN TRIM(ampm_type) = 'AM IN' THEN time_only END) AS amIn,
         MAX(CASE WHEN TRIM(ampm_type) = 'AM OUT' THEN time_only END) AS amOut,
@@ -193,8 +192,6 @@ const getEmployeeDTR = (req, res) => {
         });
       }
 
-      console.log("DTR RESULTS:", results);
-
       res.json(results);
     });
 
@@ -204,74 +201,90 @@ const getEmployeeDTR = (req, res) => {
   }
 };
 
-// ✅ UPDATE DTR (CALLBACK VERSION WITH TRANSACTION)
+// UPDATE DTR inside a transaction on a single pooled connection.
 const updateEmployeeDTR = (req, res) => {
-    const entries = req.body;
+  const entries = req.body;
 
-    if (!Array.isArray(entries) || entries.length === 0) {
-        return res.status(400).json({ error: "No DTR data provided" });
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return res.status(400).json({ error: "No DTR data provided" });
+  }
+
+  const updateQuery = `
+    UPDATE employee_dtr
+    SET time_only = ?, status = 'Edited'
+    WHERE bio_id = ?
+      AND date_only = ?
+      AND TRIM(ampm_type) = ?
+  `;
+
+  // Flatten entries into [time, bio_id, date, type]
+  const updatesToRun = [];
+  for (const entry of entries) {
+    const { bio_id, date, amIn, amOut, pmIn, pmOut, otIn, otOut } = entry || {};
+    if (!bio_id || !date) {
+      return res.status(400).json({ error: "Missing bio_id or date in DTR payload" });
     }
 
-    db.query("START TRANSACTION", (err) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+    const fields = [
+      ["AM IN", amIn],
+      ["AM OUT", amOut],
+      ["PM IN", pmIn],
+      ["PM OUT", pmOut],
+      ["OT IN", otIn],
+      ["OT OUT", otOut],
+    ];
+    for (const [type, time] of fields) {
+      if (time === null) continue;
+      updatesToRun.push([time, bio_id, date, type]);
+    }
+  }
+
+  
+  db.getConnection((connErr, connection) => {
+    if (connErr) {
+      return res.status(500).json({ error: "Failed to update DTR", details: connErr.message });
+    }
+
+    const fail = (e) => {
+      connection.rollback(() => {
+        connection.release();
+        res.status(500).json({ error: "Failed to update DTR", details: e?.message || String(e) });
+      });
+    };
+
+    connection.beginTransaction((txErr) => {
+      if (txErr) {
+        connection.release();
+        return res.status(500).json({ error: "Failed to update DTR", details: txErr.message });
+      }
+
+      const misses = []; // updates that matched 0 rows
+      let i = 0;
+
+      const runNext = () => {
+        if (i >= updatesToRun.length) {
+          return connection.commit((commitErr) => {
+            if (commitErr) return fail(commitErr);
+            connection.release();
+            res.json({ message: "DTR updated successfully", updates: updatesToRun.length, misses });
+          });
         }
 
-        const updateQuery = `
-            UPDATE employee_dtr
-            SET time_only = ?, status = 'Edited'
-            WHERE bio_id = ?
-              AND date_only = ?
-              AND TRIM(ampm_type) = ?
-        `;
-
-        let hasError = false;
-
-        entries.forEach((entry) => {
-            const { bio_id, date, amIn, amOut, pmIn, pmOut, otIn, otOut } = entry;
-
-            const updates = [
-                ["AM IN", amIn],
-                ["AM OUT", amOut],
-                ["PM IN", pmIn],
-                ["PM OUT", pmOut],
-                ["OT IN", otIn],
-                ["OT OUT", otOut],
-            ];
-
-            updates.forEach(([type, time]) => {
-                if (time !== null) {
-                    db.query(updateQuery, [time, bio_id, date, type], (err) => {
-                        if (err && !hasError) {
-                            hasError = true;
-
-                            return db.query("ROLLBACK", () => {
-                                return res.status(500).json({
-                                    error: "Failed to update DTR",
-                                    details: err.message,
-                                });
-                            });
-                        }
-                    });
-                }
-            });
+        const params = updatesToRun[i];
+        connection.query(updateQuery, params, (qErr, result) => {
+          if (qErr) return fail(qErr);
+          if (!result || (result.affectedRows || 0) === 0) {
+            const [, bio_id, date, type] = params;
+            misses.push({ bio_id, date, type });
+          }
+          i += 1;
+          runNext();
         });
+      };
 
-        // ⚠️ Delay commit slightly to allow all queries to finish
-        setTimeout(() => {
-            if (!hasError) {
-                db.query("COMMIT", (err) => {
-                    if (err) {
-                        return db.query("ROLLBACK", () => {
-                            return res.status(500).json({ error: err.message });
-                        });
-                    }
-
-                    res.json({ message: "DTR updated successfully" });
-                });
-            }
-        }, 500);
+      runNext();
     });
+  });
 };
 
 module.exports = {
