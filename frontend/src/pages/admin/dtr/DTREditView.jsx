@@ -21,19 +21,23 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
     return `${hour.toString().padStart(2, "0")}:${minute}:${second} ${suffix}`;
   };
 
-  const convertTo24Hour = (time) => {
+  const convertTo24Hour = (time, field) => {
     if (!time || typeof time !== "string") return null;
 
     let t = time.trim().toUpperCase();
 
     // Fix missing space (07:30:15PM → 07:30:15 PM)
-    t = t.replace(/(AM|PM)/, " $1");
+    t = t.replace(/\s*(AM|PM)\s*$/, " $1");
+    t = t.replace(/\s+/g, " ").trim();
 
-    const parts = t.split(" ");
+    const parts = t.split(/\s+/);
     if (parts.length < 1) return null;
 
     let [hours, minutes, seconds] = parts[0].split(":");
-    let modifier = parts[1] || null;
+    let modifier =
+      parts.length > 1 && (parts[1] === "AM" || parts[1] === "PM")
+        ? parts[1]
+        : null;
 
     hours = parseInt(hours);
     minutes = parseInt(minutes);
@@ -41,6 +45,19 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
 
     if (isNaN(hours) || isNaN(minutes)) return null;
 
+    if (!modifier) {
+      const inferred =
+        typeof field === "string" && field.startsWith("pm")
+          ? "PM"
+          : typeof field === "string" && field.startsWith("am")
+            ? "AM"
+            : null;
+      // Only infer AM/PM when the hour looks like 12-hour input (1..12).
+      // If user types a 24-hour value (e.g. 13:05), treat it as already 24-hour.
+      if (inferred && hours >= 1 && hours <= 12) modifier = inferred;
+    }
+
+    // If still no modifier, treat input as already 24-hour time.
     if (!modifier) {
       return `${hours.toString().padStart(2, "0")}:${minutes
         .toString()
@@ -141,12 +158,12 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
       const payload = changedEntries.map((entry) => ({
         bio_id: bioId,
         date: entry.rawDate ? String(entry.rawDate).split("T")[0] : null,
-        amIn: convertTo24Hour(entry.amIn),
-        amOut: convertTo24Hour(entry.amOut),
-        pmIn: convertTo24Hour(entry.pmIn),
-        pmOut: convertTo24Hour(entry.pmOut),
-        otIn: convertTo24Hour(entry.otIn),
-        otOut: convertTo24Hour(entry.otOut),
+        amIn: convertTo24Hour(entry.amIn, "amIn"),
+        amOut: convertTo24Hour(entry.amOut, "amOut"),
+        pmIn: convertTo24Hour(entry.pmIn, "pmIn"),
+        pmOut: convertTo24Hour(entry.pmOut, "pmOut"),
+        otIn: convertTo24Hour(entry.otIn, "otIn"),
+        otOut: convertTo24Hour(entry.otOut, "otOut"),
       }));
 
       const res = await fetch(`${API_BASE_URL}/api/dtr/update-dtr`, {
