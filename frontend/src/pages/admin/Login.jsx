@@ -11,6 +11,7 @@ const LoginPage = () => {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -19,6 +20,7 @@ const LoginPage = () => {
   //Fetch login
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/adminLogin`, {
@@ -33,14 +35,14 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        setError("invalid username or password");
         return;
       }
 
       navigate("/admin/home");
     } catch (error) {
       console.error("Login error:", error);
-      alert("Server error");
+      setError("Server error");
     }
   };
 
@@ -81,7 +83,7 @@ const LoginPage = () => {
                 name="username"
                 value={credentials.username}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${error ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                 required
               />
             </div>
@@ -96,7 +98,7 @@ const LoginPage = () => {
                   name="password"
                   value={credentials.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+                  className={`w-full px-4 py-3 pr-12 rounded-lg border transition-all bg-white outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent ${error ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                   required
                 />
                 <button
@@ -108,6 +110,9 @@ const LoginPage = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {error && (
+                <div className="mt-1 text-xs text-red-600 font-medium px-1">{error}</div>
+              )}
               <button
                 type="button"
                 className="text-xs text-gray-500 hover:text-blue-900 mt-2 transition-colors"

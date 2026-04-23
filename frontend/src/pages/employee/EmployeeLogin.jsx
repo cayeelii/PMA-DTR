@@ -88,7 +88,7 @@ const EmployeeLoginPage = () => {
                 name="bio_id"
                 value={credentials.bio_id}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${errorMessage ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                 placeholder="Enter 6-digit BioID"
                 pattern="\d{6}"
                 title="Bio ID must be exactly 6 digits."
@@ -105,9 +105,12 @@ const EmployeeLoginPage = () => {
                 name="password"
                 value={credentials.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
+                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${errorMessage ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                 required
               />
+              {errorMessage && (
+                <div className="mt-1 text-xs text-red-600 font-medium px-1">{errorMessage}</div>
+              )}
               <button
                 type="button"
                 className="text-xs text-gray-500 hover:text-blue-900 mt-2 transition-colors"
@@ -125,9 +128,6 @@ const EmployeeLoginPage = () => {
                 {isSubmitting ? "Logging in..." : "Log In"}
               </button>
             </div>
-            {errorMessage && (
-              <p className="text-center text-sm text-red-600">{errorMessage}</p>
-            )}
             <div className="text-center">
               <Link
                 to="/employee-register"
