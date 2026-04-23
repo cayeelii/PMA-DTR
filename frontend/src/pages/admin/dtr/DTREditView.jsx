@@ -139,6 +139,12 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
     return (current[field] || "") !== (original[field] || "");
   };
 
+  const hasChanges = () => {
+    return dtrEntries.some((entry, i) =>
+      isRowChanged(entry, initialEntries[i]),
+    );
+  };
+
   const handleSaveClick = async () => {
     if (isSaving) return;
     try {
@@ -218,9 +224,9 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSaveClick}
-            disabled={isSaving}
+            disabled={isSaving || !hasChanges()}
             className={`flex items-center gap-2 px-5 py-2 rounded-lg font-semibold transition-all shadow-sm active:scale-95 ${
-              isSaving
+              isSaving || !hasChanges()
                 ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                 : "bg-[#449d44] hover:bg-[#398439] text-white"
             }`}
@@ -278,6 +284,8 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
                 </tr>
               )}
 
+              
+
               {dtrEntries.map((entry, idx) => (
                 <tr key={idx} className="hover:bg-gray-50 transition-colors">
                   <td className="py-3 text-sm font-medium text-gray-700 whitespace-nowrap">
@@ -295,13 +303,13 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
                             handleInputChange(idx, field, e.target.value)
                           }
                           className={`w-24 text-center py-1.5 border rounded-full text-[11px] font-semibold outline-none transition-all shadow-sm
-  ${
-    isCellChanged(entry, initialEntries[idx], field)
-      ? "bg-yellow-100 border-yellow-400 text-gray-800"
-      : "bg-white border-gray-200 text-gray-600"
-  }
-  focus:ring-2 focus:ring-orange-400 focus:border-transparent
-`}
+                            ${
+                              isCellChanged(entry, initialEntries[idx], field)
+                                ? "bg-yellow-100 border-yellow-400 text-gray-800"
+                                : "bg-white border-gray-200 text-gray-600"
+                            }
+                            focus:ring-2 focus:ring-orange-400 focus:border-transparent
+                          `}
                         />
                       </td>
                     ),
