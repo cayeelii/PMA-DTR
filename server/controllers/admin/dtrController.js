@@ -59,7 +59,7 @@ const importDTR = (req, res) => {
       row["Date_Time"],
       row["Machine Loc"],
       row["Type"],
-      formatDateOnly(row["DateOnly"]), 
+      formatDateOnly(row["DateOnly"]),
       row["TimeOnly"],
       row["AMPM Type"],
       row["Status"] || null,
@@ -88,7 +88,6 @@ const importDTR = (req, res) => {
         insertedRows: result.affectedRows,
       });
     });
-
   } catch (error) {
     console.error("Import Error:", error);
     res.status(500).json({
@@ -194,7 +193,6 @@ const getEmployeeDTR = (req, res) => {
 
       res.json(results);
     });
-
   } catch (error) {
     console.error("Server Crash:", error);
     res.status(500).json({ message: "Server error" });
@@ -222,7 +220,9 @@ const updateEmployeeDTR = (req, res) => {
   for (const entry of entries) {
     const { bio_id, date, amIn, amOut, pmIn, pmOut, otIn, otOut } = entry || {};
     if (!bio_id || !date) {
-      return res.status(400).json({ error: "Missing bio_id or date in DTR payload" });
+      return res
+        .status(400)
+        .json({ error: "Missing bio_id or date in DTR payload" });
     }
 
     const fields = [
@@ -239,23 +239,29 @@ const updateEmployeeDTR = (req, res) => {
     }
   }
 
-  
   db.getConnection((connErr, connection) => {
     if (connErr) {
-      return res.status(500).json({ error: "Failed to update DTR", details: connErr.message });
+      return res
+        .status(500)
+        .json({ error: "Failed to update DTR", details: connErr.message });
     }
 
     const fail = (e) => {
       connection.rollback(() => {
         connection.release();
-        res.status(500).json({ error: "Failed to update DTR", details: e?.message || String(e) });
+        res.status(500).json({
+          error: "Failed to update DTR",
+          details: e?.message || String(e),
+        });
       });
     };
 
     connection.beginTransaction((txErr) => {
       if (txErr) {
         connection.release();
-        return res.status(500).json({ error: "Failed to update DTR", details: txErr.message });
+        return res
+          .status(500)
+          .json({ error: "Failed to update DTR", details: txErr.message });
       }
 
       const misses = []; // updates that matched 0 rows
@@ -266,7 +272,11 @@ const updateEmployeeDTR = (req, res) => {
           return connection.commit((commitErr) => {
             if (commitErr) return fail(commitErr);
             connection.release();
-            res.json({ message: "DTR updated successfully", updates: updatesToRun.length, misses });
+            res.json({
+              message: "DTR updated successfully",
+              updates: updatesToRun.length,
+              misses,
+            });
           });
         }
 
@@ -287,10 +297,44 @@ const updateEmployeeDTR = (req, res) => {
   });
 };
 
+//Get Signatory by Department
+const getDepartmentSignatory = (req, res) => {
+  try {
+    const { dept_id } = req.query;
+
+    const sql = `
+      SELECT 
+        s.signatory_id,
+        s.head_name,
+        d.dept_name
+      FROM signatories s
+      JOIN departments d ON d.dept_id = s.dept_id
+      WHERE d.dept_id = ?
+      LIMIT 1
+    `;
+
+    db.query(sql, [dept_id], (err, results) => {
+      if (err) {
+        console.error("SQL ERROR:", err.sqlMessage || err);
+        return res.status(500).json({
+          message: err.sqlMessage || "Database error",
+        });
+      }
+
+      console.log("RESULT:", results);
+      res.json(results[0] || null);
+    });
+  } catch (error) {
+    console.error("SERVER CRASH:", error);
+    res.status(500).json({ message: "Server crash" });
+  }
+};
+
 module.exports = {
-    importDTR,
-    getDepartments,
-    getEmployeesByDepartment,
-    getEmployeeDTR,
-    updateEmployeeDTR,
+  importDTR,
+  getDepartments,
+  getEmployeesByDepartment,
+  getEmployeeDTR,
+  updateEmployeeDTR,
+  getDepartmentSignatory,
 };

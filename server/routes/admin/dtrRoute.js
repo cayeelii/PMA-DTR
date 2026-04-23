@@ -8,5 +8,6 @@ router.get("/departments", dtrController.getDepartments);
 router.get("/employees", dtrController.getEmployeesByDepartment);
 router.get("/employee-dtr", dtrController.getEmployeeDTR);
 router.put("/update-dtr", dtrController.updateEmployeeDTR);
+router.get("/signatory", dtrController.getDepartmentSignatory);
 
 module.exports = router;
