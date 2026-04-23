@@ -3,7 +3,6 @@ import { ChevronLeft, Save, FileText } from "lucide-react";
 
 const DTREditView = ({ employee, onBack, onGenerateReport }) => {
   const [dtrEntries, setDtrEntries] = useState([]);
-  // Snapshot from last load, used to detect edited rows on save.
   const [initialEntries, setInitialEntries] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -26,7 +25,6 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
 
     let t = time.trim().toUpperCase();
 
-    // Fix missing space (07:30:15PM → 07:30:15 PM)
     t = t.replace(/\s*(AM|PM)\s*$/, " $1");
     t = t.replace(/\s+/g, " ").trim();
 
@@ -52,12 +50,9 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
           : typeof field === "string" && field.startsWith("am")
             ? "AM"
             : null;
-      // Only infer AM/PM when the hour looks like 12-hour input (1..12).
-      // If user types a 24-hour value (e.g. 13:05), treat it as already 24-hour.
       if (inferred && hours >= 1 && hours <= 12) modifier = inferred;
     }
 
-    // If still no modifier, treat input as already 24-hour time.
     if (!modifier) {
       return `${hours.toString().padStart(2, "0")}:${minutes
         .toString()
@@ -137,6 +132,11 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
   const isRowChanged = (current, original) => {
     if (!original) return true;
     return TIME_FIELDS.some((f) => (current[f] || "") !== (original[f] || ""));
+  };
+
+  const isCellChanged = (current, original, field) => {
+    if (!original) return false;
+    return (current[field] || "") !== (original[field] || "");
   };
 
   const handleSaveClick = async () => {
@@ -294,7 +294,14 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
                           onChange={(e) =>
                             handleInputChange(idx, field, e.target.value)
                           }
-                          className="w-24 text-center py-1.5 border border-gray-200 rounded-full text-[11px] font-semibold text-gray-600 focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none bg-white transition-all shadow-sm"
+                          className={`w-24 text-center py-1.5 border rounded-full text-[11px] font-semibold outline-none transition-all shadow-sm
+  ${
+    isCellChanged(entry, initialEntries[idx], field)
+      ? "bg-yellow-100 border-yellow-400 text-gray-800"
+      : "bg-white border-gray-200 text-gray-600"
+  }
+  focus:ring-2 focus:ring-orange-400 focus:border-transparent
+`}
                         />
                       </td>
                     ),
