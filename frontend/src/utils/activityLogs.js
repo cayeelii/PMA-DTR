@@ -28,15 +28,53 @@ export async function saveActivityLog({
   return data;
 }
 
-export async function fetchActivityLogs() {
-  // Activity Logs fetch (Logs page).
-  const response = await fetch(`${API_BASE_URL}/api/activity-logs`, {
+// Activity Logs fetch (Logs page) with server-side pagination + filters.
+// Returns { items, total, page, pageSize, totalPages }.
+export async function fetchActivityLogs(params = {}, { signal } = {}) {
+  const allowed = [
+    "page",
+    "pageSize",
+    "search",
+    "action",
+    "userId",
+    "bioId",
+    "from",
+    "to",
+  ];
+
+  const query = new URLSearchParams();
+  for (const key of allowed) {
+    const value = params[key];
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, String(value));
+    }
+  }
+
+  const qs = query.toString();
+  const url = `${API_BASE_URL}/api/activity-logs${qs ? `?${qs}` : ""}`;
+
+  const response = await fetch(url, {
     credentials: "include",
+    signal,
   });
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.error || "Failed to fetch activity logs.");
+  }
+
+  return data;
+}
+
+export async function fetchActivityLogFilters({ signal } = {}) {
+  const response = await fetch(`${API_BASE_URL}/api/activity-logs/filters`, {
+    credentials: "include",
+    signal,
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to fetch activity log filters.");
   }
 
   return data;

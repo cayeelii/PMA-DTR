@@ -175,6 +175,7 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
       const res = await fetch(`${API_BASE_URL}/api/dtr/update-dtr`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
