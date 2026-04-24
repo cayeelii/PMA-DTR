@@ -1,12 +1,13 @@
 const db = require("../../config/db");
 const XLSX = require("xlsx");
 
+// FORMAT DATE ONLY
 const formatDateOnly = (value) => {
   if (!value) return null;
 
-  // FORMAT: YYYY-MM-DD
+  const pad = (n) => String(n).padStart(2, "0");
+
   if (value instanceof Date) {
-    const pad = (n) => String(n).padStart(2, "0");
     return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
   }
 
@@ -15,8 +16,9 @@ const formatDateOnly = (value) => {
     const parts = value.trim().split("/");
 
     if (parts.length === 3) {
-      const [month, day, year] = parts;
-      const pad = (n) => String(n).padStart(2, "0");
+      let [month, day, year] = parts;
+
+      if (year.length === 2) year = "20" + year;
 
       return `${year}-${pad(month)}-${pad(day)}`;
     }
@@ -25,17 +27,59 @@ const formatDateOnly = (value) => {
   return null;
 };
 
+// FORMAT DATETIME
+const formatDateTime = (value) => {
+  if (!value) return null;
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  if (value instanceof Date) {
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())} ` +
+           `${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(value.getSeconds())}`;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    // MySQL format
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      return trimmed;
+    }
+
+    // MM/DD/YY or MM/DD/YYYY HH:MM[:SS] AM/PM
+    const match = trimmed.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i
+    );
+
+    if (match) {
+      let [, month, day, year, hour, minute, second, ampm] = match;
+
+      if (year.length === 2) year = "20" + year;
+
+      hour = parseInt(hour, 10);
+
+      if (ampm) {
+        if (ampm.toUpperCase() === "PM" && hour !== 12) hour += 12;
+        if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
+      }
+
+      return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second || 0)}`;
+    }
+  }
+
+  return null;
+};
+
+
+// IMPORT DTR
 const importDTR = (req, res) => {
   try {
     if (!req.files || !req.files.file) {
-      return res.status(400).json({
-        message: "No file uploaded",
-      });
+      return res.status(400).json({ message: "No file uploaded" });
     }
 
     const file = req.files.file;
 
-    // Read Excel file
     const workbook = XLSX.read(file.data, { type: "buffer" });
 
     const sheetName = workbook.SheetNames[0];
@@ -46,17 +90,15 @@ const importDTR = (req, res) => {
       dateNF: "yyyy-mm-dd hh:mm:ss",
     });
 
-    if (data.length === 0) {
-      return res.status(400).json({
-        message: "Empty Excel file",
-      });
+    if (!data.length) {
+      return res.status(400).json({ message: "Empty Excel file" });
     }
 
     const values = data.map((row) => [
       row["Dept"],
       row["NAME"],
       row["BIOID"],
-      row["Date_Time"],
+      formatDateTime(row["Date_Time"]),   
       row["Machine Loc"],
       row["Type"],
       formatDateOnly(row["DateOnly"]),
@@ -78,9 +120,7 @@ const importDTR = (req, res) => {
     db.query(sql, [values], (err, result) => {
       if (err) {
         console.error("DB Error:", err);
-        return res.status(500).json({
-          message: "Database error",
-        });
+        return res.status(500).json({ message: "Database error" });
       }
 
       return res.json({
@@ -88,11 +128,10 @@ const importDTR = (req, res) => {
         insertedRows: result.affectedRows,
       });
     });
+
   } catch (error) {
     console.error("Import Error:", error);
-    res.status(500).json({
-      message: "Import failed",
-    });
+    res.status(500).json({ message: "Import failed" });
   }
 };
 
@@ -447,3 +486,4 @@ module.exports = {
   updateEmployeeDTR,
   getDepartmentSignatory,
 };
+

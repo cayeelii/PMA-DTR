@@ -5,6 +5,7 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
     const [dtrEntries, setDtrEntries] = useState([]);
     const [initialEntries, setInitialEntries] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const formatTime = (time) => {
@@ -143,7 +144,7 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
             isRowChanged(entry, initialEntries[i]),
         );
     };
-    
+
     const handleInputChange = (index, field, value) => {
         setDtrEntries((prev) =>
             prev.map((row, i) => {
@@ -241,7 +242,13 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
             <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4 shrink-0">
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={onBack}
+                        onClick={() => {
+                            if (hasChanges()) {
+                                setShowUnsavedModal(true);
+                                return;
+                            }
+                            onBack();
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                         <ChevronLeft size={24} className="text-gray-600" />
@@ -371,6 +378,40 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
                             ))}
                         </tbody>
                     </table>
+
+                    {showUnsavedModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                            <div className="bg-white rounded-xl shadow-lg w-[450px] p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                                    Unsaved Changes
+                                </h3>
+                                <p className="text-md text-gray-600 mb-6">
+                                    You have unsaved changes. Are you sure you want to leave?
+                                </p>
+
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() =>
+                                            setShowUnsavedModal(false)
+                                        }
+                                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setShowUnsavedModal(false);
+                                            onBack();
+                                        }}
+                                        className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                                    >
+                                        Leave
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -20,8 +20,10 @@ const DepartmentView = ({ fileName, onReset, onSelect }) => {
 
         fetchDepartments();
     }, []);
+
     return (
-        <div className="bg-white rounded-xl shadow-sm p-10 max-w-7xl mx-auto">
+          <div className="bg-white rounded-xl shadow-sm p-10 max-w-7xl mx-auto flex flex-col h-[650px]">
+
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-xl font-semibold text-gray-800">
                     Select a department
@@ -41,6 +43,7 @@ const DepartmentView = ({ fileName, onReset, onSelect }) => {
                 </div>
             </div>
 
+        <div className="flex-1 overflow-y-auto pr-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 {departments.map((dept, index) => (
                     <button
@@ -58,6 +61,7 @@ const DepartmentView = ({ fileName, onReset, onSelect }) => {
                 ))}
             </div>
         </div>
+    </div>
     );
 };
 
