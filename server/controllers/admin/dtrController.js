@@ -188,40 +188,75 @@ const getEmployeesByDepartment = (req, res) => {
   });
 };
 
-// Get Employee DTR
 const getEmployeeDTR = (req, res) => {
   try {
     const { bio_id, month, year } = req.query;
 
-    if (!bio_id || !month || !year) {
+    if (!bio_id) {
       return res.status(400).json({
-        message: "Missing parameters",
+        message: "Missing bio_id",
       });
     }
 
-    // Return date as plain "YYYY-MM-DD" to avoid mysql2 timezone conversion.
-    const sql = `
-      SELECT 
-        DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
+    let sql;
+    let params;
 
-        MAX(CASE WHEN TRIM(ampm_type) = 'AM IN' THEN time_only END) AS amIn,
-        MAX(CASE WHEN TRIM(ampm_type) = 'AM OUT' THEN time_only END) AS amOut,
-        MAX(CASE WHEN TRIM(ampm_type) = 'PM IN' THEN time_only END) AS pmIn,
-        MAX(CASE WHEN TRIM(ampm_type) = 'PM OUT' THEN time_only END) AS pmOut,
-        MAX(CASE WHEN TRIM(ampm_type) = 'OT IN' THEN time_only END) AS otIn,
-        MAX(CASE WHEN TRIM(ampm_type) = 'OT OUT' THEN time_only END) AS otOut
+    // MANUAL FILTER
+    if (month && year) {
+      sql = `
+        SELECT 
+          DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
 
-      FROM employee_dtr
-      WHERE bio_id = ?
-        AND date_only IS NOT NULL
-        AND MONTH(date_only) = ?
-        AND YEAR(date_only) = ?
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM IN' THEN time_only END) AS amIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM OUT' THEN time_only END) AS amOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM IN' THEN time_only END) AS pmIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM OUT' THEN time_only END) AS pmOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT IN' THEN time_only END) AS otIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT OUT' THEN time_only END) AS otOut
 
-      GROUP BY date_only
-      ORDER BY date_only ASC
-    `;
+        FROM employee_dtr
+        WHERE bio_id = ?
+          AND date_only IS NOT NULL
+          AND MONTH(date_only) = ?
+          AND YEAR(date_only) = ?
 
-    db.query(sql, [bio_id, month, year], (err, results) => {
+        GROUP BY date_only
+        ORDER BY date_only ASC
+      `;
+
+      params = [bio_id, month, year];
+    }
+
+    // LATEST MONTH 
+    else {
+      sql = `
+        SELECT 
+          DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
+
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM IN' THEN time_only END) AS amIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM OUT' THEN time_only END) AS amOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM IN' THEN time_only END) AS pmIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM OUT' THEN time_only END) AS pmOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT IN' THEN time_only END) AS otIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT OUT' THEN time_only END) AS otOut
+
+        FROM employee_dtr
+        WHERE bio_id = ?
+          AND date_only IS NOT NULL
+          AND DATE_FORMAT(date_only, '%Y-%m') = (
+            SELECT DATE_FORMAT(MAX(date_only), '%Y-%m')
+            FROM employee_dtr
+            WHERE bio_id = ?
+          )
+
+        GROUP BY date_only
+        ORDER BY date_only ASC
+      `;
+
+      params = [bio_id, bio_id];
+    }
+
+    db.query(sql, params, (err, results) => {
       if (err) {
         console.error("DTR Fetch Error:", err);
         return res.status(500).json({
@@ -230,11 +265,13 @@ const getEmployeeDTR = (req, res) => {
         });
       }
 
-      res.json(results);
+      // 🔥 IMPORTANT: return empty array instead of breaking UI
+      return res.json(results || []);
     });
+
   } catch (error) {
     console.error("Server Crash:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 

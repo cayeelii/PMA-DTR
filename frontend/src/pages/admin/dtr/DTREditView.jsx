@@ -68,58 +68,56 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
 
-    const loadDTR = useCallback(async () => {
-        try {
-            const bioId = employee?.bio_id || employee?.id;
-            if (!bioId) return;
+   const loadDTR = useCallback(async () => {
+  try {
+    const bioId = employee?.bio_id || employee?.id;
+    if (!bioId) return;
 
-            const month = 2;
-            const year = 2026;
+    const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}`;
 
-            const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}&month=${month}&year=${year}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-            const res = await fetch(url);
-            const data = await res.json();
+    if (!Array.isArray(data)) return;
 
-            if (!Array.isArray(data)) return;
+    const formatted = data
+      .map((row) => {
+        const dateObj = new Date(row.date);
+        if (isNaN(dateObj.getTime())) return null;
 
-            const formatted = data
-                .map((row) => {
-                    const dateObj = new Date(row.date);
-                    if (isNaN(dateObj.getTime())) return null;
+        return {
+          rawDate: row.date,
+          date: `${(dateObj.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}/${dateObj
+            .getDate()
+            .toString()
+            .padStart(2, "0")}/${dateObj
+            .getFullYear()
+            .toString()
+            .slice(-2)}`,
 
-                    return {
-                        rawDate: row.date,
-                        date: `${(dateObj.getMonth() + 1)
-                            .toString()
-                            .padStart(2, "0")}/${dateObj
-                            .getDate()
-                            .toString()
-                            .padStart(
-                                2,
-                                "0",
-                            )}/${dateObj.getFullYear().toString().slice(-2)}`,
+          day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+            dateObj.getDay()
+          ],
 
-                        day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
-                            dateObj.getDay()
-                        ],
+          amIn: formatTime(row.amIn),
+          amOut: formatTime(row.amOut),
+          pmIn: formatTime(row.pmIn),
+          pmOut: formatTime(row.pmOut),
+          otIn: formatTime(row.otIn),
+          otOut: formatTime(row.otOut),
+        };
+      })
+      .filter(Boolean);
 
-                        amIn: formatTime(row.amIn),
-                        amOut: formatTime(row.amOut),
-                        pmIn: formatTime(row.pmIn),
-                        pmOut: formatTime(row.pmOut),
-                        otIn: formatTime(row.otIn),
-                        otOut: formatTime(row.otOut),
-                    };
-                })
-                .filter(Boolean);
+    setDtrEntries(formatted);
+    setInitialEntries(formatted.map((r) => ({ ...r })));
 
-            setDtrEntries(formatted);
-            setInitialEntries(formatted.map((r) => ({ ...r })));
-        } catch (err) {
-            console.error("LOAD DTR ERROR:", err);
-        }
-    }, [employee, API_BASE_URL]);
+  } catch (err) {
+    console.error("LOAD DTR ERROR:", err);
+  }
+}, [employee, API_BASE_URL]);
 
     useEffect(() => {
         loadDTR();
