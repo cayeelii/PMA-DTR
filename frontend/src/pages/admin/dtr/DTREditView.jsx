@@ -68,58 +68,57 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
 
-   const loadDTR = useCallback(async () => {
-  try {
-    const bioId = employee?.bio_id || employee?.id;
-    const batchId = employee?.batch_id;
-    if (!bioId || !batchId) return;
+    const loadDTR = useCallback(async () => {
+        try {
+            const bioId = employee?.bio_id || employee?.id;
+            const batchId = employee?.batch_id;
+            if (!bioId || !batchId) return;
 
-    const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}&batch_id=${batchId}`;
-    console.log("Fetching DTR from:", url);
+            const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}&batch_id=${batchId}`;
+            console.log("Fetching DTR from:", url);
 
-    const res = await fetch(url);
-    const data = await res.json();
+            const res = await fetch(url);
+            const data = await res.json();
 
-    if (!Array.isArray(data)) return;
+            if (!Array.isArray(data)) return;
 
-    const formatted = data
-      .map((row) => {
-        const dateObj = new Date(row.date);
-        if (isNaN(dateObj.getTime())) return null;
+            const formatted = data
+                .map((row) => {
+                    const dateObj = new Date(row.date);
+                    if (isNaN(dateObj.getTime())) return null;
 
-        return {
-          rawDate: row.date,
-          date: `${(dateObj.getMonth() + 1)
-            .toString()
-            .padStart(2, "0")}/${dateObj
-            .getDate()
-            .toString()
-            .padStart(2, "0")}/${dateObj
-            .getFullYear()
-            .toString()
-            .slice(-2)}`,
+                    return {
+                        rawDate: row.date,
+                        date: `${(dateObj.getMonth() + 1)
+                            .toString()
+                            .padStart(2, "0")}/${dateObj
+                            .getDate()
+                            .toString()
+                            .padStart(2, "0")}/${dateObj
+                            .getFullYear()
+                            .toString()
+                            .slice(-2)}`,
 
-          day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
-            dateObj.getDay()
-          ],
+                        day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+                            dateObj.getDay()
+                        ],
 
-          amIn: formatTime(row.amIn),
-          amOut: formatTime(row.amOut),
-          pmIn: formatTime(row.pmIn),
-          pmOut: formatTime(row.pmOut),
-          otIn: formatTime(row.otIn),
-          otOut: formatTime(row.otOut),
-        };
-      })
-      .filter(Boolean);
+                        amIn: formatTime(row.amIn),
+                        amOut: formatTime(row.amOut),
+                        pmIn: formatTime(row.pmIn),
+                        pmOut: formatTime(row.pmOut),
+                        otIn: formatTime(row.otIn),
+                        otOut: formatTime(row.otOut),
+                    };
+                })
+                .filter(Boolean);
 
-    setDtrEntries(formatted);
-    setInitialEntries(formatted.map((r) => ({ ...r })));
-
-  } catch (err) {
-    console.error("LOAD DTR ERROR:", err);
-  }
-}, [employee, batchId, API_BASE_URL]);
+            setDtrEntries(formatted);
+            setInitialEntries(formatted.map((r) => ({ ...r })));
+        } catch (err) {
+            console.error("LOAD DTR ERROR:", err);
+        }
+    }, [employee, batchId, API_BASE_URL]);
 
     useEffect(() => {
         loadDTR();
@@ -181,7 +180,8 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         try {
             setIsSaving(true);
             const bioId = employee?.bio_id || employee?.id;
-            const batchId = employee?.batch_id || localStorage.getItem("current_batch_id");
+            const batchId =
+                employee?.batch_id || localStorage.getItem("current_batch_id");
 
             const changedEntries = dtrEntries.filter((entry, i) =>
                 isRowChanged(entry, initialEntries[i]),
@@ -239,8 +239,8 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
     };
 
     console.log("employee:", employee);
-console.log("batch:", batchId);
-console.log("DTR entries:", dtrEntries);
+    console.log("batch:", batchId);
+    console.log("DTR entries:", dtrEntries);
 
     return (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(80vh-80px)] min-h-[300px]">
@@ -392,7 +392,8 @@ console.log("DTR entries:", dtrEntries);
                                     Unsaved Changes
                                 </h3>
                                 <p className="text-md text-gray-600 mb-6">
-                                    You have unsaved changes. Are you sure you want to leave?
+                                    You have unsaved changes. Are you sure you
+                                    want to leave?
                                 </p>
 
                                 <div className="flex justify-end gap-3">
