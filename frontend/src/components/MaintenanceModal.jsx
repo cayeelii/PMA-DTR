@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 /**
@@ -51,7 +51,8 @@ function MaintenanceModal({ mode, onClose, onAdd }) {
   const formatDate = (day) => {
     const mm = String(month + 1).padStart(2, "0");
     const dd = String(day).padStart(2, "0");
-    return `${mm}/${dd}/${String(year).slice(-2)}`;
+    const yyyy = String(year);
+    return `${year}-${mm}-${dd}`; 
   };
 
   const handleTimeChange = (e) => {

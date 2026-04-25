@@ -1,28 +1,102 @@
 import Pagination from "../../components/Pagination";
 const PAGE_SIZE = 20;
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import RemoveMaintenanceModal from "../../components/RemoveMaintenanceModal";
-import MaintenanceModal from "../../components/MaintenanceModal"; 
+import MaintenanceModal from "../../components/MaintenanceModal";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function MaintenancePage() {
   const [page, setPage] = useState(1);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, mode: "" });
-  const [rows, setRows] = useState([
-    { id: 1, date: "01/01/26", remarks: "Holiday" },
-    { id: 2, date: "02/13/26", remarks: "Half-day" },
-    { id: 3, date: "02/17/26", remarks: "Holiday" },
-  ]);
+  const [rows, setRows] = useState([]);
   const [removeModal, setRemoveModal] = useState({ isOpen: false, rowId: null });
 
+  // FETCH FROM DATABASE
+  useEffect(() => {
+    fetchMaintenance();
+  }, []);
 
+  const formatToDisplayDate = (dateStr) => {
+    if (!dateStr) return "";
+
+    if (typeof dateStr === "string" && dateStr.includes("-")) {
+      const [year, month, day] = dateStr.split("T")[0].split("-");
+      return `${month}-${day}-${year.slice(-2)}`;
+    }
+
+    return dateStr;
+  };
+
+  const fetchMaintenance = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/maintenance`);
+      const data = await res.json();
+
+      setRows(
+        data.map((item) => ({
+          id: item.setting_id,
+          date: formatToDisplayDate(item.config_date),
+          remarks: item.category,
+        }))
+      );
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
+  // ADD HOLIDAY / HALF-DAY
+  const handleAddEntry = async (newEntry) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/maintenance/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          date: newEntry.date,
+          category: modalConfig.mode === "holiday" ? "Holiday" : "Half-day",
+        }),
+      });
+
+      const data = await res.json();
+      console.log("RESPONSE:", data);
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to add");
+      }
+
+      await fetchMaintenance(); // IMPORTANT: wait
+      setModalConfig({ isOpen: false, mode: "" });
+
+    } catch (err) {
+      console.error("error",err.message);
+    }
+  };
+
+
+  // DELETE ENTRY
   const handleRemoveClick = (id) => {
     setRemoveModal({ isOpen: true, rowId: id });
   };
 
-  const confirmRemove = () => {
-    setRows(rows.filter((row) => row.id !== removeModal.rowId));
-    setRemoveModal({ isOpen: false, rowId: null });
+  const confirmRemove = async () => {
+    try {
+      await fetch(
+        `${API_BASE_URL}/api/maintenance/${removeModal.rowId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      setRemoveModal({ isOpen: false, rowId: null });
+
+      fetchMaintenance();
+
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
   };
 
   const openModal = (mode) => {
@@ -33,34 +107,34 @@ function MaintenancePage() {
     setModalConfig({ isOpen: false, mode: "" });
   };
 
-  const handleAddEntry = (newEntry) => {
-    const entryWithId = { 
-      ...newEntry, 
-      id: Date.now(), 
-      remarks: modalConfig.mode === "holiday" ? "Holiday" : "Half-day" 
-    };
-    setRows((prev) => [...prev, entryWithId]);
-  };
-
   const totalPages = Math.ceil(rows.length / PAGE_SIZE);
   const paginated = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
       <div className="p-1 md:p-5 md:mt-0">
+
+        {/* HEADER */}
         <div className="flex flex-row md:items-center justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary">Maintenance</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-primary">
+            Maintenance
+          </h1>
         </div>
 
+        {/* BUTTONS */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-          <h2 className="text-lg md:text-xl font-semibold">Holidays and Half-Days</h2>
+          <h2 className="text-lg md:text-xl font-semibold">
+            Holidays and Half-Days
+          </h2>
+
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={() => openModal("holiday")}
               className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium shadow"
             >
               Add Holiday
             </button>
+
             <button
               onClick={() => openModal("half-day")}
               className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded-lg font-medium shadow"
@@ -70,7 +144,7 @@ function MaintenancePage() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* TABLE  */}
         <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
@@ -80,29 +154,38 @@ function MaintenancePage() {
                 <th className="text-center px-11 py-3 font-semibold">Action</th>
               </tr>
             </thead>
+
             <tbody>
               {paginated.map((row, index) => (
-                <tr key={row.id} className={`border-t ${index % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition`}>
-                  <td className="text-center px-8 py-3">{row.date}</td>
-                  <td className="text-center px-10 py-3">{row.remarks}</td>
+                <tr
+                  key={row.id}
+                  className={`border-t ${
+                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                  } hover:bg-blue-50 transition`}
+                >
+                  <td className="text-center px-8 py-3">
+                    {row.date}
+                  </td>
+
+                  <td className="text-center px-10 py-3">
+                    {row.remarks}
+                  </td>
+
                   <td className="px-6 py-3 text-center">
-                    <button onClick={() => handleRemoveClick(row.id)} className="text-red-600 hover:text-red-800">
+                    <button
+                      onClick={() => handleRemoveClick(row.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
                       <Trash2 size={18} />
                     </button>
                   </td>
-                        <RemoveMaintenanceModal
-                          isOpen={removeModal.isOpen}
-                          onClose={() => setRemoveModal({ isOpen: false, rowId: null })}
-                          onConfirm={confirmRemove}
-                          entry={rows.find(r => r.id === removeModal.rowId)}
-                        />
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
-        {/* Pagination Controls */}
+
+        {/* PAGINATION */}
         <div className="flex justify-center mt-4">
           <Pagination
             page={page}
@@ -111,14 +194,24 @@ function MaintenancePage() {
           />
         </div>
 
-        {/* Modal Import Name */}
+        {/* MODAL */}
         {modalConfig.isOpen && (
-          <MaintenanceModal 
-            mode={modalConfig.mode} 
-            onClose={closeModal} 
+          <MaintenanceModal
+            mode={modalConfig.mode}
+            onClose={closeModal}
             onAdd={handleAddEntry}
           />
         )}
+
+        {/* REMOVE MODAL */}
+        <RemoveMaintenanceModal
+          isOpen={removeModal.isOpen}
+          onClose={() =>
+            setRemoveModal({ isOpen: false, rowId: null })
+          }
+          onConfirm={confirmRemove}
+          entry={rows.find((r) => r.id === removeModal.rowId)}
+        />
       </div>
     </div>
   );

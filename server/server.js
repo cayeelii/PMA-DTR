@@ -46,6 +46,7 @@ const adminUsersRoute = require("./routes/admin/usersRoute");
 const adminSignatoryRoutes = require("./routes/admin/signatoriesRoute");
 const dtrRoute = require("./routes/admin/dtrRoute");
 const activityLogsRoute = require("./routes/admin/activityLogsRoute");
+const maintenanceRoute = require("./routes/admin/maintenanceRoute");
 
 //Routes
 app.use("/api/auth", authRoutes);
@@ -53,6 +54,7 @@ app.use("/api/users", adminUsersRoute);
 app.use("/api/signatories", adminSignatoryRoutes);
 app.use("/api/dtr", dtrRoute);
 app.use("/api/activity-logs", activityLogsRoute);
+app.use("/api/maintenance", maintenanceRoute);
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
