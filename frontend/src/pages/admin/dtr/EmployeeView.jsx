@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, Search } from "lucide-react";
 
-const EmployeeView = ({ departmentName, onBack, onSelectEmployee }) => {
+const EmployeeView = ({ departmentName, batchId, onBack, onSelectEmployee }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,30 +9,30 @@ const EmployeeView = ({ departmentName, onBack, onSelectEmployee }) => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch Employees 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        setLoading(true);
+useEffect(() => {
+  const fetchEmployees = async () => {
+    try {
+      if (!departmentName || !batchId) return;
 
-        const res = await fetch(
-          `${API_BASE_URL}/api/dtr/employees?department=${encodeURIComponent(
-            departmentName
-          )}`
-        );
+      setLoading(true);
 
-        const data = await res.json();
-        setEmployees(data || []);
-      } catch (err) {
-        console.error("Failed to fetch employees:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const res = await fetch(
+        `${API_BASE_URL}/api/dtr/employees?department=${encodeURIComponent(
+          departmentName
+        )}&batch_id=${batchId}`
+      );
 
-    if (departmentName) {
-      fetchEmployees();
+      const data = await res.json();
+      setEmployees(data || []);
+    } catch (err) {
+      console.error("Failed to fetch employees:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [departmentName]);
+  };
+
+  fetchEmployees();
+}, [departmentName, batchId]);
 
   // FILTER
   const filteredEmployees = employees.filter(

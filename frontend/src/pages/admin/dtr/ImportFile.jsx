@@ -24,6 +24,7 @@ const ImportFile = ({ onUpload }) => {
       const result = await response.json();
 
       if (response.ok) {
+        const batchId = result.batch_id;
         alert(`Success: ${result.insertedRows || 0} rows imported.`);
 
         try {
@@ -37,8 +38,9 @@ const ImportFile = ({ onUpload }) => {
         }
 
         localStorage.setItem("dtr_fileName", file.name);
-        
-        if (onUpload) onUpload(file);
+        localStorage.setItem("dtr_batchId", batchId);
+
+        if (onUpload) onUpload(file, batchId);
       } else {
         alert(`Error: ${result.message || "Upload failed"}`);
       }

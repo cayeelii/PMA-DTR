@@ -81,73 +81,98 @@ const importDTR = (req, res) => {
     const file = req.files.file;
 
     const workbook = XLSX.read(file.data, { type: "buffer" });
-
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-
-    const data = XLSX.utils.sheet_to_json(sheet, {
-      raw: false,
-      dateNF: "yyyy-mm-dd hh:mm:ss",
-    });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(sheet);
 
     if (!data.length) {
-      return res.status(400).json({ message: "Empty Excel file" });
+      return res.status(400).json({ message: "Empty file" });
     }
 
-    const values = data.map((row) => [
-      row["Dept"],
-      row["NAME"],
-      row["BIOID"],
-      formatDateTime(row["Date_Time"]),   
-      row["Machine Loc"],
-      row["Type"],
-      formatDateOnly(row["DateOnly"]),
-      row["TimeOnly"],
-      row["AMPM Type"],
-      row["Status"] || null,
-      row["Their Reason"] || null,
-      row["Class"] || null,
-      row["Include"] || 0,
-      row["Late"] || 0,
-    ]);
-
-    const sql = `
-      INSERT INTO employee_dtr
-      (dept_name, name, bio_id, date_time, machine_loc, log_type, date_only, time_only, ampm_type, status, reason, class, include_in_calc, late_minutes)
-      VALUES ?
+    // STEP 1: create batch record FIRST
+    const insertBatchSql = `
+      INSERT INTO dtr_batches (file_name, uploaded_by)
+      VALUES (?, ?)
     `;
 
-    db.query(sql, [values], (err, result) => {
-      if (err) {
-        console.error("DB Error:", err);
-        return res.status(500).json({ message: "Database error" });
+    db.query(
+      insertBatchSql,
+      [file.name, req.session?.user?.user_id || null],
+      (err, batchResult) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to create batch" });
+        }
+
+        const batch_id = batchResult.insertId; // 🔥 IMPORTANT
+
+        // STEP 2: insert DTR with batch_id
+        const values = data.map((row) => [
+          row["Dept"],
+          row["NAME"],
+          row["BIOID"],
+          formatDateTime(row["Date_Time"]),
+          row["Machine Loc"],
+          row["Type"],
+          formatDateOnly(row["DateOnly"]),
+          row["TimeOnly"],
+          row["AMPM Type"],
+          row["Status"] || null,
+          row["Their Reason"] || null,
+          row["Class"] || null,
+          row["Include"] || 0,
+          row["Late"] || 0,
+          batch_id
+        ]);
+
+        const sql = `
+          INSERT INTO employee_dtr (
+            dept_name, name, bio_id, date_time, machine_loc,
+            log_type, date_only, time_only, ampm_type,
+            status, reason, class, include_in_calc,
+            late_minutes, batch_id
+          ) VALUES ?
+        `;
+
+        db.query(sql, [values], (err2, result) => {
+          if (err2) {
+            return res.status(500).json({ message: "Insert failed" });
+          }
+
+          return res.json({
+            message: "Import successful",
+            batch_id, // 🔥 send numeric ID
+            insertedRows: result.affectedRows
+          });
+        });
       }
+    );
 
-      return res.json({
-        message: "File imported successfully",
-        insertedRows: result.affectedRows,
-      });
-    });
-
-  } catch (error) {
-    console.error("Import Error:", error);
-    res.status(500).json({ message: "Import failed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Import error" });
   }
 };
 
 // Get Departments
 const getDepartments = (req, res) => {
+  const { batch_id } = req.query;
+
+  if (!batch_id) {
+    return res.status(400).json({ message: "Missing batch_id" });
+  }
+
   const sql = `
-   SELECT 
+    SELECT 
       TRIM(dept_name) AS name,
       COUNT(DISTINCT bio_id) AS employees
     FROM employee_dtr
-    WHERE dept_name IS NOT NULL AND dept_name != ''
+    WHERE dept_name IS NOT NULL 
+      AND dept_name != ''
+      AND batch_id = ?
     GROUP BY TRIM(dept_name)
     ORDER BY name ASC
   `;
 
-  db.query(sql, (err, results) => {
+  db.query(sql, [batch_id], (err, results) => {
     if (err) {
       console.error("DB Error:", err);
       return res.status(500).json({ message: "Database error" });
@@ -159,10 +184,14 @@ const getDepartments = (req, res) => {
 
 // Get Employees by Department
 const getEmployeesByDepartment = (req, res) => {
-  const { department } = req.query;
+  const { department, batch_id } = req.query;
 
   if (!department) {
     return res.status(400).json({ message: "Department is required" });
+  }
+
+  if (!batch_id) {
+    return res.status(400).json({ message: "Missing batch_id" });
   }
 
   const sql = `
@@ -171,11 +200,12 @@ const getEmployeesByDepartment = (req, res) => {
       MAX(name) AS name
     FROM employee_dtr
     WHERE TRIM(dept_name) = TRIM(?)
+      AND batch_id = ?
     GROUP BY bio_id
     ORDER BY name ASC
   `;
 
-  db.query(sql, [department], (err, results) => {
+  db.query(sql, [department, batch_id], (err, results) => {
     if (err) {
       console.error("DB Error:", err);
       return res.status(500).json({
@@ -190,18 +220,22 @@ const getEmployeesByDepartment = (req, res) => {
 
 const getEmployeeDTR = (req, res) => {
   try {
-    const { bio_id, month, year } = req.query;
+    const { bio_id, month, year, batch_id } = req.query;
 
     if (!bio_id) {
-      return res.status(400).json({
-        message: "Missing bio_id",
-      });
+      return res.status(400).json({ message: "Missing bio_id" });
+    }
+
+    if (!batch_id) {
+      return res.status(400).json({ message: "Missing batch_id" });
     }
 
     let sql;
     let params;
 
-    // MANUAL FILTER
+    // =========================
+    // CASE 1: FILTER BY MONTH/YEAR
+    // =========================
     if (month && year) {
       sql = `
         SELECT 
@@ -216,6 +250,7 @@ const getEmployeeDTR = (req, res) => {
 
         FROM employee_dtr
         WHERE bio_id = ?
+          AND batch_id = ?
           AND date_only IS NOT NULL
           AND MONTH(date_only) = ?
           AND YEAR(date_only) = ?
@@ -224,10 +259,12 @@ const getEmployeeDTR = (req, res) => {
         ORDER BY date_only ASC
       `;
 
-      params = [bio_id, month, year];
+      params = [bio_id, batch_id, month, year];
     }
 
-    // LATEST MONTH 
+    // =========================
+    // CASE 2: DEFAULT (LATEST DATA - FIXED)
+    // =========================
     else {
       sql = `
         SELECT 
@@ -242,18 +279,14 @@ const getEmployeeDTR = (req, res) => {
 
         FROM employee_dtr
         WHERE bio_id = ?
+          AND batch_id = ?
           AND date_only IS NOT NULL
-          AND DATE_FORMAT(date_only, '%Y-%m') = (
-            SELECT DATE_FORMAT(MAX(date_only), '%Y-%m')
-            FROM employee_dtr
-            WHERE bio_id = ?
-          )
 
         GROUP BY date_only
         ORDER BY date_only ASC
       `;
 
-      params = [bio_id, bio_id];
+      params = [bio_id, batch_id];
     }
 
     db.query(sql, params, (err, results) => {
@@ -265,7 +298,6 @@ const getEmployeeDTR = (req, res) => {
         });
       }
 
-      // 🔥 IMPORTANT: return empty array instead of breaking UI
       return res.json(results || []);
     });
 
@@ -287,6 +319,7 @@ const updateEmployeeDTR = (req, res) => {
     UPDATE employee_dtr
     SET time_only = ?, status = 'Edited'
     WHERE bio_id = ?
+      AND batch_id = ?
       AND date_only = ?
       AND TRIM(ampm_type) = ?
   `;
@@ -311,7 +344,7 @@ const updateEmployeeDTR = (req, res) => {
     ];
     for (const [type, time] of fields) {
       if (time === null) continue;
-      updatesToRun.push([time, bio_id, date, type]);
+      updatesToRun.push([time, bio_id, batch_id, date, type]);
     }
   }
 
@@ -358,11 +391,11 @@ const updateEmployeeDTR = (req, res) => {
             TRIM(ampm_type) AS ampm_type,
             time_only
           FROM employee_dtr
-          WHERE (bio_id, date_only) IN (${uniquePairs.map(() => "(?, ?)").join(", ")})
+          WHERE batch_id = ? AND (bio_id, date_only) IN (${uniquePairs.map(() => "(?, ?)").join(", ")})
           GROUP BY bio_id, date_only, TRIM(ampm_type), time_only
         `
         : null;
-      const selectOldParams = uniquePairs.flat();
+      const selectOldParams = [batch_id, ...uniquePairs.flat()];
 
       const runSelectOld = (cb) => {
         if (!selectOldSql) return cb(null, []);

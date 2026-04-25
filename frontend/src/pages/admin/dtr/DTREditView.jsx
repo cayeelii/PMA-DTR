@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, Save, FileText } from "lucide-react";
 
-const DTREditView = ({ employee, onBack, onGenerateReport }) => {
+const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
     const [dtrEntries, setDtrEntries] = useState([]);
     const [initialEntries, setInitialEntries] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -71,9 +71,11 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
    const loadDTR = useCallback(async () => {
   try {
     const bioId = employee?.bio_id || employee?.id;
-    if (!bioId) return;
+    const batchId = employee?.batch_id;
+    if (!bioId || !batchId) return;
 
-    const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}`;
+    const url = `${API_BASE_URL}/api/dtr/employee-dtr?bio_id=${bioId}&batch_id=${batchId}`;
+    console.log("Fetching DTR from:", url);
 
     const res = await fetch(url);
     const data = await res.json();
@@ -117,7 +119,7 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
   } catch (err) {
     console.error("LOAD DTR ERROR:", err);
   }
-}, [employee, API_BASE_URL]);
+}, [employee, batchId, API_BASE_URL]);
 
     useEffect(() => {
         loadDTR();
@@ -179,6 +181,7 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
         try {
             setIsSaving(true);
             const bioId = employee?.bio_id || employee?.id;
+            const batchId = employee?.batch_id || localStorage.getItem("current_batch_id");
 
             const changedEntries = dtrEntries.filter((entry, i) =>
                 isRowChanged(entry, initialEntries[i]),
@@ -192,6 +195,7 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
             // Send all changed rows in ONE request
             const payload = changedEntries.map((entry) => ({
                 bio_id: bioId,
+                batch_id: Number(batchId),
                 date: entry.rawDate
                     ? String(entry.rawDate).split("T")[0]
                     : null,
@@ -233,6 +237,10 @@ const DTREditView = ({ employee, onBack, onGenerateReport }) => {
             setIsSaving(false);
         }
     };
+
+    console.log("employee:", employee);
+console.log("batch:", batchId);
+console.log("DTR entries:", dtrEntries);
 
     return (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(80vh-80px)] min-h-[300px]">

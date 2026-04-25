@@ -3,23 +3,35 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const DepartmentView = ({ fileName, onReset, onSelect }) => {
+const DepartmentView = ({ fileName, onReset, batchId, onSelect }) => {
     const [departments, setDepartments] = useState([]);
 
-    useEffect(() => {
-        const fetchDepartments = async () => {
-            try {
-                const res = await axios.get(
-                    `${API_BASE_URL}/api/dtr/departments`,
-                );
-                setDepartments(res.data);
-            } catch (error) {
-                console.error("Error fetching departments:", error);
-            }
-        };
+useEffect(() => {
+    const fetchDepartments = async () => {
+        console.log("batchId received:", batchId);
 
-        fetchDepartments();
-    }, []);
+        if (!batchId || batchId === "null" || batchId === "undefined") return;
+
+        try {
+            const res = await axios.get(
+                `${API_BASE_URL}/api/dtr/departments`,
+                {
+                    params: { batch_id: Number(batchId) }
+                }
+            );
+
+            console.log("Departments response:", res.data);
+
+            setDepartments(res.data);
+        } catch (error) {
+            console.error("Error fetching departments:", error);
+        }
+    };
+
+    fetchDepartments();
+}, [batchId]);
+
+console.log("batchId received:", batchId);
 
     return (
           <div className="bg-white rounded-xl shadow-sm p-10 max-w-7xl mx-auto flex flex-col h-[650px]">

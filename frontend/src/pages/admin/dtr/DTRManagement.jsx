@@ -17,6 +17,9 @@ const DTRManagement = () => {
   });
   const [reportData, setReportData] = useState(null); // { dtrRows, employee }
   const [signatory, setSignatory] = useState(null);
+  const [batchId, setBatchId] = useState(() => {
+  return localStorage.getItem("current_batch_id") || null;
+});
 
   //Fetch getSignatory
   const fetchSignatory = async (deptId) => {
@@ -37,29 +40,34 @@ const DTRManagement = () => {
     }
   };
 
-  // Restore state on page load
-  useEffect(() => {
-    const checkExistingDTR = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/dtr/departments`);
+useEffect(() => {
+  const checkExistingDTR = async () => {
+    try {
+      const batchId = localStorage.getItem("current_batch_id");
+setBatchId(batchId);
 
-        // Skip upload step if departments already exist
-        if (res.data && res.data.length > 0) {
-          setStep(2);
-        } else {
-          setStep(1);
-        }
-      } catch (err) {
-        console.error("Failed to check DTR data:", err);
+      const res = await axios.get(`${API_BASE_URL}/api/dtr/departments`, {
+        params: { batch_id: batchId }
+      });
+
+      if (res.data && res.data.length > 0) {
+        setStep(2);
+      } else {
         setStep(1);
       }
-    };
+    } catch (err) {
+      console.error("Failed to check DTR data:", err);
+      setStep(1);
+    }
+  };
 
-    checkExistingDTR();
-  }, []);
+  checkExistingDTR();
+}, []);
 
-  const handleFileUpload = (file) => {
+  const handleFileUpload = (file, newBatchId) => {
     setFileName(file.name);
+      localStorage.setItem("current_batch_id", newBatchId);
+  setBatchId(newBatchId);
     setStep(2);
   };
 
@@ -70,7 +78,10 @@ const DTRManagement = () => {
   };
 
   const handleEmployeeSelect = (emp) => {
-    setSelectedEmployee(emp);
+ setSelectedEmployee({
+        ...emp,
+        batch_id: localStorage.getItem("current_batch_id"),
+    });
     setStep(4);
   };
 
@@ -81,6 +92,8 @@ const DTRManagement = () => {
 
     localStorage.removeItem("dtr_fileName");
   };
+
+  console.log("batchId in parent:", batchId);
 
   return (
     <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
@@ -159,6 +172,7 @@ const DTRManagement = () => {
           {step === 2 && (
             <DepartmentView
               fileName={fileName}
+              batchId={batchId}
               onReset={resetProcess}
               onSelect={handleDepartmentSelect}
             />
@@ -167,6 +181,7 @@ const DTRManagement = () => {
           {step === 3 && (
             <EmployeeView
               departmentName={selectedDept?.name}
+              batchId={batchId}
               onBack={() => setStep(2)}
               onSelectEmployee={handleEmployeeSelect}
             />
@@ -175,6 +190,7 @@ const DTRManagement = () => {
           {step === 4 && (
             <DTREditView
               employee={selectedEmployee}
+              batchId={batchId}
               onBack={() => setStep(3)}
               onSave={(updatedData) => {
                 console.log("Data to save:", updatedData);
