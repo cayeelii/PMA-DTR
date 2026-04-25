@@ -238,10 +238,6 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         }
     };
 
-    console.log("employee:", employee);
-    console.log("batch:", batchId);
-    console.log("DTR entries:", dtrEntries);
-
     return (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-6xl mx-auto border border-gray-100 flex flex-col h-[calc(80vh-80px)] min-h-[300px]">
             {/* Header */}

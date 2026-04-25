@@ -324,10 +324,18 @@ const getEmployeeDTR = (req, res) => {
 
 // UPDATE DTR inside a transaction on a single pooled connection.
 const updateEmployeeDTR = (req, res) => {
-    const entries = req.body;
+      const entries = req.body;
 
     if (!Array.isArray(entries) || entries.length === 0) {
         return res.status(400).json({ error: "No DTR data provided" });
+    }
+
+    const batch_id = entries?.[0]?.batch_id;
+
+    if (!batch_id) {
+        return res.status(400).json({
+            error: "Missing batch_id in request"
+        });
     }
 
     const updateQuery = `
