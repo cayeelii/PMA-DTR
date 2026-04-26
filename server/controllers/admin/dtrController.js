@@ -376,7 +376,7 @@ const updateEmployeeDTR = (req, res) => {
     const pairKey = (b, d) => `${b}|${d}`;
     const uniquePairs = Array.from(
         new Map(
-            updatesToRun.map((u) => [pairKey(u[1], u[2]), [u[1], u[2]]]),
+            updatesToRun.map((u) => [pairKey(u[1], u[3]), [u[1], u[3]]]),
         ).values(),
     );
 
@@ -458,7 +458,13 @@ const updateEmployeeDTR = (req, res) => {
 
                     // Build per-field diffs (only where value actually changed).
                     const changes = [];
-                    for (const [newTime, bio_id, date, type] of updatesToRun) {
+                    for (const [
+                        newTime,
+                        bio_id,
+                        ,
+                        date,
+                        type,
+                    ] of updatesToRun) {
                         const key = `${bio_id}|${date}|${type}`;
                         const prev = oldMap.get(key);
                         const oldTime = prev ? prev.old_time : null;
@@ -545,7 +551,7 @@ const updateEmployeeDTR = (req, res) => {
                     connection.query(updateQuery, params, (qErr, result) => {
                         if (qErr) return fail(qErr);
                         if (!result || (result.affectedRows || 0) === 0) {
-                            const [, bio_id, date, type] = params;
+                            const [, bio_id, , date, type] = params;
                             misses.push({ bio_id, date, type });
                         }
                         i += 1;

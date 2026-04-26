@@ -117,6 +117,12 @@ const adminLogin = (req, res) => {
       });
     }
 
+    if (user.role === "employee") {
+      return res.status(401).json({
+        message: "Invalid username or password",
+      });
+    }
+
     const sessionId = req.session.id;
 
     if (user.active_session_id && user.active_session_id !== sessionId) {
