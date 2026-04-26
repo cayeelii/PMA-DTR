@@ -253,7 +253,7 @@ function LogsPage() {
   const rangeEnd = Math.min(page * pageSize, total);
 
   return (
-    <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-hidden">
+    <div className="relative min-h-0 w-full bg-surface p-2 pt-2 text-theme">
       <div className="p-1 md:p-5 md:mt-0">
         {/* Page Header */}
         <div className="flex flex-row md:items-center justify-between mb-6 gap-4">

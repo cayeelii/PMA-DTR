@@ -231,7 +231,7 @@ export default function AdminSidebar() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 bg-[#ECEEF3] p-8">
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#ECEEF3] p-8">
         <Outlet />
       </main>
     </div>
