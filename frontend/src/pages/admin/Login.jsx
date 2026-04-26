@@ -35,14 +35,21 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError("invalid username or password");
+        const errorMessage = data.message || data.error || "Invalid username or password";
+        setError(errorMessage);
         return;
       }
 
-      navigate("/admin/home");
+      if (data.user?.role === 'superadmin' || data.user?.role === 'admin') {
+        navigate("/admin/home");
+      } else if (data.user?.role === 'employee') {
+        navigate("/employee/dashboard");
+      } else {
+        navigate("/home");
+      }
     } catch (error) {
       console.error("Login error:", error);
-      setError("Server error");
+      setError("Server error - please try again later");
     }
   };
 
