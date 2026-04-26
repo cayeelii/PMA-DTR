@@ -89,6 +89,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
 
                     return {
                         rawDate: row.date,
+                        status: row.status,
                         date: `${(dateObj.getMonth() + 1)
                             .toString()
                             .padStart(2, "0")}/${dateObj
@@ -337,7 +338,11 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                             {dtrEntries.map((entry, idx) => (
                                 <tr
                                     key={idx}
-                                    className="hover:bg-gray-50 transition-colors"
+                                    className={`transition-colors
+                                        ${entry.status === "Holiday" ? "bg-blue-100 text-blue-700 font-semibold" : ""}
+                                        ${entry.status === "Half-day" ? "bg-yellow-100 text-yellow-700 font-semibold" : ""}
+                                        ${!entry.status ? "hover:bg-gray-50" : ""}
+                                    `}
                                 >
                                     <td className="py-3 text-sm font-medium text-gray-700 whitespace-nowrap">
                                         {entry.date}
