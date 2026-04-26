@@ -29,6 +29,90 @@ export default function ReportPreview({
     row.otOut,
   ]);
 
+  const parseDate = (value) => {
+    if (!value) return null;
+
+    const parts = String(value).trim().split(/[/-]/);
+    if (parts.length !== 3) return null;
+
+    const month = Number(parts[0]);
+    const day = Number(parts[1]);
+    let year = Number(parts[2]);
+
+    if (!month || !day || !year) return null;
+
+    if (year < 100) {
+      year += 2000;
+    }
+
+    const parsed = new Date(year, month - 1, day);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const formatDateIso = (date) => {
+    if (!date) return "-";
+
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0",
+    )}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+
+  const getDateRange = () => {
+    const validDates = dtrRows
+      .map((row) => parseDate(row.date))
+      .filter(Boolean)
+      .sort((a, b) => a - b);
+
+    if (!validDates.length) {
+      return {
+        monthYear: "-",
+        rangeText: "-",
+      };
+    }
+
+    const first = validDates[0];
+    const last = validDates[validDates.length - 1];
+
+    return {
+      monthYear: first.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      rangeText: `${formatDateIso(first)} - ${formatDateIso(last)}`,
+    };
+  };
+
+  const formatDateForOneColumn = (value) => {
+    const parsed = parseDate(value);
+    if (!parsed) return value || "";
+
+    return `${parsed.getMonth() + 1}/${parsed.getDate()}/${parsed.getFullYear()}`;
+  };
+
+  const formatTimeForOneColumn = (value) => {
+    if (!value) return "";
+
+    const text = String(value).trim();
+    if (!text || text === "-" || text === "--") return "";
+
+    const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?$/i);
+    if (!match) return text;
+
+    let hours = Number(match[1]);
+    const minutes = match[2];
+    const suffix = match[3]?.toUpperCase();
+
+    if (suffix === "AM" && hours === 12) {
+      hours = 0;
+    } else if (suffix === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    const twelveHour = ((hours + 11) % 12) + 1;
+    return `${twelveHour}:${minutes}`;
+  };
+
   const drawPdfHeader = (doc) => {
     doc.setFontSize(14);
     doc.setFont(undefined, "bold");
@@ -53,6 +137,80 @@ export default function ReportPreview({
 
     doc.setFont(undefined, "normal");
     doc.text("Signature over printed name", 150, y + 18);
+  };
+
+  const drawOneColumnHeader = (doc) => {
+    const { monthYear, rangeText } = getDateRange();
+
+    doc.setLineWidth(0.4);
+    doc.line(18, 13, 192, 13);
+
+    doc.setFont(undefined, "bold");
+    doc.setFontSize(10);
+    doc.text(
+      `DAILY TIME RECORD OF - ${String(monthYear).toUpperCase()}`,
+      105,
+      18,
+      {
+        align: "center",
+      },
+    );
+
+    doc.setLineWidth(0.25);
+    doc.line(18, 20.2, 192, 20.2);
+
+    doc.setFont(undefined, "normal");
+    doc.setFontSize(8);
+    doc.text(`Statistics Date: ${rangeText}`, 18, 23.1);
+    doc.text(`Office: ${department?.name || "-"}`, 192, 23.1, { align: "right" });
+
+
+    doc.setLineWidth(0.25);
+    doc.line(18, 25.0, 192, 25.0);
+
+    doc.text(`Name: ${employee?.name || "-"}`, 192, 28.0, { align: "right" });
+
+    
+    doc.line(18, 29.5, 192, 29.5);
+  };
+
+
+  const drawOneColumnSignatures = (doc, contentEndY) => {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let signatureY = contentEndY + 12;
+
+    if (signatureY > pageHeight - 30) {
+      doc.addPage();
+      signatureY = 40;
+    }
+
+    const leftStart = 26;
+    const leftEnd = 86;
+    const rightStart = 124;
+    const rightEnd = 184;
+
+    doc.setLineWidth(0.3);
+    doc.line(leftStart, signatureY, leftEnd, signatureY);
+    doc.line(rightStart, signatureY, rightEnd, signatureY);
+
+    doc.setFontSize(8);
+    doc.setFont(undefined, "bold");
+    doc.text(employee?.name || "Employee", (leftStart + leftEnd) / 2, signatureY - 2, {
+      align: "center",
+    });
+
+    const supervisorName = signatory?.head_name || "Supervisor";
+    doc.text(supervisorName, (rightStart + rightEnd) / 2, signatureY - 2, {
+      align: "center",
+    });
+
+    doc.setFont(undefined, "normal");
+    doc.text("Employee Signature", (leftStart + leftEnd) / 2, signatureY + 5, {
+      align: "center",
+    });
+    doc.text("Supervisor", (rightStart + rightEnd) / 2, signatureY + 5, {
+      align: "center",
+    });
   };
 
   //Export to XLSX
@@ -103,111 +261,156 @@ export default function ReportPreview({
 
   //Export PDF
   const exportToPDF = (columnLayout = "1") => {
-    const doc = new jsPDF();
-    drawPdfHeader(doc);
+    try {
+      const doc = new jsPDF();
+      let finalY = 58;
 
-    let finalY = 58;
+      if (columnLayout === "2") {
+        drawPdfHeader(doc);
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const marginX = 14;
+        const columnGap = 8;
+        const columnWidth = (pageWidth - marginX * 2 - columnGap) / 2;
+        const splitIndex = Math.ceil(tableData.length / 2);
+        const leftRows = tableData.slice(0, splitIndex);
+        const rightRows = tableData.slice(splitIndex);
 
-    if (columnLayout === "2") {
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const marginX = 14;
-      const columnGap = 8;
-      const columnWidth = (pageWidth - marginX * 2 - columnGap) / 2;
-      const splitIndex = Math.ceil(tableData.length / 2);
-      const leftRows = tableData.slice(0, splitIndex);
-      const rightRows = tableData.slice(splitIndex);
+        autoTable(doc, {
+          startY: 38,
+          head: tableHead,
+          body: leftRows,
+          margin: { left: marginX },
+          tableWidth: columnWidth,
+          styles: {
+            fontSize: 6.2,
+            cellPadding: 1,
+            halign: "center",
+            overflow: "linebreak",
+          },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: 0,
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            0: { halign: "left", cellWidth: 14 },
+            1: { halign: "left", cellWidth: 11 },
+            2: { cellWidth: 10 },
+            3: { cellWidth: 10 },
+            4: { cellWidth: 10 },
+            5: { cellWidth: 10 },
+            6: { cellWidth: 10 },
+            7: { cellWidth: 10 },
+          },
+          theme: "grid",
+        });
 
-      autoTable(doc, {
-        startY: 38,
-        head: tableHead,
-        body: leftRows,
-        margin: { left: marginX },
-        tableWidth: columnWidth,
-        styles: {
-          fontSize: 6.2,
-          cellPadding: 1,
-          halign: "center",
-          overflow: "linebreak",
-        },
-        headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: 0,
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { halign: "left", cellWidth: 14 },
-          1: { halign: "left", cellWidth: 11 },
-          2: { cellWidth: 10 },
-          3: { cellWidth: 10 },
-          4: { cellWidth: 10 },
-          5: { cellWidth: 10 },
-          6: { cellWidth: 10 },
-          7: { cellWidth: 10 },
-        },
-        theme: "grid",
-      });
+        const leftFinalY = doc.lastAutoTable?.finalY || 38;
 
-      const leftFinalY = doc.lastAutoTable?.finalY || 38;
+        autoTable(doc, {
+          startY: 38,
+          head: tableHead,
+          body: rightRows,
+          margin: { left: marginX + columnWidth + columnGap },
+          tableWidth: columnWidth,
+          styles: {
+            fontSize: 6.2,
+            cellPadding: 1,
+            halign: "center",
+            overflow: "linebreak",
+          },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: 0,
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            0: { halign: "left", cellWidth: 14 },
+            1: { halign: "left", cellWidth: 11 },
+            2: { cellWidth: 10 },
+            3: { cellWidth: 10 },
+            4: { cellWidth: 10 },
+            5: { cellWidth: 10 },
+            6: { cellWidth: 10 },
+            7: { cellWidth: 10 },
+          },
+          theme: "grid",
+        });
 
-      autoTable(doc, {
-        startY: 38,
-        head: tableHead,
-        body: rightRows,
-        margin: { left: marginX + columnWidth + columnGap },
-        tableWidth: columnWidth,
-        styles: {
-          fontSize: 6.2,
-          cellPadding: 1,
-          halign: "center",
-          overflow: "linebreak",
-        },
-        headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: 0,
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { halign: "left", cellWidth: 14 },
-          1: { halign: "left", cellWidth: 11 },
-          2: { cellWidth: 10 },
-          3: { cellWidth: 10 },
-          4: { cellWidth: 10 },
-          5: { cellWidth: 10 },
-          6: { cellWidth: 10 },
-          7: { cellWidth: 10 },
-        },
-        theme: "grid",
-      });
+        const rightFinalY = doc.lastAutoTable?.finalY || 38;
+        finalY = Math.max(leftFinalY, rightFinalY) + 8;
+        drawSignatory(doc, finalY);
+      } else {
+        const oneColumnHead = [["Date", "AM IN", "AM OUT", "PM IN", "PM OUT"]];
+        const oneColumnBody = dtrRows.map((row) => [
+          formatDateForOneColumn(row.date),
+          formatTimeForOneColumn(row.amIn),
+          formatTimeForOneColumn(row.amOut),
+          formatTimeForOneColumn(row.pmIn),
+          formatTimeForOneColumn(row.pmOut),
+        ]);
 
-      const rightFinalY = doc.lastAutoTable?.finalY || 38;
-      finalY = Math.max(leftFinalY, rightFinalY) + 8;
-    } else {
-      autoTable(doc, {
-        startY: 38,
-        head: tableHead,
-        body: tableData,
-        styles: {
-          fontSize: 8,
-          halign: "center",
-        },
-        headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: 0,
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { halign: "left" },
-          1: { halign: "left" },
-        },
-        theme: "grid",
-      });
+        drawOneColumnHeader(doc);
 
-      finalY = (doc.lastAutoTable?.finalY || 38) + 20;
+        const tableWidth = 102;
+        const marginLeft = 18;
+
+        autoTable(doc, {
+          // Keep 1cm (10mm) space below the header block.
+          startY: 39.5,
+          head: oneColumnHead,
+          body: oneColumnBody,
+          margin: { left: marginLeft },
+          tableWidth,
+          styles: {
+            fontSize: 7,
+            cellPadding: 1.2,
+            halign: "center",
+            lineWidth: 0,
+            lineColor: 0,
+          },
+          headStyles: {
+            fillColor: [255, 255, 255],
+            textColor: 0,
+            fontStyle: "bold",
+            lineWidth: 0,
+            lineColor: 0,
+          },
+          bodyStyles: {
+            lineWidth: 0,
+            lineColor: 0,
+          },
+          columnStyles: {
+            0: { halign: "left", cellWidth: 24 },
+            1: { cellWidth: 19.5 },
+            2: { cellWidth: 19.5 },
+            3: { cellWidth: 19.5 },
+            4: { cellWidth: 19.5 },
+          },
+          theme: "plain",
+          didDrawCell: (data) => {
+            if (
+              (data.section === "head" || data.section === "body") &&
+              data.column.index === data.table.columns.length - 1
+            ) {
+              const y = data.cell.y + data.cell.height;
+              const x1 = marginLeft;
+              const x2 = marginLeft + tableWidth;
+
+              doc.setLineWidth(0.2);
+              doc.line(x1, y, x2, y);
+            }
+          },
+        });
+
+        finalY = doc.lastAutoTable?.finalY || 38;
+        drawOneColumnSignatures(doc, finalY);
+      }
+
+      doc.save(`${employee?.name || "DTR"}_Report.pdf`);
+    } catch (error) {
+      console.error("PDF export failed:", error);
     }
-
-    drawSignatory(doc, finalY);
-
-    doc.save(`${employee?.name || "DTR"}_Report.pdf`);
   };
 
   const handleExportPDF = (columnLayout) => {
