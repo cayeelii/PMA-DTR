@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import RemoveMaintenanceModal from "../../components/RemoveMaintenanceModal";
 import MaintenanceModal from "../../components/MaintenanceModal";
+import { saveActivityLog } from "../../utils/activityLogs";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -38,6 +39,7 @@ function MaintenancePage() {
         data.map((item) => ({
           id: item.setting_id,
           date: formatToDisplayDate(item.config_date),
+          rawDate: item.config_date,
           remarks: item.category,
         }))
       );
@@ -49,6 +51,8 @@ function MaintenancePage() {
   // ADD HOLIDAY / HALF-DAY
   const handleAddEntry = async (newEntry) => {
     try {
+      const category = modalConfig.mode === "holiday" ? "Holiday" : "Half-day";
+
       const res = await fetch(`${API_BASE_URL}/api/maintenance/add`, {
         method: "POST",
         headers: {
@@ -56,7 +60,7 @@ function MaintenancePage() {
         },
         body: JSON.stringify({
           date: newEntry.date,
-          category: modalConfig.mode === "holiday" ? "Holiday" : "Half-day",
+          category,
         }),
       });
 
@@ -66,6 +70,15 @@ function MaintenancePage() {
       if (!res.ok) {
         throw new Error(data.message || "Failed to add");
       }
+
+      // Audit log
+      const logDate = data.date || newEntry.date;
+      saveActivityLog({
+        action: `${category} Added`,
+        details: `Added ${category} on ${logDate}.`,
+      }).catch((logErr) =>
+        console.error("Activity log failed:", logErr.message)
+      );
 
       await fetchMaintenance(); // IMPORTANT: wait
       setModalConfig({ isOpen: false, mode: "" });
@@ -83,12 +96,28 @@ function MaintenancePage() {
 
   const confirmRemove = async () => {
     try {
-      await fetch(
+      const target = rows.find((r) => r.id === removeModal.rowId);
+
+      const res = await fetch(
         `${API_BASE_URL}/api/maintenance/${removeModal.rowId}`,
         {
           method: "DELETE",
         }
       );
+
+      if (!res.ok) {
+        throw new Error("Failed to delete");
+      }
+
+      // Audit log 
+      if (target) {
+        saveActivityLog({
+          action: `${target.remarks} Removed`,
+          details: `Removed ${target.remarks} on ${target.rawDate}.`,
+        }).catch((logErr) =>
+          console.error("Activity log failed:", logErr.message)
+        );
+      }
 
       setRemoveModal({ isOpen: false, rowId: null });
 
