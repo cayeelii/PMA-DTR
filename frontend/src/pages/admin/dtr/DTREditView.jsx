@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, Save, FileText } from "lucide-react";
 
 const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
@@ -6,13 +6,27 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
     const [initialEntries, setInitialEntries] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [editing, setEditing] = useState(null);
+    const editingRef = useRef(null);
+    editingRef.current = editing;
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const formatTime = (time) => {
         if (!time) return "";
+        if (typeof time === "string") {
+            time = time.split(".")[0];
+        }
 
-        let [hour, minute, second] = time.split(":");
-        hour = parseInt(hour);
+        let [hour, minute, second] = String(time).split(":");
+        second = (second != null && second !== "" ? String(second) : "00")
+            .split(".")[0]
+            .padStart(2, "0");
+        minute = (minute != null && minute !== "" ? String(minute) : "00").padStart(
+            2,
+            "0",
+        );
+
+        hour = parseInt(hour, 10);
 
         const suffix = hour >= 12 ? "PM" : "AM";
         if (hour > 12) hour -= 12;
@@ -24,32 +38,47 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
     const convertTo24Hour = (time, field) => {
         if (!time || typeof time !== "string") return null;
 
-        let t = time.trim().toUpperCase();
-
+        let t = time.trim();
+        t = t.replace(
+            /([0-9]{1,2}:[0-9]{2}:[0-9]{2}|[0-9]{1,2}:[0-9]{2}|[0-9]{1,2})(AM|PM)\s*$/i,
+            "$1 $2",
+        );
+        t = t.toUpperCase();
         t = t.replace(/\s*(AM|PM)\s*$/, " $1");
         t = t.replace(/\s+/g, " ").trim();
 
         const parts = t.split(/\s+/);
         if (parts.length < 1) return null;
 
-        let [hours, minutes, seconds] = parts[0].split(":");
+        const timeSeg = parts[0].split(":");
+        const secPart =
+            timeSeg[2] != null ? String(timeSeg[2]).split(".")[0] : "0";
+        let [hours, minutes, seconds] = [
+            timeSeg[0],
+            timeSeg[1] != null && timeSeg[1] !== "" ? timeSeg[1] : "0",
+            secPart,
+        ];
         let modifier =
             parts.length > 1 && (parts[1] === "AM" || parts[1] === "PM")
                 ? parts[1]
                 : null;
 
-        hours = parseInt(hours);
-        minutes = parseInt(minutes);
-        seconds = seconds ? parseInt(seconds) : 0;
+        hours = parseInt(hours, 10);
+        minutes = parseInt(minutes, 10);
+        seconds = parseInt(seconds, 10) || 0;
 
-        if (isNaN(hours) || isNaN(minutes)) return null;
+        if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) return null;
 
         if (!modifier) {
             const inferred =
-                typeof field === "string" && field.startsWith("pm")
-                    ? "PM"
-                    : typeof field === "string" && field.startsWith("am")
-                      ? "AM"
+                field === "amIn"
+                    ? "AM"
+                    : field === "amOut" ||
+                        field === "pmIn" ||
+                        field === "pmOut" ||
+                        field === "otIn" ||
+                        field === "otOut"
+                      ? "PM"
                       : null;
             if (inferred && hours >= 1 && hours <= 12) modifier = inferred;
         }
@@ -115,6 +144,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
 
             setDtrEntries(formatted);
             setInitialEntries(formatted.map((r) => ({ ...r })));
+            setEditing(null);
         } catch (err) {
             console.error("LOAD DTR ERROR:", err);
         }
@@ -126,6 +156,91 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
 
     const TIME_FIELDS = ["amIn", "amOut", "pmIn", "pmOut", "otIn", "otOut"];
 
+    const defaultAmPmForField = (field) =>
+        field === "amIn" ? "AM" : "PM";
+
+    const readAmPmFromText = (text) =>
+        String(text).match(/\b(am|pm)\b/i)?.[1]?.toUpperCase() ?? null;
+
+    const amPmLockForCell = (field, cellValue) => {
+        const trimmed = (cellValue ?? "").trim();
+        return trimmed
+            ? readAmPmFromText(trimmed) ?? defaultAmPmForField(field)
+            : null;
+    };
+
+    const lockAmPmForTimeField = (field, value) => {
+        if (field === "otIn" || field === "otOut") {
+            return amPmLockForCell(field, value);
+        }
+        return (value ?? "").trim()
+            ? amPmLockForCell(field, value)
+            : defaultAmPmForField(field);
+    };
+
+    // Turn what the user typed into one string: "HH:MM:SS" "AM" or "PM".
+    const formatDtrTimeInput = (field, value, lockedAmPm) => {
+        let text = value.trim();
+        if (!text) return "";
+
+        const defaultAmPm = defaultAmPmForField(field);
+        text = text.replace(
+            /^([0-9]{1,2}:[0-9]{2}:[0-9]{2}|[0-9]{1,2}:[0-9]{2}|[0-9]+)(am|pm)\s*$/i,
+            "$1 $2",
+        );
+
+        const amPmMatches = [...text.matchAll(/\b(am|pm)\b/gi)];
+        const hadExplicitAmPm = amPmMatches.length > 0;
+
+        text = text.replace(/\b(am|pm)\b/gi, " ");
+
+        let digits = text.replace(/[^0-9:]/g, "");
+        if (!digits) return "";
+        if (!digits.includes(":") && digits.length > 2) {
+            digits = digits.slice(0, 2) + ":" + digits.slice(2);
+        }
+        if (/^0+$/.test(digits.replace(/:/g, ""))) return "";
+
+        const parts = digits.split(":").map((s) => s.slice(0, 2));
+        const [h = "", m = "", s = ""] = parts;
+
+        if (!h) return "";
+
+        let hour = parseInt(h, 10);
+        if (Number.isNaN(hour) || hour < 0 || hour > 23) return "";
+
+        const resolveAmPm = () => {
+            let ap = hadExplicitAmPm
+                ? amPmMatches[amPmMatches.length - 1][1].toUpperCase()
+                : defaultAmPm;
+            if (lockedAmPm === "AM" || lockedAmPm === "PM") {
+                ap = lockedAmPm;
+            }
+            return ap;
+        };
+
+        let ampm;
+        if (hour > 12) {
+            hour -= 12;
+            if (hadExplicitAmPm) {
+                ampm = resolveAmPm();
+            } else {
+                ampm = field === "amIn" ? "AM" : "PM";
+            }
+        } else if (hour === 0) {
+            hour = 12;
+            ampm = "AM";
+        } else if (hour === 12) {
+            ampm = hadExplicitAmPm ? resolveAmPm() : "PM";
+        } else {
+            ampm = resolveAmPm();
+        }
+
+        const min = (m || "00").slice(0, 2).padStart(2, "0");
+        const sec = (s || "00").slice(0, 2).padStart(2, "0");
+        return `${String(hour).padStart(2, "0")}:${min}:${sec} ${ampm}`;
+    };
+
     const isRowChanged = (current, original) => {
         if (!original) return true;
         return TIME_FIELDS.some(
@@ -133,47 +248,78 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         );
     };
 
-    const isCellChanged = (current, original, field) => {
-        if (!original) return false;
-        return (current[field] || "") !== (original[field] || "");
+    const isTimeCellChanged = (idx, field, entry) => {
+        const cur =
+            editing?.row === idx && editing?.field === field
+                ? formatDtrTimeInput(
+                      field,
+                      editing.draft,
+                      editing.lockAmPm,
+                  )
+                : entry[field] || "";
+        return cur !== (initialEntries[idx]?.[field] || "");
     };
 
     const hasChanges = () => {
+        if (editing) {
+            const formatted = formatDtrTimeInput(
+                editing.field,
+                editing.draft,
+                editing.lockAmPm,
+            );
+            const init = initialEntries[editing.row]?.[editing.field] ?? "";
+            if (formatted !== init) return true;
+        }
         return dtrEntries.some((entry, i) =>
             isRowChanged(entry, initialEntries[i]),
         );
     };
 
-    const handleInputChange = (index, field, value) => {
-        setDtrEntries((prev) =>
-            prev.map((row, i) => {
-                if (i !== index) return row;
-
-                let prevVal = row[field] || "";
-
-                let modifier = prevVal.includes("PM") ? "PM" : "AM";
-
-                let clean = value.replace(/\s*(AM|PM)$/i, "");
-                clean = clean.replace(/[^0-9:]/g, "");
-
-                let parts = clean.split(":");
-
-                parts = parts.map((p, i) => {
-                    if (i === 0) return p.slice(0, 2);
-                    if (i === 1) return p.slice(0, 2);
-                    if (i === 2) return p.slice(0, 2);
-                    return "";
-                });
-
-                clean = parts.join(":");
-
-                return {
-                    ...row,
-                    [field]: `${clean} ${modifier}`,
-                };
-            }),
+    const finalizeTimeInput = () => {
+        if (!editing) return dtrEntries;
+        const f = formatDtrTimeInput(
+            editing.field,
+            editing.draft,
+            editing.lockAmPm,
         );
+        const next = dtrEntries.map((row, i) =>
+            i === editing.row ? { ...row, [editing.field]: f } : row,
+        );
+        setDtrEntries(next);
+        setEditing(null);
+        return next;
     };
+
+    const finishEditingTimeCell = (rowIndex, fieldKey) => {
+        const ed = editingRef.current;
+        if (ed?.row === rowIndex && ed?.field === fieldKey) {
+            const f = formatDtrTimeInput(
+                fieldKey,
+                ed.draft,
+                ed.lockAmPm,
+            );
+            setDtrEntries((prev) =>
+                prev.map((row, i) =>
+                    i === rowIndex ? { ...row, [fieldKey]: f } : row,
+                ),
+            );
+        }
+        setEditing(null);
+    };
+
+    // First loaded value for that row/column
+    const initialDtrValueAt = (rowIndex, timeField) =>
+        initialEntries[rowIndex]?.[timeField] ?? "";
+
+    const timeFieldEditState = (rowIndex, timeField, draft) => ({
+        row: rowIndex,
+        field: timeField,
+        draft,
+        lockAmPm: lockAmPmForTimeField(
+            timeField,
+            initialDtrValueAt(rowIndex, timeField),
+        ),
+    });
 
     const handleSaveClick = async () => {
         if (isSaving) return;
@@ -183,7 +329,9 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
             const batchId =
                 employee?.batch_id || localStorage.getItem("current_batch_id");
 
-            const changedEntries = dtrEntries.filter((entry, i) =>
+            const rows = finalizeTimeInput();
+
+            const changedEntries = rows.filter((entry, i) =>
                 isRowChanged(entry, initialEntries[i]),
             );
 
@@ -281,7 +429,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                     <button
                         className="flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all active:scale-95"
                         onClick={() =>
-                            onGenerateReport && onGenerateReport(dtrEntries)
+                            onGenerateReport && onGenerateReport(finalizeTimeInput())
                         }
                     >
                         <FileText size={18} /> Generate Report
@@ -346,36 +494,65 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                                         {entry.day}
                                     </td>
 
-                                    {[
-                                        "amIn",
-                                        "amOut",
-                                        "pmIn",
-                                        "pmOut",
-                                        "otIn",
-                                        "otOut",
-                                    ].map((field) => (
-                                        <td key={`${field}-${idx}`}>
-                                            <input
-                                                type="text"
-                                                value={entry[field] || ""}
-                                                onChange={(e) =>
-                                                    handleInputChange(
-                                                        idx,
-                                                        field,
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={`w-24 text-center py-1.5 border rounded-full text-[11px] font-semibold outline-none transition-all shadow-sm
+                                    {TIME_FIELDS.map((field) => {
+                                        const isActiveCell =
+                                            editing?.row === idx &&
+                                            editing?.field === field;
+                                        return (
+                                            <td key={`${field}-${idx}`}>
+                                                <input
+                                                    type="text"
+                                                    value={
+                                                        isActiveCell
+                                                            ? editing.draft
+                                                            : entry[field] || ""
+                                                    }
+                                                    onFocus={() =>
+                                                        setEditing(
+                                                            timeFieldEditState(
+                                                                idx,
+                                                                field,
+                                                                entry[
+                                                                    field
+                                                                ] ?? "",
+                                                            ),
+                                                        )
+                                                    }
+                                                    onChange={(e) => {
+                                                        const v =
+                                                            e.target.value;
+                                                        setEditing((ed) =>
+                                                            ed?.row === idx &&
+                                                            ed?.field === field
+                                                                ? {
+                                                                      ...ed,
+                                                                      draft: v,
+                                                                  }
+                                                                : timeFieldEditState(
+                                                                      idx,
+                                                                      field,
+                                                                      v,
+                                                                  ),
+                                                        );
+                                                    }}
+                                                    onBlur={() =>
+                                                        finishEditingTimeCell(
+                                                            idx,
+                                                            field,
+                                                        )
+                                                    }
+                                                    className={`w-24 text-center py-1.5 border rounded-full text-[11px] font-semibold outline-none transition-all shadow-sm
                             ${
-                                isCellChanged(entry, initialEntries[idx], field)
+                                isTimeCellChanged(idx, field, entry)
                                     ? "bg-yellow-100 border-yellow-400 text-gray-800"
                                     : "bg-white border-gray-200 text-gray-600"
                             }
                             focus:ring-2 focus:ring-orange-400 focus:border-transparent
                           `}
-                                            />
-                                        </td>
-                                    ))}
+                                                />
+                                            </td>
+                                        );
+                                    })}
                                 </tr>
                             ))}
                         </tbody>

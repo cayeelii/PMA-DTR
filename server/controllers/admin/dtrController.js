@@ -322,9 +322,74 @@ const getEmployeeDTR = (req, res) => {
     }
 };
 
-// UPDATE DTR inside a transaction on a single pooled connection.
+// Insert a manual DTR row when the editor UPDATE hit 0 rows (no row for that date/slot yet).
+const insertDtrTime = (
+    connection,
+    { newTime, bio_id, batch_id, date, ampmType },
+    nameMap,
+    metaCache,
+    onDone,
+) => {
+    const k = String(bio_id);
+
+    const useMeta = (meta) => {
+        if (meta.name) nameMap.set(k, meta.name);
+        const dateTime = `${date} ${newTime}`;
+        const insertSql = `
+    INSERT INTO employee_dtr (
+      dept_name, name, bio_id, date_time, machine_loc,
+      log_type, date_only, time_only, ampm_type,
+      status, reason, class, include_in_calc, late_minutes, batch_id
+    ) VALUES (?, ?, ?, ?, 'DTR Editor', 'MANUAL', ?, ?, ?, 'Edited', NULL, NULL, 1, 0, ?)
+  `;
+        connection.query(
+            insertSql,
+            [
+                meta.dept_name,
+                meta.name,
+                bio_id,
+                dateTime,
+                date,
+                newTime,
+                ampmType,
+                batch_id,
+            ],
+            onDone,
+        );
+    };
+
+    if (metaCache.has(k)) {
+        return useMeta(metaCache.get(k));
+    }
+
+    connection.query(
+        `SELECT MAX(name) AS name, MAX(TRIM(dept_name)) AS dept_name
+      FROM employee_dtr
+      WHERE bio_id = ? AND batch_id = ?`,
+        [bio_id, batch_id],
+        (e, rows) => {
+            if (e) return onDone(e);
+            const row = rows && rows[0];
+            if (!row || (row.name == null && row.dept_name == null)) {
+                return onDone(
+                    new Error(
+                        "Cannot save: no existing DTR row for this employee in this batch (copy name/dept from).",
+                    ),
+                );
+            }
+            const meta = {
+                name: row.name || "",
+                dept_name:
+                    (row.dept_name && String(row.dept_name).trim()) || "—",
+            };
+            metaCache.set(k, meta);
+            useMeta(meta);
+        },
+    );
+};
+
 const updateEmployeeDTR = (req, res) => {
-      const entries = req.body;
+    const entries = req.body;
 
     if (!Array.isArray(entries) || entries.length === 0) {
         return res.status(400).json({ error: "No DTR data provided" });
@@ -411,7 +476,7 @@ const updateEmployeeDTR = (req, res) => {
                     });
             }
 
-            // 1) Fetch current (old) values + employee names for all targets.
+            // PRE-FETCH CURRENT VALUES FOR AUDIT DIFFS
             const selectOldSql = uniquePairs.length
                 ? `
           SELECT
@@ -450,7 +515,8 @@ const updateEmployeeDTR = (req, res) => {
                     }
                 }
 
-                const misses = []; // updates that matched 0 rows
+                const misses = [];
+                const metaCache = new Map();
                 let i = 0;
 
                 const finalize = () => {
@@ -548,14 +614,38 @@ const updateEmployeeDTR = (req, res) => {
                     if (i >= updatesToRun.length) return finalize();
 
                     const params = updatesToRun[i];
+                    const [newTime, bio_id, batchIdParam, date, ampmType] =
+                        params;
                     connection.query(updateQuery, params, (qErr, result) => {
                         if (qErr) return fail(qErr);
-                        if (!result || (result.affectedRows || 0) === 0) {
-                            const [, bio_id, , date, type] = params;
-                            misses.push({ bio_id, date, type });
+                        if (result && (result.affectedRows || 0) > 0) {
+                            i += 1;
+                            return runNext();
                         }
-                        i += 1;
-                        runNext();
+                        insertDtrTime(
+                            connection,
+                            {
+                                newTime,
+                                bio_id,
+                                batch_id: batchIdParam,
+                                date,
+                                ampmType,
+                            },
+                            nameMap,
+                            metaCache,
+                            (insErr) => {
+                                if (insErr) {
+                                    misses.push({
+                                        bio_id,
+                                        date,
+                                        type: ampmType,
+                                    });
+                                    return fail(insErr);
+                                }
+                                i += 1;
+                                runNext();
+                            },
+                        );
                     });
                 };
 
