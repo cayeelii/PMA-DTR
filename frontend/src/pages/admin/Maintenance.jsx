@@ -60,8 +60,7 @@ function MaintenancePage() {
         },
         body: JSON.stringify({
           date: newEntry.date,
-          times: newEntry.times,
-          category: modalConfig.mode === "holiday" ? "Holiday" : "Half-day",
+          category,
         }),
       });
 

@@ -238,88 +238,88 @@ const getEmployeesByDepartment = (req, res) => {
     });
 };
 
-// GET EMPLOYEE DTR + HOLIDAYS
 const getEmployeeDTR = (req, res) => {
-    const { bio_id, batch_id } = req.query;
+    try {
+        const { bio_id, month, year, batch_id } = req.query;
 
-    if (!bio_id || !batch_id) {
-        return res.status(400).json({ message: "Missing parameters" });
-    }
-
-    // Get DTR with normalized date format
-    const dtrQuery = `
-    SELECT 
-      DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
-      MAX(CASE WHEN ampm_type = 'AM IN' THEN time_only END) AS amIn,
-      MAX(CASE WHEN ampm_type = 'AM OUT' THEN time_only END) AS amOut,
-      MAX(CASE WHEN ampm_type = 'PM IN' THEN time_only END) AS pmIn,
-      MAX(CASE WHEN ampm_type = 'PM OUT' THEN time_only END) AS pmOut,
-      MAX(CASE WHEN ampm_type = 'OT IN' THEN time_only END) AS otIn,
-      MAX(CASE WHEN ampm_type = 'OT OUT' THEN time_only END) AS otOut
-    FROM employee_dtr
-    WHERE bio_id = ? AND batch_id = ?
-    GROUP BY DATE_FORMAT(date_only, '%Y-%m-%d')
-  `;
-
-    // Get holidays / half-days with normalized date format
-    const maintenanceQuery = `
-    SELECT 
-      DATE_FORMAT(config_date, '%Y-%m-%d') AS date,
-      category,
-      am_in,
-      am_out,
-      pm_in,
-      pm_out
-    FROM maintenance_settings
-  `;
-
-    db.query(dtrQuery, [bio_id, batch_id], (err, dtrResults) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ message: "DTR error" });
+        if (!bio_id) {
+            return res.status(400).json({ message: "Missing bio_id" });
         }
 
-        db.query(maintenanceQuery, (err2, maintenanceResults) => {
-            if (err2) {
-                console.error(err2);
-                return res.status(500).json({ message: "Maintenance error" });
+        if (!batch_id) {
+            return res.status(400).json({ message: "Missing batch_id" });
+        }
+
+        let sql;
+        let params;
+
+        // FILTER BY MONTH/YEAR
+        if (month && year) {
+            sql = `
+        SELECT 
+          DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
+
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM IN' THEN time_only END) AS amIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM OUT' THEN time_only END) AS amOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM IN' THEN time_only END) AS pmIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM OUT' THEN time_only END) AS pmOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT IN' THEN time_only END) AS otIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT OUT' THEN time_only END) AS otOut
+
+        FROM employee_dtr
+        WHERE bio_id = ?
+          AND batch_id = ?
+          AND date_only IS NOT NULL
+          AND MONTH(date_only) = ?
+          AND YEAR(date_only) = ?
+
+        GROUP BY date_only
+        ORDER BY date_only ASC
+      `;
+
+            params = [bio_id, batch_id, month, year];
+        }
+
+        // LATEST DATA
+        else {
+            sql = `
+        SELECT 
+          DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
+
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM IN' THEN time_only END) AS amIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'AM OUT' THEN time_only END) AS amOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM IN' THEN time_only END) AS pmIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'PM OUT' THEN time_only END) AS pmOut,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT IN' THEN time_only END) AS otIn,
+          MAX(CASE WHEN TRIM(ampm_type) = 'OT OUT' THEN time_only END) AS otOut
+
+        FROM employee_dtr
+        WHERE bio_id = ?
+          AND batch_id = ?
+          AND date_only IS NOT NULL
+
+        GROUP BY date_only
+        ORDER BY date_only ASC
+      `;
+
+            params = [bio_id, batch_id];
+        }
+
+        db.query(sql, params, (err, results) => {
+            if (err) {
+                console.error("DTR Fetch Error:", err);
+                return res.status(500).json({
+                    message: "Database error",
+                    error: err.message,
+                });
             }
 
-            // Convert DTR into map - dates are already normalized strings
-            const dtrMap = {};
-            dtrResults.forEach((row) => {
-                dtrMap[row.date] = { ...row, status: null };
-            });
-
-            // Merge maintenance into DTR - dates are already normalized strings
-            maintenanceResults.forEach((m) => {
-                const date = m.date;
-
-                if (!dtrMap[date]) {
-                    // If no DTR exists, create one from maintenance
-                    dtrMap[date] = {
-                        date: date,
-                        amIn: m.am_in,
-                        amOut: m.am_out,
-                        pmIn: m.pm_in,
-                        pmOut: m.pm_out,
-                        otIn: null,
-                        otOut: null,
-                        status: m.category,
-                    };
-                } else {
-                    // If DTR exists, override times + add status (preserve DTR times if maintenance is null)
-                    dtrMap[date].amIn = m.am_in || dtrMap[date].amIn;
-                    dtrMap[date].amOut = m.am_out || dtrMap[date].amOut;
-                    dtrMap[date].pmIn = m.pm_in || dtrMap[date].pmIn;
-                    dtrMap[date].pmOut = m.pm_out || dtrMap[date].pmOut;
-                    dtrMap[date].status = m.category;
-                }
-            });
-
-            res.json(Object.values(dtrMap));
+            return res.json(results || []);
         });
-    });
+    } catch (error) {
+        console.error("Server Crash:", error);
+        return res.status(500).json({ message: "Server error" });
+    }
 };
 
 // UPDATE DTR inside a transaction on a single pooled connection.
@@ -458,7 +458,13 @@ const updateEmployeeDTR = (req, res) => {
 
                     // Build per-field diffs (only where value actually changed).
                     const changes = [];
-                    for (const [newTime, bio_id, date, type] of updatesToRun) {
+                    for (const [
+                        newTime,
+                        bio_id,
+                        ,
+                        date,
+                        type,
+                    ] of updatesToRun) {
                         const key = `${bio_id}|${date}|${type}`;
                         const prev = oldMap.get(key);
                         const oldTime = prev ? prev.old_time : null;

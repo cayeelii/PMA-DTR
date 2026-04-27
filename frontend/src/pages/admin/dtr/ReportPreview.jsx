@@ -18,37 +18,6 @@ export default function ReportPreview({
     ["Date", "Day", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"],
   ];
 
-  const getRowStyle = (status) => {
-    if (status === "Holiday") {
-      return {
-        bg: "bg-blue-50",
-        text: "text-blue-800",
-        font: "font-semibold",
-        xlsxBg: "#DBEAFE",
-        pdfBg: [219, 234, 254],
-        pdfText: [30, 58, 138],
-      };
-    }
-    if (status === "Half-day") {
-      return {
-        bg: "bg-yellow-50",
-        text: "text-yellow-800",
-        font: "font-semibold",
-        xlsxBg: "#FEF3C7",
-        pdfBg: [254, 243, 199],
-        pdfText: [133, 77, 14],
-      };
-    }
-    return {
-      bg: "",
-      text: "text-gray-700",
-      font: "",
-      xlsxBg: "#FFFFFF",
-      pdfBg: [255, 255, 255],
-      pdfText: [0, 0, 0],
-    };
-  };
-
   const tableData = dtrRows.map((row) => [
     row.date,
     row.day,
@@ -276,7 +245,16 @@ export default function ReportPreview({
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "DTR");
 
-    worksheet["!cols"] = Array(8).fill({ wch: 12 });
+    worksheet["!cols"] = [
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 10 },
+    ];
 
     XLSX.writeFile(workbook, `${employee?.name || "DTR"}_Report.xlsx`);
   };
@@ -294,34 +272,8 @@ export default function ReportPreview({
         const columnGap = 8;
         const columnWidth = (pageWidth - marginX * 2 - columnGap) / 2;
         const splitIndex = Math.ceil(tableData.length / 2);
-        const leftRows = dtrRows.slice(0, splitIndex).map((row) => {
-
-  const style = getRowStyle(row.status);
-  return [
-    { content: row.date, styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.day, styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.amIn || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.amOut || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.pmIn || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.pmOut || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.otIn || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.otOut || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-  ];
-});
-
-const rightRows = dtrRows.slice(splitIndex).map((row) => {
-  const style = getRowStyle(row.status);
-  return [
-    { content: row.date, styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.day, styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.amIn || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.amOut || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.pmIn || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.pmOut || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.otIn || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-    { content: row.otOut || "", styles: { fillColor: style.pdfBg, textColor: style.pdfText } },
-  ];
-});
+        const leftRows = tableData.slice(0, splitIndex);
+        const rightRows = tableData.slice(splitIndex);
 
         autoTable(doc, {
           startY: 38,
@@ -554,41 +506,34 @@ const rightRows = dtrRows.slice(splitIndex).map((row) => {
               </tr>
             </thead>
             <tbody>
-              {dtrRows.map((row, idx) => {
-                const style = getRowStyle(row.status);
-
-                return (
-                  <tr
-                    key={idx}
-                    className={`transition-colors ${style.bg}`}
-                  >
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left font-medium ${style.text} ${style.font}`}>
-                      {row.date}
-                    </td>
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left ${style.text} ${style.font}`}>
-                      {row.day}
-                    </td>
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left ${style.text}`}>
-                      {row.amIn}
-                    </td>
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left ${style.text}`}>
-                      {row.amOut}
-                    </td>
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left ${style.text}`}>
-                      {row.pmIn}
-                    </td>
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left ${style.text}`}>
-                      {row.pmOut}
-                    </td>
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left ${style.text}`}>
-                      {row.otIn}
-                    </td>
-                    <td className={`px-4 py-2 border-t border-gray-200 text-left ${style.text}`}>
-                      {row.otOut}
-                    </td>
-                  </tr>
-                );
-              })}
+              {dtrRows.map((row, idx) => (
+                <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-2 border-t border-gray-200 text-left font-medium text-gray-700">
+                    {row.date}
+                  </td>
+                  <td className="px-4 py-2 border-t border-gray-200 text-left">
+                    {row.day}
+                  </td>
+                  <td className="px-4 py-2 border-t border-gray-200 text-left">
+                    {row.amIn}
+                  </td>
+                  <td className="px-4 py-2 border-t border-gray-200 text-left">
+                    {row.amOut}
+                  </td>
+                  <td className="px-4 py-2 border-t border-gray-200 text-left">
+                    {row.pmIn}
+                  </td>
+                  <td className="px-4 py-2 border-t border-gray-200 text-left">
+                    {row.pmOut}
+                  </td>
+                  <td className="px-4 py-2 border-t border-gray-200 text-left">
+                    {row.otIn}
+                  </td>
+                  <td className="px-4 py-2 border-t border-gray-200 text-left">
+                    {row.otOut}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
