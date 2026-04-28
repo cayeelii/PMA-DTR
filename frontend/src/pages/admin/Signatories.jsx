@@ -112,6 +112,18 @@ function SignatoriesPage() {
 
       setShowAddModal(false);
       setPage(1);
+
+      try {
+        const deptAcronym = signatory.dept_name.toUpperCase().trim();
+        const pos = (signatory.position || "").trim();
+        const fullName = (signatory.dept_full_name || "").trim();
+        await saveActivityLog({
+          action: "Added Signatory",
+          details: `Added signatory "${signatory.head_name}" (${pos || "—"}) for department ${deptAcronym} — ${fullName}.`,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
     } catch (err) {
       console.error(err.message);
       alert(err.message);
@@ -198,14 +210,23 @@ function SignatoriesPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error);
 
+      const deleted = { ...selectedDelete };
+
       setData((prev) =>
-        prev.filter(
-          (item) => item.signatory_id !== selectedDelete.signatory_id,
-        ),
+        prev.filter((item) => item.signatory_id !== deleted.signatory_id),
       );
 
       setShowDeleteModal(false);
       setSelectedDelete(null);
+
+      try {
+        await saveActivityLog({
+          action: "Removed Signatory",
+          details: `Removed signatory "${deleted.head}" (${deleted.position || "—"}) from department "${deleted.department}".`,
+        });
+      } catch (logErr) {
+        console.error("Failed to save activity log:", logErr);
+      }
     } catch (err) {
       console.error(err.message);
       alert(err.message);

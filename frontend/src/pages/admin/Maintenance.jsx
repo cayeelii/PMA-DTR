@@ -52,6 +52,8 @@ function MaintenancePage() {
   const handleAddEntry = async (newEntry) => {
     try {
       const category = modalConfig.mode === "holiday" ? "Holiday" : "Half-day";
+      const action =
+        modalConfig.mode === "holiday" ? "Added holiday" : "Added half day";
 
       const res = await fetch(`${API_BASE_URL}/api/maintenance/add`, {
         method: "POST",
@@ -74,7 +76,7 @@ function MaintenancePage() {
       // Audit log
       const logDate = data.date || newEntry.date;
       saveActivityLog({
-        action: `${category} Added`,
+        action,
         details: `Added ${category} on ${logDate}.`,
       }).catch((logErr) =>
         console.error("Activity log failed:", logErr.message)
@@ -109,10 +111,15 @@ function MaintenancePage() {
         throw new Error("Failed to delete");
       }
 
-      // Audit log 
+      // Audit log
       if (target) {
+        const isHoliday =
+          String(target.remarks ?? "")
+            .trim()
+            .toLowerCase() === "holiday";
+        const action = isHoliday ? "Removed holiday" : "Removed half day";
         saveActivityLog({
-          action: `${target.remarks} Removed`,
+          action,
           details: `Removed ${target.remarks} on ${target.rawDate}.`,
         }).catch((logErr) =>
           console.error("Activity log failed:", logErr.message)
