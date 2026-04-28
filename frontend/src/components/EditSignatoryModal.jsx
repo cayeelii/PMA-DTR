@@ -10,6 +10,7 @@ const EditSignatoryModal = ({
   const [formData, setFormData] = useState({
     signatory_id: "",
     dept_id: "",
+    position: "",
     head: "",
   });
 
@@ -18,7 +19,8 @@ const EditSignatoryModal = ({
       setFormData({
         signatory_id: signatory.signatory_id,
         dept_id: signatory.dept_id,
-        head: signatory.head,
+        position: signatory.position || "",
+        head: signatory.head || "",
       });
     }
   }, [signatory]);
@@ -51,6 +53,19 @@ const EditSignatoryModal = ({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Position Input */}
+          <div>
+            <label className="text-sm font-semibold">Position</label>
+            <input
+              value={formData.position}
+              onChange={(e) =>
+                setFormData({ ...formData, position: e.target.value })
+              }
+              className="w-full border p-2 rounded mt-1"
+              placeholder="e.g. Director, Manager"
+            />
           </div>
 
           {/* Head Input */}

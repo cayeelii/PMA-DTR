@@ -15,4 +15,7 @@ router.post("/add", adminSignatoriesRoute.addSignatory);
 //PUT /signatories/update
 router.put("/update", adminSignatoriesRoute.updateSignatory);
 
+//DELETE /signatories/delete/:signatory_id
+router.delete("/delete/:signatory_id", adminSignatoriesRoute.deleteSignatory);
+
 module.exports = router;

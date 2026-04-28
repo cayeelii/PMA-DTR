@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Pencil, Search } from "lucide-react";
+import { Pencil, Trash2, Search } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import AddSignatoryModal from "../../components/AddSignatoryModal";
 import EditSignatoryModal from "../../components/EditSignatoryModal";
+import DeleteSignatoryModal from "../../components/DeleteSignatoryModal";
 import { saveActivityLog } from "../../utils/activityLogs";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -17,6 +18,8 @@ function SignatoriesPage() {
   const [data, setData] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDelete, setSelectedDelete] = useState(null);
   const [selectedSignatory, setSelectedSignatory] = useState(null);
   const [departments, setDepartments] = useState([]);
 
@@ -53,6 +56,7 @@ function SignatoriesPage() {
             signatory_id: item.signatory_id,
             dept_id: item.dept_id,
             department: item.dept_name,
+            position: item.position || "",
             head: item.head_name,
           })),
         );
@@ -73,8 +77,10 @@ function SignatoriesPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          dept_name: signatory.department,
-          head_name: signatory.head,
+          dept_name: signatory.dept_name,
+          dept_full_name: signatory.dept_full_name,
+          head_name: signatory.head_name,
+          position: signatory.position,
         }),
       });
 
@@ -88,8 +94,9 @@ function SignatoriesPage() {
         {
           signatory_id: data.signatory_id,
           dept_id: data.dept_id,
-          department: signatory.department.toUpperCase(),
-          head: signatory.head,
+          department: signatory.dept_name.toUpperCase(),
+          head: signatory.head_name,
+          position: signatory.position,
         },
         ...prev,
       ]);
@@ -98,21 +105,13 @@ function SignatoriesPage() {
         ...prev,
         {
           dept_id: data.dept_id,
-          dept_name: signatory.department.toUpperCase(),
+          dept_name: signatory.dept_name.toUpperCase(),
+          dept_full_name: signatory.dept_full_name,
         },
       ]);
 
       setShowAddModal(false);
       setPage(1);
-
-      try {
-        await saveActivityLog({
-          action: "Added Signatory",
-          details: `Added Department Head "${signatory.head}" for Department "${signatory.department.toUpperCase()}".`,
-        });
-      } catch (logErr) {
-        console.error("Failed to save activity log:", logErr);
-      }
     } catch (err) {
       console.error(err.message);
       alert(err.message);
@@ -136,6 +135,7 @@ function SignatoriesPage() {
         body: JSON.stringify({
           signatory_id: selectedSignatory.signatory_id,
           dept_id: updated.dept_id,
+          position: updated.position,
           head_name: updated.head,
         }),
       });
@@ -155,6 +155,7 @@ function SignatoriesPage() {
                 ...item,
                 dept_id: updated.dept_id,
                 department: newDept,
+                position: updated.position,
                 head: updated.head,
               }
             : item,
@@ -184,10 +185,42 @@ function SignatoriesPage() {
     }
   };
 
+  //Fetch delete signatory
+  const handleDeleteSignatory = async () => {
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/signatories/delete/${selectedDelete.signatory_id}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
+      setData((prev) =>
+        prev.filter(
+          (item) => item.signatory_id !== selectedDelete.signatory_id,
+        ),
+      );
+
+      setShowDeleteModal(false);
+      setSelectedDelete(null);
+    } catch (err) {
+      console.error(err.message);
+      alert(err.message);
+    }
+  };
+
   const handleEditClose = () => {
     setShowEditModal(false);
     setEditIdx(null);
     setSelectedSignatory(null);
+  };
+
+  const handleDeleteClick = (row) => {
+    setSelectedDelete(row);
+    setShowDeleteModal(true);
   };
 
   return (
@@ -237,12 +270,24 @@ function SignatoriesPage() {
           onSave={handleEditSave}
           departments={departments}
         />
+        <DeleteSignatoryModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedDelete(null);
+          }}
+          selectedSignatory={selectedDelete}
+          onConfirm={handleDeleteSignatory}
+        />
         <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
                 <th className="text-center px-8 py-3 font-semibold">
                   Department
+                </th>
+                <th className="text-center px-12 py-3 font-semibold">
+                  Position
                 </th>
                 <th className="text-center px-12 py-3 font-semibold">
                   Department Head
@@ -256,7 +301,7 @@ function SignatoriesPage() {
               {paginated.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={3}
+                    colSpan={4}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No results found.
@@ -274,16 +319,29 @@ function SignatoriesPage() {
                         {row.department || ""}
                       </td>
                       <td className="px-6 py-4 text-center">
+                        {row.position || ""}
+                      </td>
+                      <td className="px-6 py-4 text-center">
                         {row.head || ""}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <button
-                          className="text-blue-600 hover:text-blue-800 transition"
-                          title="Edit"
-                          onClick={() => handleEditClick(row, globalIdx)}
-                        >
-                          <Pencil size={18} />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            className="text-blue-600 hover:text-blue-800 transition"
+                            title="Edit"
+                            onClick={() => handleEditClick(row, globalIdx)}
+                          >
+                            <Pencil size={18} />
+                          </button>
+
+                          <button
+                            className="text-red-600 hover:text-red-800 transition"
+                            title="Delete"
+                            onClick={() => handleDeleteClick(row)}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

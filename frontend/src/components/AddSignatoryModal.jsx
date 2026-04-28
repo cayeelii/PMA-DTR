@@ -2,21 +2,35 @@ import React, { useState } from "react";
 
 const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
   const [newDept, setNewDept] = useState("");
+  const [newDeptFull, setNewDeptFull] = useState("");
   const [newHead, setNewHead] = useState("");
+  const [newPosition, setNewPosition] = useState("");
 
   const handleAdd = () => {
     const dept = newDept.trim();
+    const full = newDeptFull.trim();
+    const pos = newPosition.trim();
     const head = newHead.trim();
 
-    if (dept && head) {
-      onAdd({ department: dept, head: head });
+    if (dept && full && head) {
+      onAdd({
+        dept_name: dept,
+        dept_full_name: full,
+        position: pos,
+        head_name: head,
+      });
+
       setNewDept("");
+      setNewDeptFull("");
+      setNewPosition("");
       setNewHead("");
     }
   };
 
   const handleClose = () => {
     setNewDept("");
+    setNewDeptFull("");
+    setNewPosition("");
     setNewHead("");
     onClose();
   };
@@ -28,15 +42,40 @@ const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 w-full max-w-md relative animate-fadeIn">
         <h2 className="text-2xl font-semibold mb-4">Add Signatory</h2>
 
-        {/* Department */}
+        {/* Department Acronym */}
         <div className="mb-4">
-          <label className="block text-gray-700 mb-1">Department</label>
+          <label className="block text-gray-700 mb-1">Department Acronym</label>
           <input
             type="text"
             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
             value={newDept}
             onChange={(e) => setNewDept(e.target.value)}
-            placeholder="Enter department name"
+            placeholder="e.g. ICTC"
+          />
+        </div>
+
+        {/* Full Department Name */}
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-1">
+            Full Department Name
+          </label>
+          <input
+            type="text"
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+            value={newDeptFull}
+            onChange={(e) => setNewDeptFull(e.target.value)}
+            placeholder="Enter full department name"
+          />
+        </div>
+
+        {/* Position */}
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-1">Position</label>
+          <input
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+            value={newPosition}
+            onChange={(e) => setNewPosition(e.target.value)}
+            placeholder="e.g. HR, Superintendent"
           />
         </div>
 
@@ -62,7 +101,9 @@ const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
           <button
             className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded font-semibold"
             onClick={handleAdd}
-            disabled={!newDept || !newHead.trim()}
+            disabled={
+              !newDept || !newDeptFull || !newPosition.trim() || !newHead.trim()
+            }
           >
             Add
           </button>
