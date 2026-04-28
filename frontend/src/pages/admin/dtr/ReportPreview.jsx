@@ -14,11 +14,19 @@ export default function ReportPreview({
   
   const [showPdfOptions, setShowPdfOptions] = useState(false);
 
+  const TIME_FIELDS = ["amIn", "amOut", "pmIn", "pmOut", "otIn", "otOut"];
+
+  const rowHasAnyTimeData = (row) =>
+    TIME_FIELDS.some((f) => String(row?.[f] ?? "").trim() !== "");
+
+  /* The printed/exported report should list only days that have at least one AM/PM/OT time */
+  const reportRows = dtrRows.filter(rowHasAnyTimeData);
+
   const tableHead = [
     ["Date", "Day", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"],
   ];
 
-  const tableData = dtrRows.map((row) => [
+  const tableData = reportRows.map((row) => [
     row.date,
     row.day,
     row.amIn,
@@ -59,7 +67,7 @@ export default function ReportPreview({
   };
 
   const getDateRange = () => {
-    const validDates = dtrRows
+    const validDates = reportRows
       .map((row) => parseDate(row.date))
       .filter(Boolean)
       .sort((a, b) => a - b);
@@ -227,17 +235,6 @@ export default function ReportPreview({
       ["Date", "Day", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"],
     ];
 
-    const tableData = dtrRows.map((row) => [
-      row.date,
-      row.day,
-      row.amIn,
-      row.amOut,
-      row.pmIn,
-      row.pmOut,
-      row.otIn,
-      row.otOut,
-    ]);
-
     const worksheetData = [...header, ...tableHeader, ...tableData];
 
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -342,7 +339,7 @@ export default function ReportPreview({
         drawSignatory(doc, finalY);
       } else {
         const oneColumnHead = [["Date", "AM IN", "AM OUT", "PM IN", "PM OUT"]];
-        const oneColumnBody = dtrRows.map((row) => [
+        const oneColumnBody = reportRows.map((row) => [
           formatDateForOneColumn(row.date),
           formatTimeForOneColumn(row.amIn),
           formatTimeForOneColumn(row.amOut),
@@ -506,34 +503,45 @@ export default function ReportPreview({
               </tr>
             </thead>
             <tbody>
-              {dtrRows.map((row, idx) => (
-                <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-2 border-t border-gray-200 text-left font-medium text-gray-700">
-                    {row.date}
-                  </td>
-                  <td className="px-4 py-2 border-t border-gray-200 text-left">
-                    {row.day}
-                  </td>
-                  <td className="px-4 py-2 border-t border-gray-200 text-left">
-                    {row.amIn}
-                  </td>
-                  <td className="px-4 py-2 border-t border-gray-200 text-left">
-                    {row.amOut}
-                  </td>
-                  <td className="px-4 py-2 border-t border-gray-200 text-left">
-                    {row.pmIn}
-                  </td>
-                  <td className="px-4 py-2 border-t border-gray-200 text-left">
-                    {row.pmOut}
-                  </td>
-                  <td className="px-4 py-2 border-t border-gray-200 text-left">
-                    {row.otIn}
-                  </td>
-                  <td className="px-4 py-2 border-t border-gray-200 text-left">
-                    {row.otOut}
+              {reportRows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-6 border-t border-gray-200 text-center text-gray-500"
+                  >
+                    No days with time entries to include in the report.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                reportRows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-2 border-t border-gray-200 text-left font-medium text-gray-700">
+                      {row.date}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.day}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.amIn}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.amOut}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.pmIn}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.pmOut}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.otIn}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.otOut}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

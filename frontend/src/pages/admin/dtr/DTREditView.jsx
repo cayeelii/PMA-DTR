@@ -1,6 +1,76 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, Save, FileText } from "lucide-react";
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+///Parse YYYY-MM-DD as a local calendar date
+function parseLocalDateOnly(value) {
+    const part = String(value ?? "").split("T")[0];
+    const [y, m, d] = part.split("-").map((x) => parseInt(x, 10));
+    if (
+        Number.isNaN(y) ||
+        Number.isNaN(m) ||
+        Number.isNaN(d) ||
+        m < 1 ||
+        m > 12
+    ) {
+        return null;
+    }
+    const dateObj = new Date(y, m - 1, d);
+    return Number.isNaN(dateObj.getTime()) ? null : dateObj;
+}
+
+//Fill calendar gaps in the editor 
+function mergeDtrWithFullCalendarRange(formattedRows) {
+    if (!formattedRows.length) return formattedRows;
+
+    const byKey = new Map();
+    for (const row of formattedRows) {
+        const key = String(row.rawDate ?? "").split("T")[0];
+        if (key) byKey.set(key, row);
+    }
+
+    const sortedKeys = [...byKey.keys()].sort();
+    const minD = parseLocalDateOnly(sortedKeys[0]);
+    const maxD = parseLocalDateOnly(sortedKeys[sortedKeys.length - 1]);
+    if (!minD || !maxD) return formattedRows;
+
+    const rangeStart = new Date(
+        minD.getFullYear(),
+        minD.getMonth(),
+        1,
+    );
+    const rangeEnd = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+
+    const out = [];
+    for (
+        let d = new Date(rangeStart);
+        d <= rangeEnd;
+        d.setDate(d.getDate() + 1)
+    ) {
+        const y = d.getFullYear();
+        const mo = d.getMonth() + 1;
+        const da = d.getDate();
+        const key = `${y}-${String(mo).padStart(2, "0")}-${String(da).padStart(2, "0")}`;
+        if (byKey.has(key)) {
+            out.push(byKey.get(key));
+        } else {
+            out.push({
+                rawDate: key,
+                date: `${String(mo).padStart(2, "0")}/${String(da).padStart(2, "0")}/${String(y).slice(-2)}`,
+                day: DAY_LABELS[d.getDay()],
+                amIn: "",
+                amOut: "",
+                pmIn: "",
+                pmOut: "",
+                otIn: "",
+                otOut: "",
+            });
+        }
+    }
+    return out;
+}
+
 const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
     const [dtrEntries, setDtrEntries] = useState([]);
     const [initialEntries, setInitialEntries] = useState([]);
@@ -113,11 +183,12 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
 
             const formatted = data
                 .map((row) => {
-                    const dateObj = new Date(row.date);
-                    if (isNaN(dateObj.getTime())) return null;
+                    const raw = String(row.date ?? "").split("T")[0];
+                    const dateObj = parseLocalDateOnly(raw);
+                    if (!dateObj) return null;
 
                     return {
-                        rawDate: row.date,
+                        rawDate: raw,
                         date: `${(dateObj.getMonth() + 1)
                             .toString()
                             .padStart(2, "0")}/${dateObj
@@ -128,9 +199,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                             .toString()
                             .slice(-2)}`,
 
-                        day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
-                            dateObj.getDay()
-                        ],
+                        day: DAY_LABELS[dateObj.getDay()],
 
                         amIn: formatTime(row.amIn),
                         amOut: formatTime(row.amOut),
@@ -142,8 +211,10 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                 })
                 .filter(Boolean);
 
-            setDtrEntries(formatted);
-            setInitialEntries(formatted.map((r) => ({ ...r })));
+            const merged = mergeDtrWithFullCalendarRange(formatted);
+
+            setDtrEntries(merged);
+            setInitialEntries(merged.map((r) => ({ ...r })));
             setEditing(null);
         } catch (err) {
             console.error("LOAD DTR ERROR:", err);
