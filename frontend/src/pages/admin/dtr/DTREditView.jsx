@@ -21,53 +21,57 @@ function parseLocalDateOnly(value) {
 }
 
 //Fill calendar gaps in the editor 
-function mergeDtrWithFullCalendarRange(formattedRows) {
-    if (!formattedRows.length) return formattedRows;
-
+function mergeDtrWithFullCalendarRange(formattedRows, maintenanceMap = {}) {
     const byKey = new Map();
     for (const row of formattedRows) {
         const key = String(row.rawDate ?? "").split("T")[0];
         if (key) byKey.set(key, row);
     }
 
-    const sortedKeys = [...byKey.keys()].sort();
-    const minD = parseLocalDateOnly(sortedKeys[0]);
-    const maxD = parseLocalDateOnly(sortedKeys[sortedKeys.length - 1]);
-    if (!minD || !maxD) return formattedRows;
-
-    const rangeStart = new Date(
-        minD.getFullYear(),
-        minD.getMonth(),
-        1,
-    );
-    const rangeEnd = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+    const allKeys = [
+        ...new Set([
+            ...byKey.keys(),
+            ...Object.keys(maintenanceMap),
+        ]),
+    ].sort();
 
     const out = [];
-    for (
-        let d = new Date(rangeStart);
-        d <= rangeEnd;
-        d.setDate(d.getDate() + 1)
-    ) {
-        const y = d.getFullYear();
-        const mo = d.getMonth() + 1;
-        const da = d.getDate();
-        const key = `${y}-${String(mo).padStart(2, "0")}-${String(da).padStart(2, "0")}`;
+
+    for (const key of allKeys) {
+        const maintenanceType = maintenanceMap[key] || null;
+
         if (byKey.has(key)) {
-            out.push(byKey.get(key));
+            out.push({
+                ...byKey.get(key),
+                maintenanceType,
+            })
         } else {
+            const dateObj = parseLocalDateOnly(key);
+            if (!dateObj) continue;
+
             out.push({
                 rawDate: key,
-                date: `${String(mo).padStart(2, "0")}/${String(da).padStart(2, "0")}/${String(y).slice(-2)}`,
-                day: DAY_LABELS[d.getDay()],
+                date: `${(dateObj.getMonth() + 1)
+                    .toString()
+                    .padStart(2, "0")}/${dateObj
+                    .getDate()
+                    .toString()
+                    .padStart(2, "0")}/${dateObj
+                    .getFullYear()
+                    .toString()
+                    .slice(-2)}`,
+                day: DAY_LABELS[dateObj.getDay()],
                 amIn: "",
                 amOut: "",
                 pmIn: "",
                 pmOut: "",
                 otIn: "",
                 otOut: "",
+                maintenanceType,
             });
         }
     }
+
     return out;
 }
 
@@ -167,6 +171,35 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
 
+    const [maintenanceMap, setMaintenanceMap] = useState({});
+    const loadMaintenance = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/maintenance`);
+            const data = await res.json();
+
+            const map = {};
+
+            data.forEach((item) => {
+                const key = String(item.config_date).split("T")[0];
+                map[key] = item.category; // Holiday or Half-day
+            });
+
+            setMaintenanceMap(map);
+        } catch (err) {
+            console.error("Maintenance fetch error:", err);
+        }
+    }, [API_BASE_URL]);
+
+    useEffect(() => {
+        const initData = async () => {
+            await loadMaintenance();
+            if (employee?.bio_id || employee?.id) {
+                loadDTR();
+            }
+        };
+        initData();
+    }, [employee]); 
+
     const loadDTR = useCallback(async () => {
         try {
             const bioId = employee?.bio_id || employee?.id;
@@ -211,7 +244,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                 })
                 .filter(Boolean);
 
-            const merged = mergeDtrWithFullCalendarRange(formatted);
+            const merged = mergeDtrWithFullCalendarRange(formatted, maintenanceMap);
 
             setDtrEntries(merged);
             setInitialEntries(merged.map((r) => ({ ...r })));
@@ -219,7 +252,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         } catch (err) {
             console.error("LOAD DTR ERROR:", err);
         }
-    }, [employee, batchId, API_BASE_URL]);
+    }, [employee, batchId, API_BASE_URL, maintenanceMap]); 
 
     useEffect(() => {
         loadDTR();
@@ -556,8 +589,11 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                             {dtrEntries.map((entry, idx) => (
                                 <tr
                                     key={idx}
-                                    className="hover:bg-gray-50 transition-colors"
-                                >
+                                    className={`transition-colors hover:bg-gray-50
+                                        ${entry.maintenanceType === "Holiday" ? "bg-blue-100" : ""}
+                                        ${entry.maintenanceType === "Half-day" ? "bg-yellow-100" : ""}
+                                    `}
+                                > 
                                     <td className="py-3 text-sm font-medium text-gray-700 whitespace-nowrap">
                                         {entry.date}
                                     </td>
