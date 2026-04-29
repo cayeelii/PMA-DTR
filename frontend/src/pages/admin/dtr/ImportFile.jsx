@@ -25,7 +25,6 @@ const ImportFile = ({ onUpload }) => {
 
             if (response.ok) {
                 const batchId = result.batch_id;
-                alert(`Success: ${result.insertedRows || 0} rows imported.`);
 
                 try {
                     // Activity Log for DTR import.
