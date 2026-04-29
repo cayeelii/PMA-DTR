@@ -44,7 +44,6 @@ const DTRManagement = () => {
       try {
         let storedBatchId = localStorage.getItem("current_batch_id");
 
-        // ✅ PRIORITY: if user selected from homepage → use it
         if (!storedBatchId) {
           const res = await axios.get(`${API_BASE_URL}/api/dtr/latest-batch`);
           storedBatchId = res.data?.batch_id;
