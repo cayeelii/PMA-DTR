@@ -51,7 +51,12 @@ function MaintenancePage() {
   // ADD HOLIDAY / HALF-DAY
   const handleAddEntry = async (newEntry) => {
     try {
-      const category = modalConfig.mode === "holiday" ? "Holiday" : "Half-day";
+      let category;
+      if (modalConfig.mode === "holiday") {
+        category = "Holiday";
+      } else {
+        category = "Half-day";
+      }
       const action =
         modalConfig.mode === "holiday" ? "Added holiday" : "Added half day";
 
@@ -113,11 +118,14 @@ function MaintenancePage() {
 
       // Audit log
       if (target) {
-        const isHoliday =
-          String(target.remarks ?? "")
-            .trim()
-            .toLowerCase() === "holiday";
-        const action = isHoliday ? "Removed holiday" : "Removed half day";
+        const remarks = String(target.remarks ?? "").trim().toLowerCase();
+        const isHoliday = remarks === "holiday";
+        const isHalfDay = remarks.includes("half-day");
+        const action = isHoliday
+          ? "Removed holiday"
+          : isHalfDay
+            ? "Removed half day"
+            : "Removed maintenance entry";
         saveActivityLog({
           action,
           details: `Removed ${target.remarks} on ${target.rawDate}.`,

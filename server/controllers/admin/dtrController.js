@@ -322,7 +322,7 @@ const getEmployeeDTR = (req, res) => {
     }
 };
 
-// Insert a manual DTR row when the editor UPDATE hit 0 rows (no row for that date/slot yet).
+// Insert a manual DTR time. 
 const insertDtrTime = (
     connection,
     { newTime, bio_id, batch_id, date, ampmType },
@@ -679,7 +679,6 @@ const getDepartmentSignatory = (req, res) => {
                 });
             }
 
-            console.log("RESULT:", results);
             res.json(results[0] || null);
         });
     } catch (error) {

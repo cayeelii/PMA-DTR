@@ -1,6 +1,72 @@
 const db = require("../../config/db");
 
-// ADD HOLIDAY / HALF-DAY
+//Category schedules
+const CATEGORY_CONFIG = {
+  Holiday: {
+    db: "Holiday",
+    schedule: {
+      am_in: "08:00:00",
+      am_out: "12:00:00",
+      pm_in: "13:00:00",
+      pm_out: "17:00:00",
+    },
+  },
+  "Half-day": {
+    db: "Half-day",
+    schedule: {
+      am_in: null,
+      am_out: null,
+      pm_in: "13:00:00",
+      pm_out: "17:00:00",
+    },
+  },
+};
+
+function normalizeRequestCategory(category) {
+  const c = String(category ?? "").trim();
+  if (!c) return null;
+
+  if (c === "Holiday" || c === "Half-day") {
+    return { logical: c, db: CATEGORY_CONFIG[c].db };
+  }
+
+  return null;
+}
+
+function matchesSchedule(row, schedule) {
+  const aIn = row?.am_in ?? null;
+  const aOut = row?.am_out ?? null;
+  const pIn = row?.pm_in ?? null;
+  const pOut = row?.pm_out ?? null;
+
+  return (
+    aIn === schedule.am_in &&
+    aOut === schedule.am_out &&
+    pIn === schedule.pm_in &&
+    pOut === schedule.pm_out
+  );
+}
+
+function logicalCategoryFromRow(row) {
+  const raw = String(row?.category ?? "").trim();
+  if (CATEGORY_CONFIG[raw]) return raw;
+
+  if (matchesSchedule(row, CATEGORY_CONFIG.Holiday.schedule)) return "Holiday";
+  if (matchesSchedule(row, CATEGORY_CONFIG["Half-day"].schedule)) return "Half-day";
+
+  const hasAny =
+    row?.am_in != null ||
+    row?.am_out != null ||
+    row?.pm_in != null ||
+    row?.pm_out != null;
+  return hasAny ? "Half-day" : null;
+}
+
+function scheduleForCategory(logicalCategory) {
+  return CATEGORY_CONFIG[logicalCategory].schedule;
+}
+
+//Add holiday / half-day
 const addMaintenance = (req, res) => {
   try {
     const { date, category } = req.body;
@@ -9,15 +75,41 @@ const addMaintenance = (req, res) => {
       return res.status(400).json({ message: "Date and category are required" });
     }
 
+    const normalized = normalizeRequestCategory(category);
+    if (!normalized) {
+      return res.status(400).json({ message: "Invalid category" });
+    }
+
     const sql = `
-      INSERT INTO maintenance_settings (config_date, category)
-      VALUES (?, ?)
+      INSERT INTO maintenance_settings (config_date, category, am_in, am_out, pm_in, pm_out)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        category = VALUES(category),
+        am_in = VALUES(am_in),
+        am_out = VALUES(am_out),
+        pm_in = VALUES(pm_in),
+        pm_out = VALUES(pm_out)
     `;
 
 
     const cleanDate = normalizeDate(date);
+    if (!cleanDate) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
+
+    const sched = scheduleForCategory(normalized.logical);
     
-    db.query(sql, [cleanDate, category], (err, result) => {
+    db.query(
+      sql,
+      [
+        cleanDate,
+        normalized.db,
+        sched.am_in,
+        sched.am_out,
+        sched.pm_in,
+        sched.pm_out,
+      ],
+      (err, result) => {
       if (err) {
         console.error("DB Error:", err);
         return res.status(500).json({ message: "Database error", error: err.message });
@@ -27,22 +119,28 @@ const addMaintenance = (req, res) => {
         message: "Added successfully",
         id: result.insertId,
         date: cleanDate,
-        category,
+        category: normalized.logical,
+        ...sched,
       });
-    });
+      },
+    );
   } catch (error) {
     console.error("Add Maintenance Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// GET ALL
+//Get all maintenance
 const getMaintenance = (req, res) => {
   const sql = `
     SELECT 
       setting_id,
       DATE_FORMAT(config_date, '%Y-%m-%d') AS config_date,
-      category
+      category,
+      am_in,
+      am_out,
+      pm_in,
+      pm_out
     FROM maintenance_settings
     ORDER BY config_date ASC
   `;
@@ -53,11 +151,15 @@ const getMaintenance = (req, res) => {
       return res.status(500).json({ message: "Database error" });
     }
 
-    res.json(results);
+    const normalizedResults = (results || []).map((row) => ({
+      ...row,
+      category: logicalCategoryFromRow(row),
+    }));
+    res.json(normalizedResults);
   });
 };
 
-// DELETE
+//Delete maintenance
 const deleteMaintenance = (req, res) => {
   const { id } = req.params;
 
@@ -74,8 +176,14 @@ const deleteMaintenance = (req, res) => {
 
 const normalizeDate = (dateStr) => {
   if (!dateStr) return null;
-  const cleanedDate = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
-  return cleanedDate;
+  const raw = String(dateStr).trim();
+  if (!raw) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
 };
 
 module.exports = {
