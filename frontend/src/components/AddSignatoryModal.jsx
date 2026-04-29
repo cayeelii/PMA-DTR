@@ -68,17 +68,6 @@ const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
           />
         </div>
 
-        {/* Position */}
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-1">Position</label>
-          <input
-            className="w-full px-3 py-2 border border-gray-300 rounded"
-            value={newPosition}
-            onChange={(e) => setNewPosition(e.target.value)}
-            placeholder="e.g. HR, Superintendent"
-          />
-        </div>
-
         {/* Department Head */}
         <div className="mb-6">
           <label className="block text-gray-700 mb-1">Department Head</label>
@@ -87,6 +76,17 @@ const AddSignatoryModal = ({ isOpen, onClose, onAdd, departments = [] }) => {
             value={newHead}
             onChange={(e) => setNewHead(e.target.value)}
             placeholder="Enter department head"
+          />
+        </div>
+
+        {/* Position */}
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-1">Position</label>
+          <input
+            className="w-full px-3 py-2 border border-gray-300 rounded"
+            value={newPosition}
+            onChange={(e) => setNewPosition(e.target.value)}
+            placeholder="e.g. HR, Superintendent"
           />
         </div>
 

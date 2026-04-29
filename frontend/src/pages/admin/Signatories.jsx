@@ -308,10 +308,10 @@ function SignatoriesPage() {
                   Department
                 </th>
                 <th className="text-center px-12 py-3 font-semibold">
-                  Position
+                  Department Head
                 </th>
                 <th className="text-center px-12 py-3 font-semibold">
-                  Department Head
+                  Position
                 </th>
                 <th className="text-center px-12 py-3 font-semibold">
                   Actions
@@ -340,10 +340,10 @@ function SignatoriesPage() {
                         {row.department || ""}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        {row.position || ""}
+                        {row.head || ""}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        {row.head || ""}
+                        {row.position || ""}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-1">
