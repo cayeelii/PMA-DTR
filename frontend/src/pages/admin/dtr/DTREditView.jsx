@@ -119,7 +119,7 @@ function applyHalfDayRow(row, schedule, hasRealDtr) {
     };
 }
 
-function applyMaintenanceToRows(mergedRows, maintenanceMap, datesWithPunches) {
+function applyMaintenanceToRows(mergedRows, maintenanceMap, datesWithEntries) {
     return mergedRows.map((row) => {
         const key = getDateKey(row.rawDate);
         const maint = maintenanceMap[key] ?? null;
@@ -136,7 +136,7 @@ function applyMaintenanceToRows(mergedRows, maintenanceMap, datesWithPunches) {
         }
 
         const schedule = buildMaintenanceSchedule(maint, row);
-        const hasRealDtr = datesWithPunches.has(key);
+        const hasRealDtr = datesWithEntries.has(key);
 
         if (maintenanceType === "Holiday") {
             return applyHolidayRow(row, schedule, hasRealDtr);
@@ -339,7 +339,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
             .toString()
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
-    // Track which dates have any punches
+    // Track which dates have any time entries
     const loadDTR = useCallback(async () => {
         try {
             const bioId = employee?.bio_id || employee?.id;
@@ -390,10 +390,10 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
                 })
                 .filter(Boolean);
 
-            const datesWithPunches = new Set();
+            const datesWithEntries = new Set();
             for (const row of formatted) {
                 if (rowHasRealDtrTimes(row)) {
-                    datesWithPunches.add(getDateKey(row.rawDate));
+                    datesWithEntries.add(getDateKey(row.rawDate));
                 }
             }
 
@@ -401,7 +401,7 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
             const withMaintenance = applyMaintenanceToRows(
                 merged,
                 maintenanceMap,
-                datesWithPunches,
+                datesWithEntries,
             );
 
             setDtrEntries(withMaintenance);
