@@ -59,13 +59,15 @@ const DTRManagement = () => {
         localStorage.setItem("current_batch_id", storedBatchId);
 
         const dtrRes = await axios.get(`${API_BASE_URL}/api/dtr/departments`, {
-          params: { batch_id: storedBatchId },
+          params: { batch_id: Number(storedBatchId) },
         });
 
         if (dtrRes.data && dtrRes.data.length > 0) {
           setStep(2);
         } else {
-          setStep(1);
+          console.warn("Batch exists but no departments found:", storedBatchId);
+
+          setStep(2);
         }
       } catch (err) {
         console.error("Init error:", err);
