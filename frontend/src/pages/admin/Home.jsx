@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -11,13 +11,13 @@ import { useNavigate } from "react-router-dom";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function HomePage() {
-  const [batches, setBatches] = React.useState({});
-  const [loading, setLoading] = React.useState(true);
-  const [openCurrent, setOpenCurrent] = React.useState({});
-  const [openDone, setOpenDone] = React.useState({});
+  const [batches, setBatches] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [openCurrent, setOpenCurrent] = useState({});
+  const [openDone, setOpenDone] = useState({});
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBatches = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/homepage/dtr-batches`);
@@ -57,7 +57,7 @@ function HomePage() {
     }
   };
 
-  const [dateString, setDateString] = React.useState(() => {
+  const [dateString, setDateString] = useState(() => {
     const today = new Date();
     return today.toLocaleDateString("en-US", {
       year: "numeric",
@@ -66,7 +66,7 @@ function HomePage() {
     });
   });
 
-  React.useEffect(() => {
+useEffect(() => {
     const interval = setInterval(() => {
       const today = new Date();
       setDateString(
@@ -99,10 +99,10 @@ function HomePage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-center gap-10 max-w-5xl">
+      <div className="flex flex-col md:flex-row justify-center items-center gap-7 max-w-5xl mx-auto">
 
         {/* CURRENT */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 min-w-[320px] border border-blue-100">
+        <div className="bg-white rounded-2xl shadow-xl p-6 min-w-[350px] border border-blue-100">
           <div className="font-bold text-lg flex items-center gap-2 text-[#223488] mb-2">
             <FolderOpen className="w-6 h-6 text-blue-400" />
             Current DTRs
@@ -147,7 +147,7 @@ function HomePage() {
         </div>
 
         {/* DONE */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 min-w-[320px] border border-green-100">
+        <div className="bg-white rounded-2xl shadow-xl p-6 min-w-[350px] border border-green-100">
           <div className="font-bold text-lg flex items-center gap-2 text-[#223488] mb-2">
             <Check className="w-6 h-6 text-green-400" />
             DONE DTRs
