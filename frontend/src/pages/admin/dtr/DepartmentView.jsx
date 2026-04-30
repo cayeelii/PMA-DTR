@@ -3,6 +3,17 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const OFFICE_DROPDOWNS = {
+  "Cadet Mess": [
+    "CM_ADMIN",
+    "CM_COOK",
+    "CM_STR-KPR",
+    "CM_WAITER",
+    "CM_WTR-STN",
+  ],
+  "FDPSH": ["FDPSH", "FDPSH_", "FDPSH_N"],
+};
+
 const DepartmentView = ({ fileName, onReset, batchId, onSelect }) => {
   const [departments, setDepartments] = useState([]);
 
@@ -27,8 +38,6 @@ const DepartmentView = ({ fileName, onReset, batchId, onSelect }) => {
 
     fetchDepartments();
   }, [batchId]);
-
-  console.log("batchId received:", batchId);
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-10 max-w-7xl mx-auto flex flex-col h-[650px]">
