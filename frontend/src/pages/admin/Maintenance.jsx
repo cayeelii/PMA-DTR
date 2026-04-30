@@ -60,15 +60,24 @@ function MaintenancePage() {
       const action =
         modalConfig.mode === "holiday" ? "Added holiday" : "Added half day";
 
+      const payload =
+        modalConfig.mode === "holiday"
+          ? {
+              date: newEntry.date,
+              category,
+              am_in: newEntry.am_in,
+              am_out: newEntry.am_out,
+              pm_in: newEntry.pm_in,
+              pm_out: newEntry.pm_out,
+            }
+          : { date: newEntry.date, category };
+
       const res = await fetch(`${API_BASE_URL}/api/maintenance/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          date: newEntry.date,
-          category,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();

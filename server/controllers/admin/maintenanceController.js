@@ -26,7 +26,7 @@ function normalizeRequestCategory(category) {
   const c = String(category ?? "").trim();
   if (!c) return null;
 
-  if (c === "Holiday" || c === "Half-day") {
+  if (CATEGORY_CONFIG[c]) {
     return { logical: c, db: CATEGORY_CONFIG[c].db };
   }
 
@@ -66,10 +66,24 @@ function scheduleForCategory(logicalCategory) {
   return CATEGORY_CONFIG[logicalCategory].schedule;
 }
 
+//Parse HH:MM or HH:MM:SS from body to MySQL TIME string
+function parseBodyTime(value) {
+  if (value == null || value === "") return null;
+  const s = String(value).trim();
+  const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return null;
+  const hh = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+  const mm = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+  const ss =
+    m[3] != null ? Math.min(59, Math.max(0, parseInt(m[3], 10))) : 0;
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(hh)}:${pad(mm)}:${pad(ss)}`;
+}
+
 //Add holiday / half-day
 const addMaintenance = (req, res) => {
   try {
-    const { date, category } = req.body;
+    const { date, category, am_in, am_out, pm_in, pm_out } = req.body;
 
     if (!date || !category) {
       return res.status(400).json({ message: "Date and category are required" });
@@ -97,7 +111,17 @@ const addMaintenance = (req, res) => {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
-    const sched = scheduleForCategory(normalized.logical);
+    let sched = { ...scheduleForCategory(normalized.logical) };
+
+    if (normalized.logical === "Holiday") {
+      const ai = parseBodyTime(am_in);
+      const ao = parseBodyTime(am_out);
+      const pi = parseBodyTime(pm_in);
+      const po = parseBodyTime(pm_out);
+      if (ai && ao && pi && po) {
+        sched = { am_in: ai, am_out: ao, pm_in: pi, pm_out: po };
+      }
+    }
     
     db.query(
       sql,

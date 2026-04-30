@@ -6,6 +6,13 @@ import { X } from "lucide-react";
  * @param {function} onClose
  * @param {function} onAdd
  */
+const DEFAULT_HOLIDAY_TIMES = {
+    am_in: "08:00",
+    am_out: "12:00",
+    pm_in: "13:00",
+    pm_out: "17:00",
+};
+
 function MaintenanceModal({ mode, onClose, onAdd }) {
     const isHoliday = mode === "holiday";
     const today = new Date();
@@ -13,9 +20,13 @@ function MaintenanceModal({ mode, onClose, onAdd }) {
     const [year, setYear] = useState(today.getFullYear());
     const [month, setMonth] = useState(today.getMonth());
     const [selectedDate, setSelectedDate] = useState(null);
+    const [holidayTimes, setHolidayTimes] = useState(() => ({
+        ...DEFAULT_HOLIDAY_TIMES,
+    }));
 
     useEffect(() => {
         setSelectedDate(null);
+        setHolidayTimes({ ...DEFAULT_HOLIDAY_TIMES });
     }, [mode]);
 
   const monthNames = [
@@ -58,7 +69,13 @@ function MaintenanceModal({ mode, onClose, onAdd }) {
         }
 
         if (isHoliday) {
-            onAdd({ date: formatDate(selectedDate) });
+            onAdd({
+                date: formatDate(selectedDate),
+                am_in: holidayTimes.am_in,
+                am_out: holidayTimes.am_out,
+                pm_in: holidayTimes.pm_in,
+                pm_out: holidayTimes.pm_out,
+            });
         } else {
             onAdd({
                 date: formatDate(selectedDate),
@@ -143,6 +160,44 @@ function MaintenanceModal({ mode, onClose, onAdd }) {
                                 Selected: {formatDate(selectedDate)} •{" "}
                                 {isHoliday ? "Holiday" : "Half-day"}
                             </div>
+
+                            {isHoliday && (
+                                <div className="rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-3 space-y-2">
+                                    <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide">
+                                        Holiday times (DTR)
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            ["am_in", "AM In"],
+                                            ["am_out", "AM Out"],
+                                            ["pm_in", "PM In"],
+                                            ["pm_out", "PM Out"],
+                                        ].map(([key, label]) => (
+                                            <label
+                                                key={key}
+                                                className="flex flex-col gap-1 text-[11px] font-medium text-gray-600"
+                                            >
+                                                {label}
+                                                <input
+                                                    type="time"
+                                                    step={60}
+                                                    value={
+                                                        holidayTimes[key] ?? ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        setHolidayTimes((t) => ({
+                                                            ...t,
+                                                            [key]: e.target
+                                                                .value,
+                                                        }))
+                                                    }
+                                                    className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
