@@ -677,18 +677,26 @@ const exportDepartmentXLSX = (req, res) => {
     }
 
     const sql = `
-            SELECT
-                bio_id,
-                name,
-                DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
-                TRIM(ampm_type) AS ampm_type,
-                time_only
-            FROM employee_dtr
-            WHERE TRIM(dept_name) = TRIM(?)
-              AND batch_id = ?
-              AND date_only IS NOT NULL
-            ORDER BY name ASC, date_only ASC
-        `;
+      SELECT
+        dept_name,
+        name,
+        bio_id,
+        date_time,
+        machine_loc,
+        log_type,
+        date_only,
+        time_only,
+        ampm_type,
+        status,
+        reason,
+        class,
+        include_in_calc,
+        late_minutes
+      FROM employee_dtr
+      WHERE TRIM(dept_name) = TRIM(?)
+        AND batch_id = ?
+      ORDER BY name ASC, date_time ASC
+    `;
 
     db.query(sql, [department, batch_id], (err, results) => {
       if (err) {
@@ -704,34 +712,27 @@ const exportDepartmentXLSX = (req, res) => {
         });
       }
 
-      const grouped = {};
-
-      results.forEach((row) => {
-        const key = `${row.bio_id}-${row.date}`;
-
-        if (!grouped[key]) {
-          grouped[key] = {
-            BIO_ID: row.bio_id,
-            NAME: row.name,
-            DATE: row.date,
-            "AM IN": "",
-            "AM OUT": "",
-            "PM IN": "",
-            "PM OUT": "",
-            "OT IN": "",
-            "OT OUT": "",
-          };
-        }
-
-        grouped[key][row.ampm_type] = row.time_only || "";
-      });
-
-      const exportData = Object.values(grouped);
+      const exportData = results.map((row) => ({
+        Department: row.dept_name,
+        Name: row.name,
+        BIO_ID: row.bio_id,
+        Date_Time: row.date_time,
+        Machine_Loc: row.machine_loc,
+        Log_Type: row.log_type,
+        Date_Only: row.date_only,
+        Time_Only: row.time_only,
+        AMPM_Type: row.ampm_type,
+        Status: row.status,
+        Reason: row.reason,
+        Class: row.class,
+        Include_In_Calc: row.include_in_calc,
+        Late_Minutes: row.late_minutes,
+      }));
 
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Employee DTR Report");
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Employee DTR Export");
 
       const buffer = XLSX.write(workbook, {
         type: "buffer",
@@ -742,8 +743,9 @@ const exportDepartmentXLSX = (req, res) => {
 
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="${safeDepartment}_DTR.xlsx"`,
+        `attachment; filename="${safeDepartment}_DTR_Full.xlsx"`,
       );
+
       res.setHeader(
         "Content-Type",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
