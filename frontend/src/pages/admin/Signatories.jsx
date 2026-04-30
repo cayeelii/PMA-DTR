@@ -346,7 +346,7 @@ function SignatoriesPage() {
                         {row.position || ""}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-3">
                           <button
                             className="text-blue-600 hover:text-blue-800 transition"
                             title="Edit"
