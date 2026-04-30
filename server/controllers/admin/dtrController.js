@@ -761,6 +761,99 @@ const exportDepartmentXLSX = (req, res) => {
   }
 };
 
+//Export DTR per batch
+const exportBatchXLSX = (req, res) => {
+  try {
+    const { batch_id } = req.query;
+
+    if (!batch_id) {
+      return res.status(400).json({
+        message: "Missing batch_id",
+      });
+    }
+
+    const sql = `
+      SELECT
+        dept_name,
+        name,
+        bio_id,
+        date_time,
+        machine_loc,
+        log_type,
+        date_only,
+        time_only,
+        ampm_type,
+        status,
+        reason,
+        class,
+        include_in_calc,
+        late_minutes
+      FROM employee_dtr
+      WHERE batch_id = ?
+      ORDER BY dept_name ASC, name ASC, date_time ASC
+    `;
+
+    db.query(sql, [batch_id], (err, results) => {
+      if (err) {
+        console.error("Batch export error:", err);
+        return res.status(500).json({
+          message: "Database error",
+        });
+      }
+
+      if (!results.length) {
+        return res.status(404).json({
+          message: "No batch data found",
+        });
+      }
+
+      const exportData = results.map((row) => ({
+        Department: row.dept_name,
+        Name: row.name,
+        BIO_ID: row.bio_id,
+        Date_Time: row.date_time,
+        Machine_Loc: row.machine_loc,
+        Log_Type: row.log_type,
+        Date_Only: row.date_only,
+        Time_Only: row.time_only,
+        AMPM_Type: row.ampm_type,
+        Status: row.status,
+        Reason: row.reason,
+        Class: row.class,
+        Include_In_Calc: row.include_in_calc,
+        Late_Minutes: row.late_minutes,
+      }));
+
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, `Batch_${batch_id}`);
+
+      const buffer = XLSX.write(workbook, {
+        type: "buffer",
+        bookType: "xlsx",
+      });
+
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="Batch_${batch_id}_DTR.xlsx"`,
+      );
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+
+      res.send(buffer);
+    });
+  } catch (error) {
+    console.error("Export batch crash:", error);
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
 module.exports = {
   importDTR,
   getDepartments,
@@ -769,4 +862,5 @@ module.exports = {
   updateEmployeeDTR,
   getDepartmentSignatory,
   exportDepartmentXLSX,
+  exportBatchXLSX,
 };

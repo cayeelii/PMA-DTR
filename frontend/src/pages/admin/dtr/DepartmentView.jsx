@@ -11,7 +11,7 @@ const OFFICE_DROPDOWNS = {
     "CM_WAITER",
     "CM_WTR-STN",
   ],
-  "FDPSH": ["FDPSH", "FDPSH_", "FDPSH_N"],
+  FDPSH: ["FDPSH", "FDPSH_", "FDPSH_N"],
 };
 
 const DepartmentView = ({ fileName, onReset, batchId, onSelect }) => {
@@ -39,6 +39,33 @@ const DepartmentView = ({ fileName, onReset, batchId, onSelect }) => {
     fetchDepartments();
   }, [batchId]);
 
+  //Fetch eport batch dtr
+  const handleExportBatch = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/dtr/export-batch-xlsx?batch_id=${batchId}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Batch_${batchId}_DTR.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Batch export failed:", error);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-10 max-w-7xl mx-auto flex flex-col h-[650px]">
       <div className="flex justify-between items-center mb-8">
@@ -55,6 +82,7 @@ const DepartmentView = ({ fileName, onReset, batchId, onSelect }) => {
           </button>
 
           <button
+            onClick={handleExportBatch}
             className="border border-green-600 text-green-600 px-4 py-1 rounded hover:bg-green-50 text-sm font-medium"
           >
             Export XLSX
