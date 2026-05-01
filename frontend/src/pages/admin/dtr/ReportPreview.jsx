@@ -267,85 +267,166 @@ export default function ReportPreview({
   //Export PDF
   const exportToPDF = (columnLayout = "1") => {
     try {
-      const doc = new jsPDF();
-      let finalY = 58;
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Helper to strip seconds and AM/PM (e.g., "08:30:00 AM" -> "08:30")
+      const formatTimeShort = (timeStr) => {
+        if (!timeStr || timeStr === "-" || timeStr === "--") return "";
+        const parts = timeStr.split(":");
+        if (parts.length < 2) return timeStr;
+        return `${parts[0]}:${parts[1].split(" ")[0]}`;
+      };
+
+      // Helper function to draw a single DTR slip
+      const drawDTRForm = (startX, width) => {
+        // Reduced horizontal margins to allow text to enlarge
+        const margin = 6; 
+        const centerX = startX + width / 2;
+        const contentWidth = width - margin * 2;
+
+        // --- 1. Header Section ---
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11); // Enlarged
+        doc.text("Monthly Daily Time Record", centerX, 12, { align: "center" });
+
+        doc.setFontSize(10);
+        const { monthYear } = getDateRange();
+        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 18, { align: "center" });
+
+        // --- 2. Identity Section ---
+        doc.setLineWidth(0.1);
+        doc.line(startX + margin, 21, startX + width - margin, 21);
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10); // Enlarged
+        doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 26);
+        doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 31);
+
+        doc.line(startX + margin, 33, startX + width - margin, 33);
+
+        // --- 3. Table Header ---
+        const tableHeader = [
+          [
+            { content: "No / Day", rowSpan: 2, styles: { valign: "middle", halign: "left" } },
+            { content: "AM", colSpan: 2 },
+            { content: "PM", colSpan: 2 },
+            { content: "OT", colSpan: 2 },
+          ],
+          ["IN", "OUT", "IN", "OUT", "IN", "OUT"],
+        ];
+
+        // --- 4. Data Generation (31 rows) ---
+        const rows = [];
+        const daysArr = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        for (let i = 1; i <= 31; i++) {
+          const dayNum = String(i).padStart(2, "0");
+          const record = dtrRows.find((r) => {
+            const d = parseDate(r.date);
+            return d && d.getDate() === i;
+          });
+
+          let dayName = record?.day || "";
+          if (!dayName && dtrRows.length > 0) {
+            const firstDate = parseDate(dtrRows[0].date);
+            if (firstDate) {
+              const d = new Date(firstDate.getFullYear(), firstDate.getMonth(), i);
+              dayName = daysArr[d.getDay()];
+            }
+          }
+
+          rows.push([
+            `${dayNum} ${dayName}`,
+            formatTimeShort(record?.amIn),
+            formatTimeShort(record?.amOut),
+            formatTimeShort(record?.pmIn),
+            formatTimeShort(record?.pmOut),
+            formatTimeShort(record?.otIn),
+            formatTimeShort(record?.otOut),
+          ]);
+        }
+
+        autoTable(doc, {
+          startY: 33,
+          head: tableHeader,
+          body: rows,
+          margin: { left: startX + margin },
+          tableWidth: contentWidth,
+          theme: "plain",
+          styles: {
+            fontSize: 7.5, // Enlarged from 6.5
+            cellPadding: 0.8, // Increased padding to fill vertical space
+            halign: "center",
+            textColor: [0, 0, 0],
+            font: "helvetica",
+          },
+          headStyles: {
+            fillColor: [255, 255, 255],
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            0: { halign: "left", cellWidth: 16 },
+          },
+          didDrawCell: (data) => {
+            doc.setLineWidth(0.1);
+            doc.line(
+              data.cell.x,
+              data.cell.y + data.cell.height,
+              data.cell.x + data.cell.width,
+              data.cell.y + data.cell.height
+            );
+          },
+        });
+
+        // --- 5. Footer / Signature Section ---
+        const finalTableY = doc.lastAutoTable.finalY;
+        const footerY = finalTableY + 12; // Lowered to fill space
+
+        doc.line(startX + margin + 5, footerY, startX + width - margin - 5, footerY);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5, { align: "center" });
+
+        const sigY = footerY + 18; // Lowered to fill space
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10); // Enlarged
+        const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
+        doc.text(bossName, centerX, sigY, { align: "center" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8); // Enlarged
+        const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
+        doc.text(bossPos, centerX, sigY + 5, { align: "center" });
+
+        const dateStr = new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        doc.setFontSize(7.5);
+        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 12);
+        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 12, { align: "right" });
+      };
+
+      // --- EXECUTION LOGIC ---
       if (columnLayout === "2") {
-        drawPdfHeader(doc);
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const marginX = 14;
-        const columnGap = 8;
-        const columnWidth = (pageWidth - marginX * 2 - columnGap) / 2;
-        const splitIndex = Math.ceil(tableData.length / 2);
-        const leftRows = tableData.slice(0, splitIndex);
-        const rightRows = tableData.slice(splitIndex);
+        // Form 1 (Left side)
+        drawDTRForm(0, pageWidth / 2);
 
-        autoTable(doc, {
-          startY: 38,
-          head: tableHead,
-          body: leftRows,
-          margin: { left: marginX },
-          tableWidth: columnWidth,
-          styles: {
-            fontSize: 6.2,
-            cellPadding: 1,
-            halign: "center",
-            overflow: "linebreak",
-          },
-          headStyles: {
-            fillColor: [240, 240, 240],
-            textColor: 0,
-            fontStyle: "bold",
-          },
-          columnStyles: {
-            0: { halign: "left", cellWidth: 14 },
-            1: { halign: "left", cellWidth: 11 },
-            2: { cellWidth: 10 },
-            3: { cellWidth: 10 },
-            4: { cellWidth: 10 },
-            5: { cellWidth: 10 },
-            6: { cellWidth: 10 },
-            7: { cellWidth: 10 },
-          },
-          theme: "grid",
-        });
+        // Divider Line Removed as requested
 
-        const leftFinalY = doc.lastAutoTable?.finalY || 38;
-
-        autoTable(doc, {
-          startY: 38,
-          head: tableHead,
-          body: rightRows,
-          margin: { left: marginX + columnWidth + columnGap },
-          tableWidth: columnWidth,
-          styles: {
-            fontSize: 6.2,
-            cellPadding: 1,
-            halign: "center",
-            overflow: "linebreak",
-          },
-          headStyles: {
-            fillColor: [240, 240, 240],
-            textColor: 0,
-            fontStyle: "bold",
-          },
-          columnStyles: {
-            0: { halign: "left", cellWidth: 14 },
-            1: { halign: "left", cellWidth: 11 },
-            2: { cellWidth: 10 },
-            3: { cellWidth: 10 },
-            4: { cellWidth: 10 },
-            5: { cellWidth: 10 },
-            6: { cellWidth: 10 },
-            7: { cellWidth: 10 },
-          },
-          theme: "grid",
-        });
-
-        const rightFinalY = doc.lastAutoTable?.finalY || 38;
-        finalY = Math.max(leftFinalY, rightFinalY) + 8;
-        drawSignatory(doc, finalY);
+        // Form 2 (Right side)
+        drawDTRForm(pageWidth / 2, pageWidth / 2);
       } else {
+        // --- 1 COLUMN CODE REMAINS UNCHANGED ---
         const oneColumnHead = [["Date", "AM IN", "AM OUT", "PM IN", "PM OUT"]];
         const oneColumnBody = reportRows.map((row) => [
           formatDateForOneColumn(row.date),
@@ -361,7 +442,6 @@ export default function ReportPreview({
         const marginLeft = 18;
 
         autoTable(doc, {
-          // Keep 1cm (10mm) space below the header block.
           startY: 39.5,
           head: oneColumnHead,
           body: oneColumnBody,
@@ -401,14 +481,13 @@ export default function ReportPreview({
               const y = data.cell.y + data.cell.height;
               const x1 = marginLeft;
               const x2 = marginLeft + tableWidth;
-
               doc.setLineWidth(0.2);
               doc.line(x1, y, x2, y);
             }
           },
         });
 
-        finalY = doc.lastAutoTable?.finalY || 38;
+        const finalY = doc.lastAutoTable?.finalY || 38;
         drawOneColumnSignatures(doc, finalY);
       }
 
