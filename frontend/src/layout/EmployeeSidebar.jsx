@@ -46,6 +46,7 @@ export default function EmployeeSidebar() {
     fetchUser();
   }, []);
 
+  //Fetch logout
   const handleLogout = async () => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
@@ -53,7 +54,7 @@ export default function EmployeeSidebar() {
         credentials: "include",
       });
 
-      window.location.href = "/employee-login";
+      window.location.replace("/employee-login");
     } catch (error) {
       console.error("Logout error:", error);
     }

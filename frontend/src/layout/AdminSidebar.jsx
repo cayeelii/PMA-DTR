@@ -51,7 +51,7 @@ export default function AdminSidebar() {
     fetchUser();
   }, []);
 
-  // Logout function
+  //fetch logout
   const handleLogout = async () => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
@@ -59,7 +59,7 @@ export default function AdminSidebar() {
         credentials: "include",
       });
 
-      window.location.href = "/login";
+      window.location.replace("/login");
     } catch (error) {
       console.error("Logout error:", error);
     }

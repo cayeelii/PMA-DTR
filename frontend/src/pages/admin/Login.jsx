@@ -4,7 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const LoginPage = () => {
+const LoginPage = ({ setUser }) => {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: "",
@@ -35,17 +35,18 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        const errorMessage = data.message || data.error || "Invalid username or password";
+        const errorMessage =
+          data.message || data.error || "Invalid username or password";
         setError(errorMessage);
         return;
       }
 
-      if (data.user?.role === 'superadmin' || data.user?.role === 'admin') {
-        navigate("/admin/home");
-      } else if (data.user?.role === 'employee') {
-        navigate("/employee/dashboard");
+      setUser(data.user);
+
+      if (data.user?.role === "superadmin" || data.user?.role === "admin") {
+        navigate("/admin/home", { replace: true });
       } else {
-        navigate("/home");
+        setError("Unauthorized access");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -90,7 +91,7 @@ const LoginPage = () => {
                 name="username"
                 value={credentials.username}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${error ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${error ? "border-red-400 bg-red-50" : "border-gray-300"}`}
                 required
               />
             </div>
@@ -105,7 +106,7 @@ const LoginPage = () => {
                   name="password"
                   value={credentials.password}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 pr-12 rounded-lg border transition-all bg-white outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent ${error ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-3 pr-12 rounded-lg border transition-all bg-white outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent ${error ? "border-red-400 bg-red-50" : "border-gray-300"}`}
                   required
                 />
                 <button
@@ -118,7 +119,9 @@ const LoginPage = () => {
                 </button>
               </div>
               {error && (
-                <div className="mt-1 text-xs text-red-600 font-medium px-1">{error}</div>
+                <div className="mt-1 text-xs text-red-600 font-medium px-1">
+                  {error}
+                </div>
               )}
               <button
                 type="button"

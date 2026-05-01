@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const bioIdCheck = /^\d{6}$/;
 
-const EmployeeLoginPage = () => {
+const EmployeeLoginPage = ({ setUser }) => {
   const [credentials, setCredentials] = useState({ bio_id: "", password: "" });
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +43,8 @@ const EmployeeLoginPage = () => {
         return;
       }
 
-      navigate("/employee/home");
+      setUser(data.user);
+      navigate("/employee/employee-home", { replace: true });
     } catch (error) {
       setErrorMessage("Unable to connect to server.");
     } finally {
@@ -88,7 +89,7 @@ const EmployeeLoginPage = () => {
                 name="bio_id"
                 value={credentials.bio_id}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${errorMessage ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${errorMessage ? "border-red-400 bg-red-50" : "border-gray-300"}`}
                 placeholder="Enter 6-digit BioID"
                 pattern="\d{6}"
                 title="Bio ID must be exactly 6 digits."
@@ -105,11 +106,13 @@ const EmployeeLoginPage = () => {
                 name="password"
                 value={credentials.password}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${errorMessage ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                className={`w-full px-4 py-3 rounded-lg border transition-all outline-none focus:ring-2 focus:ring-[#00154d] focus:border-transparent bg-white ${errorMessage ? "border-red-400 bg-red-50" : "border-gray-300"}`}
                 required
               />
               {errorMessage && (
-                <div className="mt-1 text-xs text-red-600 font-medium px-1">{errorMessage}</div>
+                <div className="mt-1 text-xs text-red-600 font-medium px-1">
+                  {errorMessage}
+                </div>
               )}
               <button
                 type="button"

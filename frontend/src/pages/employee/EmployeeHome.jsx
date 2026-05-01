@@ -1,7 +1,7 @@
-import React from 'react';
+import React from "react";
 
 const EmployeeHomePage = () => {
-  return <div>Logged in</div>;
+  return <div></div>;
 };
 
 export default EmployeeHomePage;
