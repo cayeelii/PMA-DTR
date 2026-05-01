@@ -87,7 +87,11 @@ const DTRManagement = () => {
   const handleDepartmentSelect = async (dept) => {
     setSelectedDept(dept);
 
-    await fetchSignatory(dept.id || dept.dept_id);
+    if (dept.dept_id) {
+      await fetchSignatory(dept.dept_id);
+    } else {
+      setSignatory(null);
+    }
 
     setStep(3);
   };

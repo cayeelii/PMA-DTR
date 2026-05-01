@@ -178,13 +178,16 @@ const getDepartments = (req, res) => {
 
   const sql = `
     SELECT 
-      TRIM(dept_name) AS name,
-      COUNT(DISTINCT bio_id) AS employees
-    FROM employee_dtr
-    WHERE dept_name IS NOT NULL 
-      AND dept_name != ''
-      AND batch_id = ?
-    GROUP BY TRIM(dept_name)
+      d.dept_id,
+      TRIM(e.dept_name) AS name,
+      COUNT(DISTINCT e.bio_id) AS employees
+    FROM employee_dtr e
+    LEFT JOIN departments d 
+      ON TRIM(e.dept_name) = TRIM(d.dept_name)
+    WHERE e.dept_name IS NOT NULL 
+      AND e.dept_name != ''
+      AND e.batch_id = ?
+    GROUP BY d.dept_id, TRIM(e.dept_name)
     ORDER BY name ASC
   `;
 
@@ -640,6 +643,7 @@ const getDepartmentSignatory = (req, res) => {
       SELECT 
         s.signatory_id,
         s.head_name,
+        s.position,
         d.dept_name
       FROM signatories s
       JOIN departments d ON d.dept_id = s.dept_id

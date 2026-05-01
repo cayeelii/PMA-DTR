@@ -11,7 +11,6 @@ export default function ReportPreview({
   department,
   signatory,
 }) {
-  
   const [showPdfOptions, setShowPdfOptions] = useState(false);
 
   const TIME_FIELDS = ["amIn", "amOut", "pmIn", "pmOut", "otIn", "otOut"];
@@ -139,7 +138,9 @@ export default function ReportPreview({
     doc.setFontSize(10);
     doc.setFont(undefined, "bold");
 
-    const signatoryName = signatory?.head_name || "-";
+    const signatoryName = signatory
+      ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
+      : "-";
 
     doc.text(signatoryName, 150, y + 12);
 
@@ -170,18 +171,17 @@ export default function ReportPreview({
     doc.setFont(undefined, "normal");
     doc.setFontSize(8);
     doc.text(`Statistics Date: ${rangeText}`, 18, 23.1);
-    doc.text(`Office: ${department?.name || "-"}`, 192, 23.1, { align: "right" });
-
+    doc.text(`Office: ${department?.name || "-"}`, 192, 23.1, {
+      align: "right",
+    });
 
     doc.setLineWidth(0.25);
     doc.line(18, 25.0, 192, 25.0);
 
     doc.text(`Name: ${employee?.name || "-"}`, 192, 28.0, { align: "right" });
 
-    
     doc.line(18, 29.5, 192, 29.5);
   };
-
 
   const drawOneColumnSignatures = (doc, contentEndY) => {
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -203,11 +203,19 @@ export default function ReportPreview({
 
     doc.setFontSize(8);
     doc.setFont(undefined, "bold");
-    doc.text(employee?.name || "Employee", (leftStart + leftEnd) / 2, signatureY - 2, {
-      align: "center",
-    });
+    doc.text(
+      employee?.name || "Employee",
+      (leftStart + leftEnd) / 2,
+      signatureY - 2,
+      {
+        align: "center",
+      },
+    );
 
-    const supervisorName = signatory?.head_name || "Supervisor";
+    const supervisorName = signatory
+      ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
+      : "";
+
     doc.text(supervisorName, (rightStart + rightEnd) / 2, signatureY - 2, {
       align: "center",
     });
@@ -415,6 +423,8 @@ export default function ReportPreview({
     exportToPDF(columnLayout);
   };
 
+  console.log("SIGNATORY IN PREVIEW:", signatory);
+
   return (
     <div>
       {/* Report Card */}
@@ -448,7 +458,9 @@ export default function ReportPreview({
 
               {showPdfOptions && (
                 <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-2">
-                  <p className="text-[11px] text-gray-500 mb-2 px-1">Choose layout</p>
+                  <p className="text-[11px] text-gray-500 mb-2 px-1">
+                    Choose layout
+                  </p>
                   <button
                     onClick={() => handleExportPDF("1")}
                     className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
