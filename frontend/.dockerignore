@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log*
+dist
+dist-ssr
+.env
+.env.local
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

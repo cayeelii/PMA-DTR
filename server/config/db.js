@@ -7,6 +7,10 @@ const db = mysql.createPool({
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "pma_dtr",
+  connectionLimit: 20,
+  waitForConnections: true,
+  queueLimit: 0,
+  connectTimeout: 30000,
 });
 
 // Test connection

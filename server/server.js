@@ -7,6 +7,9 @@ const MySQLStore = require("express-mysql-session")(session);
 const fileUpload = require("express-fileupload");
 const app = express();
 
+// Trust Nginx reverse proxy
+app.set("trust proxy", 1);
+
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || "localhost";
 const sessionStore = new MySQLStore({
@@ -23,8 +26,11 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
-app.use(fileUpload());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(fileUpload({
+  limits: { fileSize: 50 * 1024 * 1024 },
+}));
 app.use(
   session({
     key: "connect.sid",

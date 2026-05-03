@@ -34,24 +34,26 @@ const getDTRBatches = (req, res) => {
   });
 };
 
-const getLatestBatch = async (req, res) => {
-    try {
-        const [rows] = await db.query(`
-            SELECT id AS batch_id
-            FROM dtr_batches
-            ORDER BY uploaded_at DESC
-            LIMIT 1
-        `);
+const getLatestBatch = (req, res) => {
+  const sql = `
+    SELECT id AS batch_id
+    FROM dtr_batches
+    ORDER BY uploaded_at DESC
+    LIMIT 1
+  `;
 
-        if (!rows.length) {
-            return res.json({ batch_id: null });
-        }
-
-        res.json({ batch_id: rows[0].batch_id });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to get latest batch" });
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Failed to get latest batch" });
     }
+
+    if (!rows || !rows.length) {
+      return res.json({ batch_id: null });
+    }
+
+    res.json({ batch_id: rows[0].batch_id });
+  });
 };
 
 module.exports = { getDTRBatches, getLatestBatch };
