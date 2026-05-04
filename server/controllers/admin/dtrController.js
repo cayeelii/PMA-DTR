@@ -1,5 +1,6 @@
 const db = require("../../config/db");
 const XLSX = require("xlsx");
+const crypto = require("crypto");
 
 // FORMAT DATE ONLY
 const formatDateOnly = (value) => {
@@ -94,7 +95,10 @@ const importDTR = (req, res) => {
 
     const file = req.files.file;
 
-    const workbook = XLSX.read(file.data, { type: "buffer" });
+    const fileBuffer = file.data;
+    const fileHash = crypto.createHash("md5").update(fileBuffer).digest("hex");
+
+    const workbook = XLSX.read(fileBuffer, { type: "buffer" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(sheet, {
       raw: false,
@@ -106,65 +110,80 @@ const importDTR = (req, res) => {
       return res.status(400).json({ message: "Empty file" });
     }
 
-    // Create batch record
-    const insertBatchSql = `
-      INSERT INTO dtr_batches (file_name, uploaded_by)
-      VALUES (?, ?)
-    `;
+    const checkSql = `SELECT id FROM dtr_batches WHERE file_hash = ?`;
 
-    db.query(
-      insertBatchSql,
-      [file.name, req.session?.user?.user_id || null],
-      (err, batchResult) => {
-        if (err) {
-          return res.status(500).json({ message: "Failed to create batch" });
-        }
+    db.query(checkSql, [fileHash], (checkErr, checkResult) => {
+      if (checkErr) {
+        return res
+          .status(500)
+          .json({ message: "Error checking duplicate file" });
+      }
 
-        const batch_id = batchResult.insertId;
+      if (checkResult.length > 0) {
+        return res.status(400).json({
+          message: "This file has already been uploaded.",
+        });
+      }
 
-        const values = data.map((row) => [
-          row["Dept"],
-          row["NAME"],
-          row["BIOID"],
-          formatDateTime(row["Date_Time"]),
-          row["Machine Loc"],
-          row["Type"],
-          formatDateOnly(row["DateOnly"]),
-          row["TimeOnly"],
-          row["AMPM Type"],
-          row["Status"] || null,
-          row["Their Reason"] || null,
-          row["Class"] || null,
-          row["Include"] || 0,
-          row["Late"] || 0,
-          batch_id,
-        ]);
+      const insertBatchSql = `
+        INSERT INTO dtr_batches (file_name, uploaded_by, file_hash)
+        VALUES (?, ?, ?)
+      `;
 
-        const sql = `
-          INSERT INTO employee_dtr (
-            dept_name, name, bio_id, date_time, machine_loc,
-            log_type, date_only, time_only, ampm_type,
-            status, reason, class, include_in_calc,
-            late_minutes, batch_id
-          ) VALUES ?
-        `;
-
-        db.query(sql, [values], (err2, result) => {
-          if (err2) {
-            return res.status(500).json({ message: "Insert failed" });
+      db.query(
+        insertBatchSql,
+        [file.name, req.session?.user?.user_id || null, fileHash],
+        (err, batchResult) => {
+          if (err) {
+            return res.status(500).json({ message: "Failed to create batch" });
           }
 
-          return res.json({
-            message: "Import successful",
+          const batch_id = batchResult.insertId;
+
+          const values = data.map((row) => [
+            row["Department"] || row["Dept"],
+            row["Name"] || row["NAME"],
+            row["BIO_ID"] || row["BIOID"],
+            formatDateTime(row["Date_Time"]),
+            row["Machine_Loc"] || row["Machine Loc"],
+            row["Log_Type"] || row["Type"],
+            formatDateOnly(row["Date_Only"] || row["DateOnly"]),
+            row["Time_Only"] || row["TimeOnly"],
+            row["AMPM_Type"] || row["AMPM Type"],
+            row["Status"] || null,
+            row["Reason"] || row["Their Reason"] || null,
+            row["Class"] || null,
+            row["Include_In_Calc"] || row["Include"] || 0,
+            row["Late_Minutes"] || row["Late"] || 0,
             batch_id,
-            insertedRows: result.affectedRows,
+          ]);
+
+          const sql = `
+            INSERT INTO employee_dtr (
+              dept_name, name, bio_id, date_time, machine_loc,
+              log_type, date_only, time_only, ampm_type,
+              status, reason, class, include_in_calc,
+              late_minutes, batch_id
+            ) VALUES ?
+          `;
+
+          db.query(sql, [values], (err2, result) => {
+            if (err2) {
+              return res.status(500).json({ message: "Insert failed" });
+            }
+
+            return res.json({
+              message: "Import successful",
+              batch_id,
+              insertedRows: result.affectedRows,
+            });
           });
-        });
-      },
-    );
+        },
+      );
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Import error" });
+    return res.status(500).json({ message: "Import error" });
   }
 };
 
