@@ -55,7 +55,9 @@ function enforcedMaintenanceCellValue(
 }
 
 function rowHasRealDtrTimes(row) {
-  return TIME_FIELDS.some((f) => String(row[f] ?? "").trim() !== "");
+  return ["amIn", "amOut", "pmIn", "pmOut"].some(
+    (f) => String(row?.[f] ?? "").trim() !== "",
+  );
 }
 
 function isHalfDayMaintenanceType(category) {
@@ -629,16 +631,29 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         return;
       }
 
+      const origByDateKey = new Map(
+        initialEntries.map((r) => [getDateKey(r?.rawDate), r]),
+      );
+
+      const fieldIfChanged = (entry, field) => {
+        const dateKey = getDateKey(entry?.rawDate);
+        const orig = origByDateKey.get(dateKey);
+        const cur = (entry?.[field] ?? "").trim();
+        const prev = (orig?.[field] ?? "").trim();
+        if (cur === prev) return null;
+        return convertTo24Hour(entry?.[field], field);
+      };
+
       const payload = changedEntries.map((entry) => ({
         bio_id: bioId,
         batch_id: Number(resolvedBatchId),
         date: entry.rawDate ? getDateKey(entry.rawDate) : null,
-        amIn: convertTo24Hour(entry.amIn, "amIn"),
-        amOut: convertTo24Hour(entry.amOut, "amOut"),
-        pmIn: convertTo24Hour(entry.pmIn, "pmIn"),
-        pmOut: convertTo24Hour(entry.pmOut, "pmOut"),
-        otIn: convertTo24Hour(entry.otIn, "otIn"),
-        otOut: convertTo24Hour(entry.otOut, "otOut"),
+        amIn: fieldIfChanged(entry, "amIn"),
+        amOut: fieldIfChanged(entry, "amOut"),
+        pmIn: fieldIfChanged(entry, "pmIn"),
+        pmOut: fieldIfChanged(entry, "pmOut"),
+        otIn: fieldIfChanged(entry, "otIn"),
+        otOut: fieldIfChanged(entry, "otOut"),
       }));
 
       const res = await fetch(`${API_BASE_URL}/api/dtr/update-dtr`, {

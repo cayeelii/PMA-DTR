@@ -13,17 +13,8 @@ export default function ReportPreview({
 }) {
   const [showPdfOptions, setShowPdfOptions] = useState(false);
 
-  const TIME_FIELDS = ["amIn", "amOut", "pmIn", "pmOut", "otIn", "otOut"];
-
-  const rowHasAnyTimeData = (row) =>
-    TIME_FIELDS.some((f) => String(row?.[f] ?? "").trim() !== "");
-
-  /* The printed/exported report should list only days that have at least one AM/PM/OT time */
-  const reportRows = dtrRows.filter(rowHasAnyTimeData);
-
-  const tableHead = [
-    ["Date", "Day", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"],
-  ];
+  // Use the same full calendar  
+  const reportRows = dtrRows;
 
   const tableData = reportRows.map((row) => [
     row.date,
@@ -120,34 +111,6 @@ export default function ReportPreview({
     return `${twelveHour}:${minutes}`;
   };
 
-  const drawPdfHeader = (doc) => {
-    doc.setFontSize(14);
-    doc.setFont(undefined, "bold");
-    doc.text("Monthly Daily Time Record", 105, 15, { align: "center" });
-
-    doc.setFontSize(10);
-    doc.setFont(undefined, "normal");
-    doc.text("For the Month of", 105, 22, { align: "center" });
-
-    doc.setFontSize(10);
-    doc.text(`Name: ${employee?.name || "-"}`, 14, 32);
-    doc.text(`Office: ${department?.name || "-"}`, 150, 32);
-  };
-
-  const drawSignatory = (doc, y) => {
-    doc.setFontSize(10);
-    doc.setFont(undefined, "bold");
-
-    const signatoryName = signatory
-      ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
-      : "-";
-
-    doc.text(signatoryName, 150, y + 12);
-
-    doc.setFont(undefined, "normal");
-    doc.text("Signature over printed name", 150, y + 18);
-  };
-
   const drawOneColumnHeader = (doc) => {
     const { monthYear, rangeText } = getDateRange();
 
@@ -184,10 +147,9 @@ export default function ReportPreview({
   };
 
   const drawOneColumnSignatures = (doc, contentEndY) => {
-    const pageHeight = doc.internal.pageSize.getHeight();
     let signatureY = contentEndY + 32; 
 
-    if (signatureY > pageHeight - 30) {
+    if (signatureY > doc.internal.pageSize.getHeight() - 30) {
       doc.addPage();
       signatureY = 40;
     }
@@ -274,7 +236,6 @@ export default function ReportPreview({
       });
 
       const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
 
       // Helper to strip seconds and AM/PM (e.g., "08:30:00 AM" -> "08:30")
       const formatTimeShort = (timeStr) => {
