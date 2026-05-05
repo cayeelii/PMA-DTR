@@ -23,13 +23,12 @@ const getDTRBatches = (req, res) => {
     };
 
     rows.forEach((row) => {
-      if (!row.status) return; // safety guard
-
+      if (!row.status) return; 
       const year = new Date(row.uploaded_at).getFullYear();
 
       const key = row.status; // CURRENT or DONE
 
-      if (!grouped[key]) return; // prevents crash if status is unexpected
+      if (!grouped[key]) return; 
 
       if (!grouped[key][year]) {
         grouped[key][year] = [];

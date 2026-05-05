@@ -1,7 +1,6 @@
 const db = require("../../config/db");
 const XLSX = require("xlsx");
 const crypto = require("crypto");
-const crypto = require("crypto");
 
 // FORMAT DATE ONLY
 const formatDateOnly = (value) => {
@@ -95,31 +94,30 @@ const importDTR = (req, res) => {
     }
 
     const file = req.files.file;
-
     const fileBuffer = file.data;
     const fileHash = crypto.createHash("md5").update(fileBuffer).digest("hex");
 
     const workbook = XLSX.read(fileBuffer, { type: "buffer" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
     const data = XLSX.utils.sheet_to_json(sheet, {
       raw: false,
       defval: null,
       dateNF: "yyyy-mm-dd hh:mm:ss",
     });
 
-        if (!data.length) {
-          return res.status(400).json({
-            message: "Empty file",
-          });
-        }
+    if (!data.length) {
+      return res.status(400).json({ message: "Empty file" });
+    }
 
+    // check duplicate
     const checkSql = `SELECT id FROM dtr_batches WHERE file_hash = ?`;
 
     db.query(checkSql, [fileHash], (checkErr, checkResult) => {
       if (checkErr) {
-        return res
-          .status(500)
-          .json({ message: "Error checking duplicate file" });
+        return res.status(500).json({
+          message: "Error checking duplicate file",
+        });
       }
 
       if (checkResult.length > 0) {
@@ -128,17 +126,31 @@ const importDTR = (req, res) => {
         });
       }
 
-      const insertBatchSql = `
-        INSERT INTO dtr_batches (file_name, uploaded_by, file_hash)
-        VALUES (?, ?, ?)
+      // update current status to done
+      const updateSql = `
+        UPDATE dtr_batches
+        SET status = 'DONE'
+        WHERE status = 'CURRENT'
       `;
 
-      db.query(
-        insertBatchSql,
-        [file.name, req.session?.user?.user_id || null, fileHash],
-        (err, batchResult) => {
+      db.query(updateSql, (statusErr) => {
+        if (statusErr) {
+          return res.status(500).json({
+            message: "Failed to update batch status",
+          });
+        }
+
+        // insert new batch
+        const insertBatchSql = `
+          INSERT INTO dtr_batches (file_name, file_hash, status)
+          VALUES (?, ?, 'CURRENT')
+        `;
+
+        db.query(insertBatchSql, [file.name, fileHash], (err, batchResult) => {
           if (err) {
-            return res.status(500).json({ message: "Failed to create batch" });
+            return res.status(500).json({
+              message: "Failed to create batch",
+            });
           }
 
           const batch_id = batchResult.insertId;
@@ -161,7 +173,7 @@ const importDTR = (req, res) => {
             batch_id,
           ]);
 
-          const sql = `
+          const insertSql = `
             INSERT INTO employee_dtr (
               dept_name, name, bio_id, date_time, machine_loc,
               log_type, date_only, time_only, ampm_type,
@@ -170,9 +182,11 @@ const importDTR = (req, res) => {
             ) VALUES ?
           `;
 
-          db.query(sql, [values], (err2, result) => {
+          db.query(insertSql, [values], (err2, result) => {
             if (err2) {
-              return res.status(500).json({ message: "Insert failed" });
+              return res.status(500).json({
+                message: "Insert failed",
+              });
             }
 
             return res.json({
@@ -181,11 +195,11 @@ const importDTR = (req, res) => {
               insertedRows: result.affectedRows,
             });
           });
-        },
-      );
+        });
+      });
     });
   } catch (err) {
-    console.error(err);
+    console.error("Import error:", err);
     return res.status(500).json({ message: "Import error" });
   }
 };
