@@ -41,13 +41,8 @@ function HomePage() {
     fetchBatches();
   }, []);
 
-  const currentDTRs = {};
-  const doneDTRs = {};
-
-  Object.keys(batches).forEach((year) => {
-    currentDTRs[year] = batches[year];
-    doneDTRs[year] = [];
-  });
+  const currentDTRs = batches.CURRENT || {};
+  const doneDTRs = batches.DONE || {};
 
   const handleToggle = (type, year) => {
     if (type === "current") {
@@ -66,7 +61,7 @@ function HomePage() {
     });
   });
 
-useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       const today = new Date();
       setDateString(
@@ -74,18 +69,22 @@ useEffect(() => {
           year: "numeric",
           month: "long",
           day: "numeric",
-        })
+        }),
       );
     }, 60000);
     return () => clearInterval(interval);
   }, []);
 
   if (loading) {
-    return <div className="p-10 text-center text-gray-500">Loading DTR files...</div>;
+    return (
+      <div className="p-10 text-center text-gray-500">Loading DTR files...</div>
+    );
   }
 
   if (!batches || Object.keys(batches).length === 0) {
-    return <div className="p-10 text-center text-gray-500">No DTR files found</div>;
+    return (
+      <div className="p-10 text-center text-gray-500">No DTR files found</div>
+    );
   }
 
   return (
@@ -100,90 +99,114 @@ useEffect(() => {
       </div>
 
       <div className="flex flex-col md:flex-row justify-center items-center gap-7 max-w-5xl mx-auto">
-
         {/* CURRENT */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 min-w-[350px] border border-blue-100">
+        <div className="bg-white rounded-2xl shadow-xl p-6 w-[430px] h-[500px] border border-blue-100 flex flex-col">
           <div className="font-bold text-lg flex items-center gap-2 text-[#223488] mb-2">
             <FolderOpen className="w-6 h-6 text-blue-400" />
             Current DTRs
           </div>
 
-          {Object.keys(currentDTRs)
-            .sort((a, b) => b - a)
-            .map((year) => (
-              <div key={year}>
-                <button
-                  className="flex items-center w-full px-2 py-1 bg-blue-50 rounded border border-blue-200 font-semibold"
-                  onClick={() => handleToggle("current", year)}
-                >
-                  <Folder className="w-5 h-5 mr-2" />
-                  {year}
-                  {openCurrent[year] ? <ChevronUp /> : <ChevronDown />}
-                </button>
+          <div className="overflow-y-auto flex-1 pr-2">
+            {Object.keys(currentDTRs)
+              .sort((a, b) => b - a)
+              .map((year) => (
+                <div key={year} className="mb-3">
+                  {/* YEAR TOGGLE */}
+                  <button
+                    className="flex items-center justify-between w-full px-3 py-2 bg-blue-50 rounded border border-blue-200 font-semibold"
+                    onClick={() => handleToggle("current", year)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Folder className="w-5 h-5" />
+                      {year}
+                    </div>
 
-                {openCurrent[year] && (
-                  <ul className="border border-t-0 border-blue-200 rounded-b">
-                    {currentDTRs[year].map((item) => (
-                      <li
-                        key={`${item.batch_id}-${item.uploaded_at}`}
-                        className="px-4 py-2 border-t"
-                      >
-                        <button
-                          className="hover:underline text-[#223488]"
-                          onClick={() => {
-                            localStorage.setItem("current_batch_id", item.batch_id);
-                            localStorage.setItem("dtr_fileName", item.label);
-                            navigate("/admin/dtr");
-                          }}
+                    {openCurrent[year] ? <ChevronUp /> : <ChevronDown />}
+                  </button>
+
+                  {/* FILES */}
+                  {openCurrent[year] && (
+                    <ul className="border border-t-0 border-blue-200 rounded-b">
+                      {currentDTRs[year].map((item) => (
+                        <li
+                          key={`${item.batch_id}-${item.uploaded_at}`}
+                          className="px-3 py-2 border-t first:border-t-0"
                         >
-                          {item.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
+                          <button
+                            className="hover:underline text-[#223488] text-left w-full"
+                            onClick={() => {
+                              localStorage.setItem(
+                                "current_batch_id",
+                                item.batch_id,
+                              );
+                              localStorage.setItem("dtr_fileName", item.label);
+                              navigate("/admin/dtr");
+                            }}
+                          >
+                            {item.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+          </div>
         </div>
 
         {/* DONE */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 min-w-[350px] border border-green-100">
+        <div className="bg-white rounded-2xl shadow-xl p-6 w-[430px] h-[500px] border border-green-100 flex flex-col">
           <div className="font-bold text-lg flex items-center gap-2 text-[#223488] mb-2">
             <Check className="w-6 h-6 text-green-400" />
             DONE DTRs
           </div>
 
-          {Object.keys(doneDTRs).map((year) => (
-            <div key={year}>
-              <button
-                className="flex items-center w-full px-2 py-1 bg-green-50 rounded border border-green-200 font-semibold"
-                onClick={() => handleToggle("done", year)}
-              >
-                <Folder className="w-5 h-5 mr-2" />
-                {year}
-                {openDone[year] ? <ChevronUp /> : <ChevronDown />}
-              </button>
+          <div className="overflow-y-auto flex-1 pr-2">
+            {Object.keys(doneDTRs)
+              .sort((a, b) => b - a)
+              .map((year) => (
+                <div key={year} className="mb-3">
+                  {/* YEAR TOGGLE */}
+                  <button
+                    className="flex items-center justify-between w-full px-3 py-2 bg-green-50 rounded border border-green-200 font-semibold"
+                    onClick={() => handleToggle("done", year)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Folder className="w-5 h-5" />
+                      {year}
+                    </div>
 
-              {openDone[year] && (
-                <ul className="border border-t-0 border-green-200 rounded-b">
-                  {doneDTRs[year].map((item) => (
-                    <li key={`${item.batch_id}-${item.uploaded_at}`} className="px-4 py-2 border-t">
-                      <button
-                        className="text-green-700 hover:underline"
-                        onClick={() => {
-                          localStorage.setItem("current_batch_id", item.batch_id);
-                          localStorage.setItem("dtr_fileName", item.label);
-                          navigate("/admin/dtr");
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+                    {openDone[year] ? <ChevronUp /> : <ChevronDown />}
+                  </button>
+
+                  {/* FILES */}
+                  {openDone[year] && (
+                    <ul className="border border-t-0 border-green-200 rounded-b">
+                      {doneDTRs[year].map((item) => (
+                        <li
+                          key={`${item.batch_id}-${item.uploaded_at}`}
+                          className="px-3 py-2 border-t first:border-t-0"
+                        >
+                          <button
+                            className="text-green-700 hover:underline text-left w-full"
+                            onClick={() => {
+                              localStorage.setItem(
+                                "current_batch_id",
+                                item.batch_id,
+                              );
+                              localStorage.setItem("dtr_fileName", item.label);
+                              navigate("/admin/dtr");
+                            }}
+                          >
+                            {item.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     </div>

@@ -5,7 +5,8 @@ const getDTRBatches = (req, res) => {
     SELECT 
       id AS batch_id,
       file_name,
-      uploaded_at
+      uploaded_at,
+      status
     FROM dtr_batches
     ORDER BY uploaded_at DESC
   `;
@@ -16,21 +17,32 @@ const getDTRBatches = (req, res) => {
       return res.status(500).json({ error: "Failed to fetch batches" });
     }
 
-    const grouped = {};
+    const grouped = {
+      CURRENT: {},
+      DONE: {},
+    };
 
     rows.forEach((row) => {
+      if (!row.status) return; // safety guard
+
       const year = new Date(row.uploaded_at).getFullYear();
 
-      if (!grouped[year]) grouped[year] = [];
+      const key = row.status; // CURRENT or DONE
 
-      grouped[year].push({
+      if (!grouped[key]) return; // prevents crash if status is unexpected
+
+      if (!grouped[key][year]) {
+        grouped[key][year] = [];
+      }
+
+      grouped[key][year].push({
         batch_id: row.batch_id,
         label: row.file_name,
         uploaded_at: row.uploaded_at,
       });
     });
 
-    return res.json(grouped);
+    res.json(grouped);
   });
 };
 
