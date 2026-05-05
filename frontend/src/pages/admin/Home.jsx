@@ -98,9 +98,9 @@ function HomePage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-center items-center gap-7 max-w-5xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-center items-center gap-12 max-w-5xl mx-auto">
         {/* CURRENT */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 w-[430px] h-[500px] border border-blue-100 flex flex-col">
+        <div className="bg-white rounded-2xl shadow-xl p-6 w-[500px] h-[500px] border border-blue-100 flex flex-col">
           <div className="font-bold text-lg flex items-center gap-2 text-[#223488] mb-2">
             <FolderOpen className="w-6 h-6 text-blue-400" />
             Current DTRs
@@ -155,7 +155,7 @@ function HomePage() {
         </div>
 
         {/* DONE */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 w-[430px] h-[500px] border border-green-100 flex flex-col">
+        <div className="bg-white rounded-2xl shadow-xl p-6 w-[500px] h-[500px] border border-green-100 flex flex-col">
           <div className="font-bold text-lg flex items-center gap-2 text-[#223488] mb-2">
             <Check className="w-6 h-6 text-green-400" />
             DONE DTRs
