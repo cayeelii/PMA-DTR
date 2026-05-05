@@ -1,7 +1,6 @@
 const db = require("../../config/db");
 const XLSX = require("xlsx");
 const crypto = require("crypto");
-const crypto = require("crypto");
 
 // FORMAT DATE ONLY
 const formatDateOnly = (value) => {
@@ -107,11 +106,11 @@ const importDTR = (req, res) => {
       dateNF: "yyyy-mm-dd hh:mm:ss",
     });
 
-        if (!data.length) {
-          return res.status(400).json({
-            message: "Empty file",
-          });
-        }
+    if (!data.length) {
+      return res.status(400).json({
+        message: "Empty file",
+      });
+    }
 
     const checkSql = `SELECT id FROM dtr_batches WHERE file_hash = ?`;
 
@@ -580,10 +579,9 @@ const updateEmployeeDTR = (req, res) => {
 
           const summary =
             `Edited ${changes.length} DTR field${changes.length === 1 ? "" : "s"} ` +
-            `for ${
-              primaryName
-                ? `${primaryName} (Bio ID ${uniqueBioIds[0]})`
-                : `Bio ID ${uniqueBioIds.join(", ")}`
+            `for ${primaryName
+              ? `${primaryName} (Bio ID ${uniqueBioIds[0]})`
+              : `Bio ID ${uniqueBioIds.join(", ")}`
             }${uniqueBioIds.length > 1 ? ` +${uniqueBioIds.length - 1} more` : ""}` +
             ` across ${uniqueDates.length} date${uniqueDates.length === 1 ? "" : "s"}.`;
 
