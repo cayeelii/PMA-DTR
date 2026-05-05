@@ -13,17 +13,8 @@ export default function ReportPreview({
 }) {
   const [showPdfOptions, setShowPdfOptions] = useState(false);
 
-  const TIME_FIELDS = ["amIn", "amOut", "pmIn", "pmOut", "otIn", "otOut"];
-
-  const rowHasAnyTimeData = (row) =>
-    TIME_FIELDS.some((f) => String(row?.[f] ?? "").trim() !== "");
-
-  /* The printed/exported report should list only days that have at least one AM/PM/OT time */
-  const reportRows = dtrRows.filter(rowHasAnyTimeData);
-
-  const tableHead = [
-    ["Date", "Day", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"],
-  ];
+  // Use the same full calendar  
+  const reportRows = dtrRows;
 
   const tableData = reportRows.map((row) => [
     row.date,
@@ -120,34 +111,6 @@ export default function ReportPreview({
     return `${twelveHour}:${minutes}`;
   };
 
-  const drawPdfHeader = (doc) => {
-    doc.setFontSize(14);
-    doc.setFont(undefined, "bold");
-    doc.text("Monthly Daily Time Record", 105, 15, { align: "center" });
-
-    doc.setFontSize(10);
-    doc.setFont(undefined, "normal");
-    doc.text("For the Month of", 105, 22, { align: "center" });
-
-    doc.setFontSize(10);
-    doc.text(`Name: ${employee?.name || "-"}`, 14, 32);
-    doc.text(`Office: ${department?.name || "-"}`, 150, 32);
-  };
-
-  const drawSignatory = (doc, y) => {
-    doc.setFontSize(10);
-    doc.setFont(undefined, "bold");
-
-    const signatoryName = signatory
-      ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
-      : "-";
-
-    doc.text(signatoryName, 150, y + 12);
-
-    doc.setFont(undefined, "normal");
-    doc.text("Signature over printed name", 150, y + 18);
-  };
-
   const drawOneColumnHeader = (doc) => {
     const { monthYear, rangeText } = getDateRange();
 
@@ -184,10 +147,9 @@ export default function ReportPreview({
   };
 
   const drawOneColumnSignatures = (doc, contentEndY) => {
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let signatureY = contentEndY + 12;
+    let signatureY = contentEndY + 32; 
 
-    if (signatureY > pageHeight - 30) {
+    if (signatureY > doc.internal.pageSize.getHeight() - 30) {
       doc.addPage();
       signatureY = 40;
     }
@@ -274,7 +236,6 @@ export default function ReportPreview({
       });
 
       const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
 
       // Helper to strip seconds and AM/PM (e.g., "08:30:00 AM" -> "08:30")
       const formatTimeShort = (timeStr) => {
@@ -361,8 +322,8 @@ export default function ReportPreview({
           tableWidth: contentWidth,
           theme: "plain",
           styles: {
-            fontSize: 7.5, // Enlarged from 6.5
-            cellPadding: 0.8, // Increased padding to fill vertical space
+            fontSize: 7.5, 
+            cellPadding: 0.8, 
             halign: "center",
             textColor: [0, 0, 0],
             font: "helvetica",
@@ -387,21 +348,21 @@ export default function ReportPreview({
 
         // --- 5. Footer / Signature Section ---
         const finalTableY = doc.lastAutoTable.finalY;
-        const footerY = finalTableY + 12; // Lowered to fill space
+        const footerY = finalTableY + 12;
 
         doc.line(startX + margin + 5, footerY, startX + width - margin - 5, footerY);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
         doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5, { align: "center" });
 
-        const sigY = footerY + 18; // Lowered to fill space
+        const sigY = footerY + 18; 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10); // Enlarged
+        doc.setFontSize(10); 
         const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
         doc.text(bossName, centerX, sigY, { align: "center" });
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8); // Enlarged
+        doc.setFontSize(8); 
         const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
         doc.text(bossPos, centerX, sigY + 5, { align: "center" });
 
@@ -421,25 +382,26 @@ export default function ReportPreview({
         // Form 1 (Left side)
         drawDTRForm(0, pageWidth / 2);
 
-        // Divider Line Removed as requested
-
         // Form 2 (Right side)
         drawDTRForm(pageWidth / 2, pageWidth / 2);
       } else {
-        // --- 1 COLUMN CODE REMAINS UNCHANGED ---
-        const oneColumnHead = [["Date", "AM IN", "AM OUT", "PM IN", "PM OUT"]];
+        // --- 1 COLUMN FORMAT: ADD OT IN/OUT ---
+        const oneColumnHead = [["Date", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"]];
         const oneColumnBody = reportRows.map((row) => [
           formatDateForOneColumn(row.date),
           formatTimeForOneColumn(row.amIn),
           formatTimeForOneColumn(row.amOut),
           formatTimeForOneColumn(row.pmIn),
           formatTimeForOneColumn(row.pmOut),
+          formatTimeForOneColumn(row.otIn),
+          formatTimeForOneColumn(row.otOut),
         ]);
 
         drawOneColumnHeader(doc);
 
-        const tableWidth = 102;
-        const marginLeft = 18;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const tableWidth = 141;
+        const marginLeft = (pageWidth - tableWidth) / 2;
 
         autoTable(doc, {
           startY: 39.5,
@@ -471,6 +433,8 @@ export default function ReportPreview({
             2: { cellWidth: 19.5 },
             3: { cellWidth: 19.5 },
             4: { cellWidth: 19.5 },
+            5: { cellWidth: 19.5 },
+            6: { cellWidth: 19.5 },
           },
           theme: "plain",
           didDrawCell: (data) => {
