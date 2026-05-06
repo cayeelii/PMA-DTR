@@ -77,15 +77,6 @@ function App() {
           }
         />
 
-        <Route
-          path="/employee-login"
-          element={
-            <PublicRoute user={user}>
-              <EmployeeLoginPage setUser={setUser} />
-            </PublicRoute>
-          }
-        />
-
         <Route path="/register" element={<EmployeeRegisterPage />} />
 
         {/* EMPLOYEE ROUTES */}

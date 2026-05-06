@@ -16,29 +16,28 @@ const EmployeeProfilePage = () => {
         const res = await fetch(`${API_BASE_URL}/api/auth/current-user`, {
           credentials: "include",
         });
-        
+
         if (!res.ok) throw new Error("Session expired");
-        
+
         const data = await res.json();
-        setProfile(data.user); 
+        setProfile(data.user);
       } catch (err) {
         console.error("Profile error:", err);
-        navigate("/employee-login");
+        navigate("/login");
       } finally {
         setLoading(false);
       }
-      
     };
 
     fetchProfile();
-    
   }, [navigate]);
-  
-  
+
   if (loading) {
     return (
       <div className="relative bg-surface w-full text-theme p-2 pt-2 min-h-screen flex items-center justify-center">
-        <div className="text-xl font-medium text-black animate-pulse">Loading profile...</div>
+        <div className="text-xl font-medium text-black animate-pulse">
+          Loading profile...
+        </div>
       </div>
     );
   }
@@ -68,21 +67,27 @@ const EmployeeProfilePage = () => {
             {/* Profile Fields */}
             <div className="absolute top-[120px] left-4 right-4 space-y-4 px-1">
               <div>
-                <h3 className="text-xl md:text-2xl text-black mb-1.5 ml-1.5">BIO ID</h3>
+                <h3 className="text-xl md:text-2xl text-black mb-1.5 ml-1.5">
+                  BIO ID
+                </h3>
                 <div className="bg-orange-300 w-full h-9 border-2 border-gray-50 rounded-lg flex items-center px-2.5 text-lg md:text-xl text-black-700">
                   {profile?.bio_id || "N/A"}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xl md:text-2xl text-black mb-1.5 ml-1.5">Name</h3>
+                <h3 className="text-xl md:text-2xl text-black mb-1.5 ml-1.5">
+                  Name
+                </h3>
                 <div className="w-full h-9 border-2 border-gray-200 rounded-lg flex items-center px-2.5 text-lg md:text-xl text-black-700 truncate">
                   {profile?.username || "N/A"}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xl md:text-2xl text-black mb-1.5 ml-1.5">Department</h3>
+                <h3 className="text-xl md:text-2xl text-black mb-1.5 ml-1.5">
+                  Department
+                </h3>
                 <div className="w-full h-9 border-2 border-gray-200 rounded-lg flex items-center px-2.5 text-lg md:text-xl text-black-700">
                   {profile?.department || "N/A"}
                 </div>
@@ -92,7 +97,7 @@ const EmployeeProfilePage = () => {
         </div>
 
         <div className="flex justify-center mt-8">
-          <button 
+          <button
             className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-6 py-1.5 rounded-lg text-lg font-medium shadow-lg border-none focus:outline-none"
             onClick={() => navigate("/employee/employee-change-password")}
           >
