@@ -113,54 +113,60 @@ export default function ReportPreview({
 
   const drawOneColumnHeader = (doc) => {
     const { monthYear, rangeText } = getDateRange();
+    // A4: 210mm wide, 15mm margins → content from x=15 to x=195, center=105
+    const M = 15;
+    const R = 195;
+    const CX = 105;
 
     doc.setLineWidth(0.4);
-    doc.line(18, 13, 192, 13);
+    doc.line(M, 13, R, 13);
 
     doc.setFont(undefined, "bold");
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.text(
       `DAILY TIME RECORD OF - ${String(monthYear).toUpperCase()}`,
-      105,
-      18,
-      {
-        align: "center",
-      },
+      CX,
+      19,
+      { align: "center" },
     );
 
     doc.setLineWidth(0.25);
-    doc.line(18, 20.2, 192, 20.2);
+    doc.line(M, 21.5, R, 21.5);
 
     doc.setFont(undefined, "normal");
-    doc.setFontSize(8);
-    doc.text(`Statistics Date: ${rangeText}`, 18, 23.1);
-    doc.text(`Office: ${department?.name || "-"}`, 192, 23.1, {
-      align: "right",
-    });
+    doc.setFontSize(8.5);
+    doc.text(`Statistics Date: ${rangeText}`, M, 25);
+    doc.text(`Office: ${department?.name || "-"}`, R, 25, { align: "right" });
 
-    doc.setLineWidth(0.25);
-    doc.line(18, 25.0, 192, 25.0);
+    doc.line(M, 27, R, 27);
 
-    doc.text(`Name: ${employee?.name || "-"}`, 192, 28.0, { align: "right" });
+    doc.text(`Name: ${employee?.name || "-"}`, R, 30.5, { align: "right" });
 
-    doc.line(18, 29.5, 192, 29.5);
+    doc.line(M, 32.5, R, 32.5);
   };
 
   const drawOneColumnSignatures = (doc, contentEndY) => {
-    let signatureY = contentEndY + 32; 
+    // A4: 297mm tall, 15mm margins
+    const M = 15;
+    const R = 195;
+    const pageH = doc.internal.pageSize.getHeight();
 
-    if (signatureY > doc.internal.pageSize.getHeight() - 30) {
+    let signatureY = contentEndY + 20;
+
+    if (signatureY > pageH - 30) {
       doc.addPage();
       signatureY = 40;
     }
 
-    const leftStart = 26;
-    const leftEnd = 86;
-    const rightStart = 124;
-    const rightEnd = 184;
+    // Two signature blocks evenly spaced across the 180mm content width
+    const blockW = 60;
+    const leftStart  = M + 10;
+    const leftEnd    = leftStart + blockW;
+    const rightStart = R - 10 - blockW;
+    const rightEnd   = R - 10;
 
     doc.setLineWidth(0.3);
-    doc.line(leftStart, signatureY, leftEnd, signatureY);
+    doc.line(leftStart,  signatureY, leftEnd,  signatureY);
     doc.line(rightStart, signatureY, rightEnd, signatureY);
 
     doc.setFontSize(8);
@@ -169,9 +175,7 @@ export default function ReportPreview({
       employee?.name || "Employee",
       (leftStart + leftEnd) / 2,
       signatureY - 2,
-      {
-        align: "center",
-      },
+      { align: "center" },
     );
 
     const supervisorName = signatory
@@ -235,7 +239,13 @@ export default function ReportPreview({
         format: "a4",
       });
 
-      const pageWidth = doc.internal.pageSize.getWidth();
+      // A4 = 210mm × 297mm, standard 15mm margins
+      const PAGE_W = 210;
+      const PAGE_H = 297;
+      const MARGIN = 15;
+      const CONTENT_W = PAGE_W - MARGIN * 2; // 180mm
+
+      const pageWidth = PAGE_W;
 
       // Helper to strip seconds and AM/PM (e.g., "08:30:00 AM" -> "08:30")
       const formatTimeShort = (timeStr) => {
@@ -245,37 +255,36 @@ export default function ReportPreview({
         return `${parts[0]}:${parts[1].split(" ")[0]}`;
       };
 
-      // Helper function to draw a single DTR slip
+      // Helper function to draw a single DTR slip (used by 2-column layout)
       const drawDTRForm = (startX, width) => {
-        // Reduced horizontal margins to allow text to enlarge
-        const margin = 6; 
+        const margin = 2.5; // tight inner padding to maximize usable width
         const centerX = startX + width / 2;
-        const contentWidth = width - margin * 2;
+        const contentWidth = width - margin * 2; // ~100mm per slip
 
         // --- 1. Header Section ---
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(11); // Enlarged
-        doc.text("Monthly Daily Time Record", centerX, 12, { align: "center" });
+        doc.setFontSize(9.5);
+        doc.text("Monthly Daily Time Record", centerX, 10, { align: "center" });
 
-        doc.setFontSize(10);
+        doc.setFontSize(8.5);
         const { monthYear } = getDateRange();
-        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 18, { align: "center" });
+        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 15.5, { align: "center" });
 
         // --- 2. Identity Section ---
         doc.setLineWidth(0.1);
-        doc.line(startX + margin, 21, startX + width - margin, 21);
-        
+        doc.line(startX + margin, 18, startX + width - margin, 18);
+
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10); // Enlarged
-        doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 26);
-        doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 31);
+        doc.setFontSize(8.5);
+        doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 22.5);
+        doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 27);
 
-        doc.line(startX + margin, 33, startX + width - margin, 33);
+        doc.line(startX + margin, 29, startX + width - margin, 29);
 
-        // --- 3. Table Header ---
+        // --- 3. Table Header (AM/PM/OT grouped) ---
         const tableHeader = [
           [
-            { content: "No / Day", rowSpan: 2, styles: { valign: "middle", halign: "left" } },
+            { content: "No/Day", colSpan: 2, rowSpan: 2, styles: { valign: "middle", halign: "center" } },
             { content: "AM", colSpan: 2 },
             { content: "PM", colSpan: 2 },
             { content: "OT", colSpan: 2 },
@@ -304,7 +313,8 @@ export default function ReportPreview({
           }
 
           rows.push([
-            `${dayNum} ${dayName}`,
+            dayNum,
+            dayName,
             formatTimeShort(record?.amIn),
             formatTimeShort(record?.amOut),
             formatTimeShort(record?.pmIn),
@@ -315,15 +325,15 @@ export default function ReportPreview({
         }
 
         autoTable(doc, {
-          startY: 33,
+          startY: 29,
           head: tableHeader,
           body: rows,
-          margin: { left: startX + margin },
+          margin: { left: startX + margin, right: PAGE_W - (startX + width - margin) },
           tableWidth: contentWidth,
           theme: "plain",
           styles: {
-            fontSize: 7.5, 
-            cellPadding: 0.8, 
+            fontSize: 7.5,
+            cellPadding: 1.0,
             halign: "center",
             textColor: [0, 0, 0],
             font: "helvetica",
@@ -333,7 +343,8 @@ export default function ReportPreview({
             fontStyle: "bold",
           },
           columnStyles: {
-            0: { halign: "left", cellWidth: 16 },
+            0: { halign: "center", cellWidth: 8  },  // No
+            1: { halign: "left",   cellWidth: 12 },  // Day
           },
           didDrawCell: (data) => {
             doc.setLineWidth(0.1);
@@ -341,30 +352,30 @@ export default function ReportPreview({
               data.cell.x,
               data.cell.y + data.cell.height,
               data.cell.x + data.cell.width,
-              data.cell.y + data.cell.height
+              data.cell.y + data.cell.height,
             );
           },
         });
 
         // --- 5. Footer / Signature Section ---
         const finalTableY = doc.lastAutoTable.finalY;
-        const footerY = finalTableY + 12;
+        const footerY = finalTableY + 7;
 
-        doc.line(startX + margin + 5, footerY, startX + width - margin - 5, footerY);
+        doc.line(startX + margin + 3, footerY, startX + width - margin - 3, footerY);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5, { align: "center" });
+        doc.setFontSize(8);
+        doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 4, { align: "center" });
 
-        const sigY = footerY + 18; 
+        const sigY = footerY + 13;
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10); 
+        doc.setFontSize(8.5);
         const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
         doc.text(bossName, centerX, sigY, { align: "center" });
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8); 
+        doc.setFontSize(7.5);
         const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
-        doc.text(bossPos, centerX, sigY + 5, { align: "center" });
+        doc.text(bossPos, centerX, sigY + 4.5, { align: "center" });
 
         const dateStr = new Date().toLocaleDateString("en-US", {
           weekday: "long",
@@ -372,20 +383,19 @@ export default function ReportPreview({
           month: "long",
           day: "numeric",
         });
-        doc.setFontSize(7.5);
-        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 12);
-        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 12, { align: "right" });
+        doc.setFontSize(6.5);
+        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 10);
+        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 10, { align: "right" });
       };
 
       // --- EXECUTION LOGIC ---
       if (columnLayout === "2") {
-        // Form 1 (Left side)
-        drawDTRForm(0, pageWidth / 2);
-
-        // Form 2 (Right side)
-        drawDTRForm(pageWidth / 2, pageWidth / 2);
+        // Portrait A4, each slip = 105mm wide
+        const SLIP_W = PAGE_W / 2; // 105mm
+        drawDTRForm(0, SLIP_W);
+        drawDTRForm(SLIP_W, SLIP_W);
       } else {
-        // --- 1 COLUMN FORMAT: ADD OT IN/OUT ---
+        // --- 1 COLUMN FORMAT: full width table (180mm content) ---
         const oneColumnHead = [["Date", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"]];
         const oneColumnBody = reportRows.map((row) => [
           formatDateForOneColumn(row.date),
@@ -399,19 +409,19 @@ export default function ReportPreview({
 
         drawOneColumnHeader(doc);
 
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const tableWidth = 141;
-        const marginLeft = (pageWidth - tableWidth) / 2;
+        // Date col fixed, remaining 6 time cols split equally across remaining width
+        const dateColW = 28;
+        const timeColW = (CONTENT_W - dateColW) / 6; // ≈ 25.3mm each
 
         autoTable(doc, {
-          startY: 39.5,
+          startY: 35,
           head: oneColumnHead,
           body: oneColumnBody,
-          margin: { left: marginLeft },
-          tableWidth,
+          margin: { left: MARGIN, right: MARGIN },
+          tableWidth: CONTENT_W,
           styles: {
-            fontSize: 7,
-            cellPadding: 1.2,
+            fontSize: 8,
+            cellPadding: 1.5,
             halign: "center",
             lineWidth: 0,
             lineColor: 0,
@@ -428,13 +438,13 @@ export default function ReportPreview({
             lineColor: 0,
           },
           columnStyles: {
-            0: { halign: "left", cellWidth: 24 },
-            1: { cellWidth: 19.5 },
-            2: { cellWidth: 19.5 },
-            3: { cellWidth: 19.5 },
-            4: { cellWidth: 19.5 },
-            5: { cellWidth: 19.5 },
-            6: { cellWidth: 19.5 },
+            0: { halign: "left", cellWidth: dateColW },
+            1: { cellWidth: timeColW },
+            2: { cellWidth: timeColW },
+            3: { cellWidth: timeColW },
+            4: { cellWidth: timeColW },
+            5: { cellWidth: timeColW },
+            6: { cellWidth: timeColW },
           },
           theme: "plain",
           didDrawCell: (data) => {
@@ -443,15 +453,13 @@ export default function ReportPreview({
               data.column.index === data.table.columns.length - 1
             ) {
               const y = data.cell.y + data.cell.height;
-              const x1 = marginLeft;
-              const x2 = marginLeft + tableWidth;
               doc.setLineWidth(0.2);
-              doc.line(x1, y, x2, y);
+              doc.line(MARGIN, y, MARGIN + CONTENT_W, y);
             }
           },
         });
 
-        const finalY = doc.lastAutoTable?.finalY || 38;
+        const finalY = doc.lastAutoTable?.finalY || 35;
         drawOneColumnSignatures(doc, finalY);
       }
 
