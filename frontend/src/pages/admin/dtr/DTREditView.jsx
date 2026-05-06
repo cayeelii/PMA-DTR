@@ -320,10 +320,10 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         field === "amIn"
           ? "AM"
           : field === "amOut" ||
-            field === "pmIn" ||
-            field === "pmOut" ||
-            field === "otIn" ||
-            field === "otOut"
+              field === "pmIn" ||
+              field === "pmOut" ||
+              field === "otIn" ||
+              field === "otOut"
             ? "PM"
             : null;
       if (inferred && hours >= 1 && hours <= 12) modifier = inferred;
@@ -374,9 +374,9 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
             date: `${(dateObj.getMonth() + 1)
               .toString()
               .padStart(2, "0")}/${dateObj
-                .getDate()
-                .toString()
-                .padStart(2, "0")}/${dateObj.getFullYear().toString().slice(-2)}`,
+              .getDate()
+              .toString()
+              .padStart(2, "0")}/${dateObj.getFullYear().toString().slice(-2)}`,
 
             day: DAY_LABELS[dateObj.getDay()],
 
@@ -641,15 +641,15 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         const cur = (entry?.[field] ?? "").trim();
         const prev = (orig?.[field] ?? "").trim();
         if (cur === prev) {
-  return "__UNCHANGED__";
-}
+          return "__UNCHANGED__";
+        }
 
-// mark for deletion
-if (cur === "") {
-  return null;
-}
+        // mark for deletion
+        if (cur === "") {
+          return null;
+        }
 
-return convertTo24Hour(entry?.[field], field);
+        return convertTo24Hour(entry?.[field], field);
         return convertTo24Hour(entry?.[field], field);
       };
 
@@ -731,10 +731,11 @@ return convertTo24Hour(entry?.[field], field);
           <button
             onClick={handleSaveClick}
             disabled={isSaving || !hasChanges()}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg font-semibold transition-all shadow-sm active:scale-95 ${isSaving || !hasChanges()
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg font-semibold transition-all shadow-sm active:scale-95 ${
+              isSaving || !hasChanges()
                 ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                 : "bg-[#449d44] hover:bg-[#398439] text-white"
-              }`}
+            }`}
           >
             <Save size={18} /> {isSaving ? "Saving..." : "Save changes"}
           </button>
@@ -794,11 +795,13 @@ return convertTo24Hour(entry?.[field], field);
               {dtrEntries.map((entry, idx) => (
                 <tr
                   key={idx}
-                  className={`transition-colors hover:bg-gray-50 ${entry.maintenanceType === "Holiday" ? "bg-blue-100/80" : ""
-                    } ${isHalfDayMaintenanceType(entry.maintenanceType)
+                  className={`transition-colors hover:bg-gray-50 ${
+                    entry.maintenanceType === "Holiday" ? "bg-blue-100/80" : ""
+                  } ${
+                    isHalfDayMaintenanceType(entry.maintenanceType)
                       ? "bg-amber-100/70"
                       : ""
-                    }`}
+                  }`}
                 >
                   <td className="py-3 text-sm font-medium text-gray-700 whitespace-nowrap">
                     {entry.date}
@@ -829,17 +832,18 @@ return convertTo24Hour(entry?.[field], field);
                             setEditing((ed) =>
                               ed?.row === idx && ed?.field === field
                                 ? {
-                                  ...ed,
-                                  draft: v,
-                                }
+                                    ...ed,
+                                    draft: v,
+                                  }
                                 : timeFieldEditState(idx, field, v),
                             );
                           }}
                           onBlur={() => finishEditingTimeCell(idx, field)}
                           className={`w-24 text-center py-1.5 border rounded-full text-[11px] font-semibold outline-none transition-all shadow-sm
-                            ${isTimeCellChanged(idx, field, entry)
-                              ? "bg-yellow-100 border-yellow-400 text-gray-800"
-                              : "bg-white border-gray-200 text-gray-600"
+                            ${
+                              isTimeCellChanged(idx, field, entry)
+                                ? "bg-yellow-100 border-yellow-400 text-gray-800"
+                                : "bg-white border-gray-200 text-gray-600"
                             }
                             focus:ring-2 focus:ring-orange-400 focus:border-transparent
                           `}
@@ -859,10 +863,11 @@ return convertTo24Hour(entry?.[field], field);
             >
               <div
                 className={`rounded-lg shadow-lg p-4 text-sm border
-            ${toast.type === "success"
-                    ? "bg-green-50 border-green-200 text-green-800"
-                    : "bg-yellow-50 border-yellow-200 text-yellow-800"
-                  }`}
+            ${
+              toast.type === "success"
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-yellow-50 border-yellow-200 text-yellow-800"
+            }`}
               >
                 <div className="font-semibold mb-2">{toast.message}</div>
 

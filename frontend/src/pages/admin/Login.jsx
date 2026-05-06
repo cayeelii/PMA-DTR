@@ -123,12 +123,6 @@ const LoginPage = ({ setUser }) => {
                   {error}
                 </div>
               )}
-              <button
-                type="button"
-                className="text-xs text-gray-500 hover:text-blue-900 mt-2 transition-colors"
-              >
-                Forgot Password?
-              </button>
             </div>
 
             <div className="pt-4 flex justify-center">
