@@ -56,9 +56,7 @@ const register = (req, res) => {
       (err, result) => {
         if (err) {
           if (err.code === "ER_DUP_ENTRY") {
-            return res
-              .status(400)
-              .json({ error: "Username or Bio ID already exists." });
+            return res.status(400).json({ error: "Username already exists." });
           }
           return res.status(500).json({ error: err.message });
         }
@@ -70,6 +68,100 @@ const register = (req, res) => {
         });
       },
     );
+  });
+};
+
+//Login
+const login = (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      message: "Username and password are required",
+    });
+  }
+
+  if (req.session.user) {
+    return res.status(403).json({
+      message: `User ${req.session.user.username} is already logged in.`,
+    });
+  }
+
+  const isBioId = /^\d{6}$/.test(username);
+
+  let sql;
+  let param;
+
+  if (isBioId) {
+    sql = `
+      SELECT u.user_id, u.username, u.bio_id, u.password, u.role, u.status,
+             u.active_session_id, d.dept_name
+      FROM users u
+      LEFT JOIN departments d ON u.dept_id = d.dept_id
+      WHERE u.bio_id = ?
+      LIMIT 1
+    `;
+    param = username;
+  } else {
+    sql = `
+      SELECT user_id, username, bio_id, password, role, active_session_id
+      FROM users
+      WHERE username = ? AND role != 'employee'
+      LIMIT 1
+    `;
+    param = username;
+  }
+
+  db.query(sql, [param], (err, results) => {
+    if (err) return res.status(500).json({ message: "Database error" });
+
+    if (!results.length) {
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
+    }
+
+    const user = results[0];
+
+    const isMatch = bcrypt.compareSync(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
+    }
+
+    if (user.role === "employee" && user.status !== "approved") {
+      return res.status(403).json({
+        message: "Your account is pending admin approval.",
+      });
+    }
+
+    const sessionId = req.session.id;
+
+    if (user.active_session_id && user.active_session_id !== sessionId) {
+      return res.status(403).json({
+        message: "User already logged in.",
+      });
+    }
+
+    req.session.user = {
+      user_id: user.user_id,
+      username: user.username,
+      role: user.role,
+      bio_id: user.bio_id,
+      department: user.dept_name,
+    };
+
+    db.query("UPDATE users SET active_session_id = ? WHERE user_id = ?", [
+      sessionId,
+      user.user_id,
+    ]);
+
+    return res.json({
+      message: "Login successful",
+      user: req.session.user,
+    });
   });
 };
 
@@ -330,6 +422,7 @@ const getDepartments = (req, res) => {
 
 module.exports = {
   register,
+  login,
   adminLogin,
   employeeLogin,
   logout,

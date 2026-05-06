@@ -44,7 +44,7 @@ const EmployeeLoginPage = ({ setUser }) => {
       }
 
       setUser(data.user);
-      navigate("/employee/employee-home", { replace: true });
+      navigate("/employee/home", { replace: true });
     } catch (error) {
       setErrorMessage("Unable to connect to server.");
     } finally {

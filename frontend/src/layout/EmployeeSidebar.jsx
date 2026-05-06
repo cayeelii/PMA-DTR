@@ -54,7 +54,7 @@ export default function EmployeeSidebar() {
         credentials: "include",
       });
 
-      window.location.replace("/employee-login");
+      window.location.replace("/login");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -84,7 +84,7 @@ export default function EmployeeSidebar() {
               {/* HOME */}
               <li>
                 <NavLink
-                  to="/employee/employee-home"
+                  to="/employee/home"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -97,7 +97,7 @@ export default function EmployeeSidebar() {
               {/* DTR */}
               <li>
                 <NavLink
-                  to="/employee/employee-dtr"
+                  to="/employee/dtr"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }
@@ -110,7 +110,7 @@ export default function EmployeeSidebar() {
               {/* PROFILE */}
               <li>
                 <NavLink
-                  to="/employee/employee-profile"
+                  to="/employee/profile"
                   className={({ isActive }) =>
                     `${baseClass} ${isActive ? activeClass : inactiveClass}`
                   }

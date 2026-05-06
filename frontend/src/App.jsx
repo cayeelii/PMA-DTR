@@ -86,7 +86,7 @@ function App() {
           }
         />
 
-        <Route path="/employee-register" element={<EmployeeRegisterPage />} />
+        <Route path="/register" element={<EmployeeRegisterPage />} />
 
         {/* EMPLOYEE ROUTES */}
         <Route
@@ -97,9 +97,9 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="employee-home" />} />
-          <Route path="employee-home" element={<EmployeeHomePage />} />
-          <Route path="employee-profile" element={<EmployeeProfilePage />} />
+          <Route index element={<Navigate to="home" />} />
+          <Route path="home" element={<EmployeeHomePage />} />
+          <Route path="profile" element={<EmployeeProfilePage />} />
           <Route
             path="employee-change-password"
             element={<EmployeeChangePasswordPage />}

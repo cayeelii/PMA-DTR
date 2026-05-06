@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -23,7 +23,7 @@ const LoginPage = ({ setUser }) => {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/adminLogin`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,8 +43,10 @@ const LoginPage = ({ setUser }) => {
 
       setUser(data.user);
 
-      if (data.user?.role === "superadmin" || data.user?.role === "admin") {
+      if (data.user?.role === "admin" || data.user?.role === "superadmin") {
         navigate("/admin/home", { replace: true });
+      } else if (data.user?.role === "employee") {
+        navigate("/employee/home", { replace: true });
       } else {
         setError("Unauthorized access");
       }
@@ -132,6 +134,14 @@ const LoginPage = ({ setUser }) => {
               >
                 Log In
               </button>
+            </div>
+            <div className="text-center">
+              <Link
+                to="/register"
+                className="text-xs text-[#0b246a] hover:text-[#00154d] font-semibold transition-colors"
+              >
+                Create Account
+              </Link>
             </div>
           </form>
         </div>

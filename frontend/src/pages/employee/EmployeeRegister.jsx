@@ -227,7 +227,7 @@ const EmployeeRegisterPage = () => {
 
             <div className="text-center">
               <Link
-                to="/employee-login"
+                to="/login"
                 className="text-xs text-[#0b246a] hover:text-[#00154d] font-semibold transition-colors"
               >
                 Back to Login

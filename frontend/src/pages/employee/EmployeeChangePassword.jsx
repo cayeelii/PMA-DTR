@@ -1,20 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 
 const ChangePassword = () => {
   const navigate = useNavigate();
-
 
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-
 
   const handleChange = (e) => {
     setFormData({
@@ -23,17 +19,15 @@ const ChangePassword = () => {
     });
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
 
     //  Check if new passwords match
     if (formData.newPassword !== formData.confirmPassword) {
       alert("New passwords do not match!");
       return;
     }
- 
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
         method: "POST",
@@ -47,7 +41,6 @@ const ChangePassword = () => {
         }),
       });
 
-
       const data = await res.json();
       if (!res.ok) {
         alert(data.message || "Error changing password");
@@ -57,7 +50,6 @@ const ChangePassword = () => {
       alert("You've successfully changed your password");
 
       navigate("/employee/home");
-
     } catch (error) {
       console.error(error);
       alert("Server error");
@@ -79,7 +71,7 @@ const ChangePassword = () => {
               name="currentPassword"
               value={formData.currentPassword}
               onChange={handleChange}
-              className="w-full p-4 border rounded" 
+              className="w-full p-4 border rounded"
               required
             />
           </div>
@@ -93,7 +85,7 @@ const ChangePassword = () => {
               name="newPassword"
               value={formData.newPassword}
               onChange={handleChange}
-              className="w-full p-4 border rounded" 
+              className="w-full p-4 border rounded"
               required
             />
           </div>
@@ -107,7 +99,7 @@ const ChangePassword = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full p-4 border rounded" 
+              className="w-full p-4 border rounded"
               required
             />
           </div>
@@ -123,7 +115,7 @@ const ChangePassword = () => {
             <button
               type="button"
               className="px-4 py-2 bg-white text-black border rounded hover:bg-gray-100"
-              onClick={() => navigate("/employee/employee-profile")}
+              onClick={() => navigate("/employee/profile")}
             >
               Cancel
             </button>
