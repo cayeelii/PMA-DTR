@@ -21,16 +21,25 @@ function HomePage() {
     const fetchBatches = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/homepage/dtr-batches`);
+
         const data = await res.json();
 
         setBatches(data);
 
-        const years = Object.keys(data);
-        if (years.length > 0) {
-          const latestYear = Math.max(...years.map(Number));
-          setOpenCurrent({ [latestYear]: true });
-          setOpenDone({ [latestYear]: true });
-        }
+        // Open all folders by default
+        const currentOpenState = {};
+        const doneOpenState = {};
+
+        Object.keys(data.CURRENT || {}).forEach((year) => {
+          currentOpenState[year] = true;
+        });
+
+        Object.keys(data.DONE || {}).forEach((year) => {
+          doneOpenState[year] = true;
+        });
+
+        setOpenCurrent(currentOpenState);
+        setOpenDone(doneOpenState);
       } catch (err) {
         console.error("Failed to fetch batches:", err);
       } finally {
@@ -39,6 +48,10 @@ function HomePage() {
     };
 
     fetchBatches();
+    
+    const interval = setInterval(fetchBatches, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const currentDTRs = batches.CURRENT || {};
@@ -46,14 +59,21 @@ function HomePage() {
 
   const handleToggle = (type, year) => {
     if (type === "current") {
-      setOpenCurrent((prev) => ({ ...prev, [year]: !prev[year] }));
+      setOpenCurrent((prev) => ({
+        ...prev,
+        [year]: !prev[year],
+      }));
     } else {
-      setOpenDone((prev) => ({ ...prev, [year]: !prev[year] }));
+      setOpenDone((prev) => ({
+        ...prev,
+        [year]: !prev[year],
+      }));
     }
   };
 
   const [dateString, setDateString] = useState(() => {
     const today = new Date();
+
     return today.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -64,6 +84,7 @@ function HomePage() {
   useEffect(() => {
     const interval = setInterval(() => {
       const today = new Date();
+
       setDateString(
         today.toLocaleDateString("en-US", {
           year: "numeric",
@@ -72,6 +93,7 @@ function HomePage() {
         }),
       );
     }, 60000);
+
     return () => clearInterval(interval);
   }, []);
 
