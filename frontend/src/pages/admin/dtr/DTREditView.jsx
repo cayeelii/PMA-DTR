@@ -640,7 +640,16 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         const orig = origByDateKey.get(dateKey);
         const cur = (entry?.[field] ?? "").trim();
         const prev = (orig?.[field] ?? "").trim();
-        if (cur === prev) return null;
+        if (cur === prev) {
+  return "__UNCHANGED__";
+}
+
+// mark for deletion
+if (cur === "") {
+  return null;
+}
+
+return convertTo24Hour(entry?.[field], field);
         return convertTo24Hour(entry?.[field], field);
       };
 

@@ -465,7 +465,8 @@ const updateEmployeeDTR = (req, res) => {
       ["OT OUT", otOut],
     ];
     for (const [type, time] of fields) {
-      if (time === null) continue;
+      if (time === "__UNCHANGED__") continue;
+
       updatesToRun.push([time, bio_id, batch_id, date, type]);
     }
   }
@@ -531,9 +532,8 @@ const updateEmployeeDTR = (req, res) => {
       runSelectOld((selErr, oldRows) => {
         if (selErr) return fail(selErr);
 
-        // Map of bio|date|type -> { old_time, name }
         const oldMap = new Map();
-        const nameMap = new Map(); // bio_id -> name
+        const nameMap = new Map(); 
         for (const r of oldRows || []) {
           oldMap.set(`${r.bio_id}|${r.date_only}|${r.ampm_type}`, {
             old_time: r.time_only,
@@ -594,9 +594,10 @@ const updateEmployeeDTR = (req, res) => {
 
           const summary =
             `Edited ${changes.length} DTR field${changes.length === 1 ? "" : "s"} ` +
-            `for ${primaryName
-              ? `${primaryName} (Bio ID ${uniqueBioIds[0]})`
-              : `Bio ID ${uniqueBioIds.join(", ")}`
+            `for ${
+              primaryName
+                ? `${primaryName} (Bio ID ${uniqueBioIds[0]})`
+                : `Bio ID ${uniqueBioIds.join(", ")}`
             }${uniqueBioIds.length > 1 ? ` +${uniqueBioIds.length - 1} more` : ""}` +
             ` across ${uniqueDates.length} date${uniqueDates.length === 1 ? "" : "s"}.`;
 
