@@ -18,6 +18,7 @@ import LoginPage from "./pages/admin/Login";
 import HomePage from "./pages/admin/Home";
 import DTRPage from "./pages/admin/dtr/DTRManagement.jsx";
 import MaintenancePage from "./pages/admin/Maintenance";
+import SchedulePage from "./pages/admin/Schedule";
 import LogsPage from "./pages/admin/Logs";
 import SignatoriesPage from "./pages/admin/Signatories";
 import AccountsPage from "./pages/admin/Accounts";
@@ -119,6 +120,7 @@ function App() {
           <Route path="dtr" element={<DTRPage />} />
           <Route path="maintenance" element={<MaintenancePage />} />
           <Route path="logs" element={<LogsPage />} />
+          <Route path="schedule" element={<SchedulePage />} />
           <Route path="signatories" element={<SignatoriesPage />} />
           <Route path="accounts" element={<AccountsPage />} />
           <Route path="change-password" element={<ChangePasswordPage />} />

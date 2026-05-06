@@ -1,5 +1,4 @@
 import Pagination from "../../components/Pagination";
-const PAGE_SIZE = 20;
 import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import RemoveMaintenanceModal from "../../components/RemoveMaintenanceModal";
@@ -7,6 +6,7 @@ import MaintenanceModal from "../../components/MaintenanceModal";
 import { saveActivityLog } from "../../utils/activityLogs";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const PAGE_SIZE = 20;
 
 function MaintenancePage() {
   const [page, setPage] = useState(1);
