@@ -469,9 +469,9 @@ export default function ReportPreview({
   console.log("SIGNATORY IN PREVIEW:", signatory);
 
   return (
-    <div>
+    <div className="flex justify-center px-4">
       {/* Report Card */}
-      <div className="bg-white rounded-xl shadow p-6 max-w-3xl mx-auto">
+      <div className="bg-white rounded-xl shadow p-6 w-full max-w-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b pb-3 mb-3">
           <div className="flex items-center gap-2">
@@ -543,9 +543,9 @@ export default function ReportPreview({
           </div>
         </div>
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-96 rounded-lg border border-gray-100">
           <table className="min-w-full text-xs border-separate border-spacing-0 rounded-xl overflow-hidden">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-gray-100 text-gray-700 font-semibold">
                 <th className="px-4 py-2 text-left rounded-tl-lg">Date</th>
                 <th className="px-4 py-2 text-left">Day</th>
