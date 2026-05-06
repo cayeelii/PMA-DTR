@@ -145,20 +145,16 @@ export default function ReportPreview({
     doc.line(M, 32.5, R, 32.5);
   };
 
-  const drawOneColumnSignatures = (doc, contentEndY) => {
-    // A4: 297mm tall, 15mm margins
+  const drawOneColumnSignatures = (doc) => {
+    // Always pin signatures to the bottom of the LAST page
     const M = 15;
     const R = 195;
     const pageH = doc.internal.pageSize.getHeight();
+    const FOOTER_BOTTOM = pageH - 12; // 12mm from page bottom edge
 
-    let signatureY = contentEndY + 20;
+    // Signature block sits 22mm tall: line + name (–2) + label (+5) + padding
+    const signatureY = FOOTER_BOTTOM - 10;
 
-    if (signatureY > pageH - 30) {
-      doc.addPage();
-      signatureY = 40;
-    }
-
-    // Two signature blocks evenly spaced across the 180mm content width
     const blockW = 60;
     const leftStart  = M + 10;
     const leftEnd    = leftStart + blockW;
@@ -284,7 +280,7 @@ export default function ReportPreview({
         // --- 3. Table Header (AM/PM/OT grouped) ---
         const tableHeader = [
           [
-            { content: "No/Day", colSpan: 2, rowSpan: 2, styles: { valign: "middle", halign: "center" } },
+            { content: "No/Day", colSpan: 2, rowSpan: 2, styles: { valign: "bottom", halign: "center" } },
             { content: "AM", colSpan: 2 },
             { content: "PM", colSpan: 2 },
             { content: "OT", colSpan: 2 },
@@ -332,7 +328,7 @@ export default function ReportPreview({
           tableWidth: contentWidth,
           theme: "plain",
           styles: {
-            fontSize: 7.5,
+            fontSize: 8.5,
             cellPadding: 1.0,
             halign: "center",
             textColor: [0, 0, 0],
@@ -357,26 +353,35 @@ export default function ReportPreview({
           },
         });
 
-        // --- 5. Footer / Signature Section ---
+        // --- 5. Signature Section (flows after table with spacing for actual signatures) ---
         const finalTableY = doc.lastAutoTable.finalY;
-        const footerY = finalTableY + 7;
 
-        doc.line(startX + margin + 3, footerY, startX + width - margin - 3, footerY);
+        // Employee sig line — 15mm gap after table (1.5cm)
+        const empSigLineY = finalTableY + 15;
+        doc.setLineWidth(0.3);
+        doc.line(startX + margin + 3, empSigLineY, startX + width - margin - 3, empSigLineY);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
-        doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 4, { align: "center" });
+        doc.text("EMPLOYEE SIGNATURE", centerX, empSigLineY + 4, { align: "center" });
 
-        const sigY = footerY + 13;
+        // Boss sig line — 17mm gap below employee label (1.7cm)
+        const bossSigLineY = empSigLineY + 17;
+        doc.setLineWidth(0.3);
+        doc.line(startX + margin + 3, bossSigLineY, startX + width - margin - 3, bossSigLineY);
+
+        // Boss name + position below the line
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
         const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
-        doc.text(bossName, centerX, sigY, { align: "center" });
+        doc.text(bossName, centerX, bossSigLineY + 5, { align: "center" });
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(7.5);
         const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
-        doc.text(bossPos, centerX, sigY + 4.5, { align: "center" });
+        doc.text(bossPos, centerX, bossSigLineY + 9.5, { align: "center" });
 
+        // Dateprint row — 12mm below boss position (1.2cm)
+        const datePrintY = bossSigLineY + 9.5 + 12;
         const dateStr = new Date().toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
@@ -384,14 +389,15 @@ export default function ReportPreview({
           day: "numeric",
         });
         doc.setFontSize(6.5);
-        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 10);
-        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 10, { align: "right" });
+        doc.text(`dateprint: ${dateStr}`, startX + margin, datePrintY);
+        doc.text(`Page 1 of 1`, startX + width - margin, datePrintY, { align: "right" });
       };
 
       // --- EXECUTION LOGIC ---
       if (columnLayout === "2") {
         // Portrait A4, each slip = 105mm wide
         const SLIP_W = PAGE_W / 2; // 105mm
+
         drawDTRForm(0, SLIP_W);
         drawDTRForm(SLIP_W, SLIP_W);
       } else {
@@ -459,8 +465,7 @@ export default function ReportPreview({
           },
         });
 
-        const finalY = doc.lastAutoTable?.finalY || 35;
-        drawOneColumnSignatures(doc, finalY);
+        drawOneColumnSignatures(doc);
       }
 
       doc.save(`${employee?.name || "DTR"}_Report.pdf`);
