@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const departmentOptions = ["PMACO", "ICTC"];
 const bioIdCheck = /^\d{6}$/;
 const passwordCheck = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 const EmployeeRegisterPage = () => {
   const [formData, setFormData] = useState({
-    bioid: '',
-    username: '',
-    password: '',
-    department: '',
+    bioid: "",
+    username: "",
+    password: "",
+    department: "",
   });
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState([]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,24 +23,26 @@ const EmployeeRegisterPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
+    setErrorMessage("");
+    setSuccessMessage("");
     setIsSubmitting(true);
 
     if (!bioIdCheck.test(formData.bioid)) {
-      setErrorMessage('Bio ID must be exactly 6 digits.');
+      setErrorMessage("Bio ID must be exactly 6 digits.");
       setIsSubmitting(false);
       return;
     }
 
     if (!passwordCheck.test(formData.password)) {
-      setErrorMessage('Password must be at least 8 chars with uppercase, lowercase, and number.');
+      setErrorMessage(
+        "Password must be at least 8 chars with uppercase, lowercase, and number.",
+      );
       setIsSubmitting(false);
       return;
     }
 
-    if (!departmentOptions.includes(formData.department)) {
-      setErrorMessage('Please select department.');
+    if (!formData.department) {
+      setErrorMessage("Please select department.");
       setIsSubmitting(false);
       return;
     }
@@ -48,8 +50,8 @@ const EmployeeRegisterPage = () => {
     // Register employee account
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: formData.username,
           bio_id: formData.bioid,
@@ -62,18 +64,34 @@ const EmployeeRegisterPage = () => {
       const ok = response.ok;
 
       if (!ok) {
-        setErrorMessage(data.error || 'Registration failed.');
+        setErrorMessage(data.error || "Registration failed.");
         return;
       }
 
-      setSuccessMessage('Account submitted. Please wait for admin approval before login.');
-      setFormData({ bioid: '', username: '', password: '', department: '' });
+      setSuccessMessage(
+        "Account submitted. Please wait for admin approval before login.",
+      );
+      setFormData({ bioid: "", username: "", password: "", department: "" });
     } catch (error) {
-      setErrorMessage('Unable to connect to server.');
+      setErrorMessage("Unable to connect to server.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/departments`);
+        const data = await res.json();
+        setDepartments(data);
+      } catch (err) {
+        console.error("Failed to fetch departments");
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4">
@@ -96,13 +114,17 @@ const EmployeeRegisterPage = () => {
 
         <div className="md:w-7/12 bg-[#f4f4f4] p-8 md:p-16 flex flex-col justify-center">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 tracking-tight">REGISTER</h2>
+            <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
+              REGISTER
+            </h2>
             <p className="text-gray-500 text-sm mt-1">Create your account</p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="block text-gray-600 text-sm font-semibold mb-2">BioID</label>
+              <label className="block text-gray-600 text-sm font-semibold mb-2">
+                BioID
+              </label>
               <input
                 type="text"
                 name="bioid"
@@ -116,20 +138,23 @@ const EmployeeRegisterPage = () => {
             </div>
 
             <div>
-              <label className="block text-gray-600 text-sm font-semibold mb-2">Username</label>
+              <label className="block text-gray-600 text-sm font-semibold mb-2">
+                Username
+              </label>
               <input
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white"
-
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-600 text-sm font-semibold mb-2">Password</label>
+              <label className="block text-gray-600 text-sm font-semibold mb-2">
+                Password
+              </label>
               <input
                 type="password"
                 name="password"
@@ -143,7 +168,9 @@ const EmployeeRegisterPage = () => {
             </div>
 
             <div>
-              <label className="block text-gray-600 text-sm font-semibold mb-2">Department</label>
+              <label className="block text-gray-600 text-sm font-semibold mb-2">
+                Department
+              </label>
               <div className="relative">
                 <select
                   name="department"
@@ -152,10 +179,12 @@ const EmployeeRegisterPage = () => {
                   className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#00154d] focus:border-transparent outline-none transition-all bg-white appearance-none"
                   required
                 >
-                  <option value="" disabled>Select department</option>
-                  {departmentOptions.map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
+                  <option value="" disabled>
+                    Select department
+                  </option>
+                  {departments.map((dept) => (
+                    <option key={dept.dept_id} value={dept.dept_name}>
+                      {dept.dept_name}
                     </option>
                   ))}
                 </select>
@@ -167,7 +196,13 @@ const EmployeeRegisterPage = () => {
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d="M6 8L10 12L14 8"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </div>
             </div>
@@ -178,14 +213,16 @@ const EmployeeRegisterPage = () => {
                 disabled={isSubmitting}
                 className="w-full md:w-1/2 bg-[#0b246a] hover:bg-[#00154d] text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all transform active:scale-95"
               >
-                {isSubmitting ? 'Registering...' : 'Register'}
+                {isSubmitting ? "Registering..." : "Register"}
               </button>
             </div>
             {errorMessage && (
               <p className="text-center text-sm text-red-600">{errorMessage}</p>
             )}
             {successMessage && (
-              <p className="text-center text-sm text-green-600">{successMessage}</p>
+              <p className="text-center text-sm text-green-600">
+                {successMessage}
+              </p>
             )}
 
             <div className="text-center">

@@ -211,7 +211,7 @@ const employeeLogin = (req, res) => {
       role: user.role,
       bio_id: user.bio_id,
       status: user.status,
-      department: user.dept_name, 
+      department: user.dept_name,
     };
 
     db.query("UPDATE users SET active_session_id = ? WHERE user_id = ?", [
@@ -314,6 +314,20 @@ const changePassword = async (req, res) => {
   }
 };
 
+//Get all departments
+const getDepartments = (req, res) => {
+  const sql =
+    "SELECT dept_id, dept_name FROM departments ORDER BY dept_name ASC";
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    res.json(results);
+  });
+};
+
 module.exports = {
   register,
   adminLogin,
@@ -321,4 +335,5 @@ module.exports = {
   logout,
   getCurrentUser,
   changePassword,
+  getDepartments,
 };

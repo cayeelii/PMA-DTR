@@ -21,4 +21,7 @@ router.get("/current-user", authController.getCurrentUser);
 //POST /auth/change-password
 router.post("/change-password", authController.changePassword);
 
+//GET /auth/departments
+router.get("/departments", authController.getDepartments);
+
 module.exports = router;
