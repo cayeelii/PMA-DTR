@@ -117,77 +117,112 @@ export default function ReportPreview({
     const R = 195;
     const CX = 105;
 
-    doc.setLineWidth(0.4);
-    doc.line(M, 13, R, 13);
-
+    // Row 1: Title
     doc.setFont(undefined, "bold");
     doc.setFontSize(11);
-    doc.text(
-      `DAILY TIME RECORD OF - ${String(monthYear).toUpperCase()}`,
-      CX,
-      19,
-      { align: "center" },
-    );
+    doc.text("Monthly Daily Time Record — DRAFT COPY", CX, 18, { align: "center" });
 
-    doc.setLineWidth(0.25);
-    doc.line(M, 21.5, R, 21.5);
-
+    // Row 2: Month subtitle
     doc.setFont(undefined, "normal");
+    doc.setFontSize(9);
+    doc.text(`For the Month of ${String(monthYear).toUpperCase()}`, CX, 23, { align: "center" });
+
+    // Divider line
+    doc.setLineWidth(0.4);
+    doc.line(M, 26, R, 26);
+
+    // Row 3: Employee Name (left) | Department (center) | BIO-ID NO (right)
     doc.setFontSize(8.5);
-    doc.text(`Statistics Date: ${rangeText}`, M, 25);
-    doc.text(`Office: ${department?.name || "-"}`, R, 25, { align: "right" });
 
-    doc.line(M, 27, R, 27);
+    // Left: Employee Name
+    doc.setFont(undefined, "bold");
+    doc.setFontSize(8.5);
+    const empLabel = "Employee Name: ";
+    const empLabelW = doc.getTextWidth(empLabel); // measure while still bold
+    doc.text(empLabel, M, 30.5);
+    doc.setFont(undefined, "normal");
+    doc.text(employee?.name || "-", M + empLabelW, 30.5);
 
-    doc.text(`Name: ${employee?.name || "-"}`, R, 30.5, { align: "right" });
+    // Center: Department
+    doc.setFont(undefined, "bold");
+    const deptLabelW = doc.getTextWidth("Department: ");
+    const deptValueW = doc.getTextWidth(department?.name || "-");
+    const deptTotalW = deptLabelW + deptValueW;
+    doc.text("Department: ", CX - deptTotalW / 2, 30.5);
+    doc.setFont(undefined, "normal");
+    doc.text(department?.name || "-", CX - deptTotalW / 2 + deptLabelW, 30.5);
 
-    doc.line(M, 32.5, R, 32.5);
+    // Right: BIO-ID NO
+    doc.setFont(undefined, "bold");
+    const bioLabel = "BIO-ID NO: ";
+    const bioValue = String(employee?.biometric_id || "-");
+    const bioTotalW = doc.getTextWidth(bioLabel) + doc.getTextWidth(bioValue);
+    doc.text(bioLabel, R - bioTotalW, 30.5);
+    doc.setFont(undefined, "normal");
+    doc.text(bioValue, R, 30.5, { align: "right" });
+
+    // Bottom divider
+    doc.setLineWidth(0.4);
+    doc.line(M, 33, R, 33);
   };
 
   const drawOneColumnSignatures = (doc) => {
-    // Always pin signatures to the bottom of the LAST page
     const M = 15;
     const R = 195;
     const pageH = doc.internal.pageSize.getHeight();
-    const FOOTER_BOTTOM = pageH - 12; // 12mm from page bottom edge
 
-    // Signature block sits 22mm tall: line + name (–2) + label (+5) + padding
-    const signatureY = FOOTER_BOTTOM - 10;
+    // Pin the whole block ~2 inches (50.8mm) above the page bottom
+    const BLOCK_BOTTOM = pageH - 50.8;
 
-    const blockW = 60;
-    const leftStart  = M + 10;
-    const leftEnd    = leftStart + blockW;
-    const rightStart = R - 10 - blockW;
-    const rightEnd   = R - 10;
-
-    doc.setLineWidth(0.3);
-    doc.line(leftStart,  signatureY, leftEnd,  signatureY);
-    doc.line(rightStart, signatureY, rightEnd, signatureY);
-
-    doc.setFontSize(8);
-    doc.setFont(undefined, "bold");
-    doc.text(
-      employee?.name || "Employee",
-      (leftStart + leftEnd) / 2,
-      signatureY - 2,
-      { align: "center" },
-    );
-
-    const supervisorName = signatory
-      ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
-      : "";
-
-    doc.text(supervisorName, (rightStart + rightEnd) / 2, signatureY - 2, {
-      align: "center",
-    });
-
+    // Bottom row: employee name + date (left), page number (right)
+    const bottomRowY = BLOCK_BOTTOM + 18;
+    doc.setFontSize(7.5);
     doc.setFont(undefined, "normal");
-    doc.text("Employee Signature", (leftStart + leftEnd) / 2, signatureY + 5, {
-      align: "center",
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
-    doc.text("Supervisor", (rightStart + rightEnd) / 2, signatureY + 5, {
-      align: "center",
-    });
+    doc.text(employee?.name || "-", M, bottomRowY);
+    doc.text(dateStr, M, bottomRowY + 4);
+
+    const totalPages = doc.internal.getNumberOfPages();
+    const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+    doc.text(`Page ${currentPage} of ${totalPages}`, R, bottomRowY + 4, { align: "right" });
+
+    // Signature lines — sit above the bottom row
+    const sigLineY = BLOCK_BOTTOM;
+
+    // Left sig line
+    const leftStart = M;
+    const leftEnd   = M + 75;
+    doc.setLineWidth(0.3);
+    doc.line(leftStart, sigLineY, leftEnd, sigLineY);
+
+    // Right sig line
+    const rightStart = R - 75;
+    const rightEnd   = R;
+    doc.line(rightStart, sigLineY, rightEnd, sigLineY);
+
+    // Labels above the lines
+    doc.setFontSize(8);
+    doc.setFont(undefined, "normal");
+    doc.text("Certified True and Correct", leftStart, sigLineY - 5);
+    doc.text("Approved by:", rightStart, sigLineY - 5);
+
+    // Left: EMPLOYEE SIGNATURE label below line
+    doc.setFontSize(7.5);
+    doc.setFont(undefined, "bold");
+    doc.text("EMPLOYEE SIGNATURE", (leftStart + leftEnd) / 2, sigLineY + 4, { align: "center" });
+
+    // Right: supervisor name + position below line
+    const supName = signatory?.head_name?.toUpperCase() || "";
+    const supPos  = signatory?.position || "";
+    doc.text(supName, (rightStart + rightEnd) / 2, sigLineY + 4, { align: "center" });
+    doc.setFont(undefined, "normal");
+    doc.setFontSize(7);
+    doc.text(supPos, (rightStart + rightEnd) / 2, sigLineY + 8, { align: "center" });
   };
 
   //Export to XLSX
@@ -242,7 +277,6 @@ export default function ReportPreview({
 
       const pageWidth = PAGE_W;
 
-      // Helper to convert time to military (24-hour) format (e.g., "08:30:00 AM" -> "08:30", "01:00:00 PM" -> "13:00")
       const formatTimeShort = (timeStr) => {
         if (!timeStr || timeStr === "-" || timeStr === "--") return "";
         const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?$/i);
@@ -258,11 +292,10 @@ export default function ReportPreview({
         return `${String(hours).padStart(2, "0")}:${minutes}`;
       };
 
-      // Helper function to draw a single DTR slip (used by 2-column layout)
       const drawDTRForm = (startX, width) => {
-        const margin = 2.5; // tight inner padding to maximize usable width
+        const margin = 2.5; 
         const centerX = startX + width / 2;
-        const contentWidth = width - margin * 2; // ~100mm per slip
+        const contentWidth = width - margin * 2; 
 
         // --- 1. Header Section ---
         doc.setFont("helvetica", "normal");
@@ -409,9 +442,10 @@ export default function ReportPreview({
         drawDTRForm(SLIP_W, SLIP_W);
       } else {
         // --- 1 COLUMN FORMAT: full width table (180mm content) ---
-        const oneColumnHead = [["Date", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"]];
+        const oneColumnHead = [["Date", "Day", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"]];
         const oneColumnBody = reportRows.map((row) => [
           formatDateForOneColumn(row.date),
+          row.day || "",
           formatTimeForOneColumn(row.amIn),
           formatTimeForOneColumn(row.amOut),
           formatTimeForOneColumn(row.pmIn),
@@ -422,9 +456,10 @@ export default function ReportPreview({
 
         drawOneColumnHeader(doc);
 
-        // Date col fixed, remaining 6 time cols split equally across remaining width
-        const dateColW = 28;
-        const timeColW = (CONTENT_W - dateColW) / 6; // ≈ 25.3mm each
+        // Date + Day cols fixed, remaining 6 time cols split equally
+        const dateColW = 24;
+        const dayColW  = 10;
+        const timeColW = (CONTENT_W - dateColW - dayColW) / 6;
 
         autoTable(doc, {
           startY: 35,
@@ -451,13 +486,14 @@ export default function ReportPreview({
             lineColor: 0,
           },
           columnStyles: {
-            0: { halign: "left", cellWidth: dateColW },
-            1: { cellWidth: timeColW },
+            0: { halign: "left",   cellWidth: dateColW },
+            1: { halign: "left",   cellWidth: dayColW  },
             2: { cellWidth: timeColW },
             3: { cellWidth: timeColW },
             4: { cellWidth: timeColW },
             5: { cellWidth: timeColW },
             6: { cellWidth: timeColW },
+            7: { cellWidth: timeColW },
           },
           theme: "plain",
           didDrawCell: (data) => {
