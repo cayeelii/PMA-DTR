@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const bioIdCheck = /^\d{6}$/;
+const bioIdCheck = /^\d{1,6}$/;
 
 const EmployeeLoginPage = ({ setUser }) => {
   const [credentials, setCredentials] = useState({ bio_id: "", password: "" });
@@ -21,7 +21,7 @@ const EmployeeLoginPage = ({ setUser }) => {
     setIsSubmitting(true);
 
     if (!bioIdCheck.test(credentials.bio_id)) {
-      setErrorMessage("Bio ID must be exactly 6 digits.");
+      setErrorMessage("Bio ID must be 1 to 6 digits only.");
       setIsSubmitting(false);
       return;
     }

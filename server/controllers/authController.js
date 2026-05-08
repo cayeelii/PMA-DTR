@@ -9,10 +9,10 @@ const register = (req, res) => {
       .pattern(/^[a-zA-Z\s'-]{3,50}$/)
       .required(),
     bio_id: Joi.string()
-      .pattern(/^\d{6}$/)
+      .pattern(/^\d{1,6}$/)
       .required()
       .messages({
-        "string.pattern.base": "Bio ID must be exactly 6 digits",
+        "string.pattern.base": "Bio ID must be 1 to 6 digits",
       }),
     password: Joi.string()
       .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)
@@ -87,7 +87,7 @@ const login = (req, res) => {
     });
   }
 
-  const isBioId = /^\d{6}$/.test(username);
+  const isBioId = /^\d{1,6}$/.test(username);
 
   let sql;
   let param;
@@ -246,7 +246,7 @@ const adminLogin = (req, res) => {
 const employeeLogin = (req, res) => {
   const schema = Joi.object({
     bio_id: Joi.string()
-      .pattern(/^\d{6}$/)
+      .pattern(/^\d{1,6}$/)
       .required(),
     password: Joi.string().required(),
   });
