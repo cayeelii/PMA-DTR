@@ -94,135 +94,101 @@ export default function ReportPreview({
     const text = String(value).trim();
     if (!text || text === "-" || text === "--") return "";
 
-    const match = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?$/i);
+    const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?$/i);
     if (!match) return text;
 
     let hours = Number(match[1]);
     const minutes = match[2];
-    const seconds = match[3] || "00";
-    const suffix = match[4]?.toUpperCase();
+    const suffix = match[3]?.toUpperCase();
 
-    if (suffix === "AM" && hours === 12) hours = 0;
-    else if (suffix === "PM" && hours !== 12) hours += 12;
+    if (suffix === "AM" && hours === 12) {
+      hours = 0;
+    } else if (suffix === "PM" && hours !== 12) {
+      hours += 12;
+    }
 
     const twelveHour = ((hours + 11) % 12) + 1;
-    const ampm = hours < 12 ? "AM" : "PM";
-    return `${twelveHour}:${minutes}:${seconds} ${ampm}`;
+    return `${twelveHour}:${minutes}`;
   };
 
   const drawOneColumnHeader = (doc) => {
-    const { monthYear } = getDateRange();
-    // A4: 210mm wide, 15mm margins → content from x=15 to x=195, center=105
-    const M = 15;
-    const R = 195;
-    const CX = 105;
+    const { monthYear, rangeText } = getDateRange();
 
-    // Row 1: Title
-    doc.setFont(undefined, "bold");
-    doc.setFontSize(11);
-    doc.text("Monthly Daily Time Record — DRAFT COPY", CX, 18, { align: "center" });
-
-    // Row 2: Month subtitle
-    doc.setFont(undefined, "normal");
-    doc.setFontSize(9);
-    doc.text(`For the Month of ${String(monthYear).toUpperCase()}`, CX, 23, { align: "center" });
-
-    // Divider line
     doc.setLineWidth(0.4);
-    doc.line(M, 26, R, 26);
+    doc.line(18, 13, 192, 13);
 
-    // Row 3: Employee Name (left) | Department (center) | BIO-ID NO (right)
-    doc.setFontSize(8.5);
-
-    // Left: Employee Name
     doc.setFont(undefined, "bold");
-    doc.setFontSize(8.5);
-    const empLabel = "Employee Name: ";
-    const empLabelW = doc.getTextWidth(empLabel); // measure while still bold
-    doc.text(empLabel, M, 30.5);
-    doc.setFont(undefined, "normal");
-    doc.text(employee?.name || "-", M + empLabelW, 30.5);
+    doc.setFontSize(10);
+    doc.text(
+      `DAILY TIME RECORD OF - ${String(monthYear).toUpperCase()}`,
+      105,
+      18,
+      {
+        align: "center",
+      },
+    );
 
-    // Center: Department
-    doc.setFont(undefined, "bold");
-    const deptLabelW = doc.getTextWidth("Department: ");
-    const deptValueW = doc.getTextWidth(department?.name || "-");
-    const deptTotalW = deptLabelW + deptValueW;
-    doc.text("Department: ", CX - deptTotalW / 2, 30.5);
-    doc.setFont(undefined, "normal");
-    doc.text(department?.name || "-", CX - deptTotalW / 2 + deptLabelW, 30.5);
+    doc.setLineWidth(0.25);
+    doc.line(18, 20.2, 192, 20.2);
 
-    // Right: BIO-ID NO
-    doc.setFont(undefined, "bold");
-    const bioLabel = "BIO-ID NO: ";
-    const bioValue = String(employee?.biometric_id || "-");
-    const bioTotalW = doc.getTextWidth(bioLabel) + doc.getTextWidth(bioValue);
-    doc.text(bioLabel, R - bioTotalW, 30.5);
     doc.setFont(undefined, "normal");
-    doc.text(bioValue, R, 30.5, { align: "right" });
+    doc.setFontSize(8);
+    doc.text(`Statistics Date: ${rangeText}`, 19.2, 23.1);
+    doc.text(`Office: ${department?.name || "-"}`, 192, 23.1, {
+      align: "right",
+    });
 
-    // Bottom divider
-    doc.setLineWidth(0.4);
-    doc.line(M, 33, R, 33);
+    doc.setLineWidth(0.25);
+    doc.line(18, 25.0, 192, 25.0);
+
+    doc.text(`Name: ${employee?.name || "-"}`, 19.2, 28.0);
+
+    doc.line(18, 29.5, 192, 29.5);
   };
 
-  const drawOneColumnSignatures = (doc) => {
-    const M = 15;
-    const R = 195;
-    const pageH = doc.internal.pageSize.getHeight();
+  const drawOneColumnSignatures = (doc, contentEndY) => {
+    let signatureY = contentEndY + 32; 
 
-    // Pin the whole block ~2 inches (50.8mm) above the page bottom
-    const BLOCK_BOTTOM = pageH - 50.8;
+    if (signatureY > doc.internal.pageSize.getHeight() - 30) {
+      doc.addPage();
+      signatureY = 40;
+    }
 
-    // Bottom row: employee name + date (left), page number (right)
-    const bottomRowY = BLOCK_BOTTOM + 18;
-    doc.setFontSize(7.5);
-    doc.setFont(undefined, "normal");
-    const dateStr = new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-    doc.text(employee?.name || "-", M, bottomRowY);
-    doc.text(dateStr, M, bottomRowY + 4);
+    const leftStart = 26;
+    const leftEnd = 86;
+    const rightStart = 124;
+    const rightEnd = 184;
 
-    const totalPages = doc.internal.getNumberOfPages();
-    const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
-    doc.text(`Page ${currentPage} of ${totalPages}`, R, bottomRowY + 4, { align: "right" });
-
-    // Signature lines — sit above the bottom row
-    const sigLineY = BLOCK_BOTTOM;
-
-    // Left sig line
-    const leftStart = M;
-    const leftEnd   = M + 75;
     doc.setLineWidth(0.3);
-    doc.line(leftStart, sigLineY, leftEnd, sigLineY);
+    doc.line(leftStart, signatureY, leftEnd, signatureY);
+    doc.line(rightStart, signatureY, rightEnd, signatureY);
 
-    // Right sig line
-    const rightStart = R - 75;
-    const rightEnd   = R;
-    doc.line(rightStart, sigLineY, rightEnd, sigLineY);
-
-    // Labels above the lines
     doc.setFontSize(8);
-    doc.setFont(undefined, "normal");
-    doc.text("Certified True and Correct", leftStart, sigLineY - 5);
-    doc.text("Approved by:", rightStart, sigLineY - 5);
-
-    // Left: EMPLOYEE SIGNATURE label below line
-    doc.setFontSize(7.5);
     doc.setFont(undefined, "bold");
-    doc.text("EMPLOYEE SIGNATURE", (leftStart + leftEnd) / 2, sigLineY + 4, { align: "center" });
+    doc.text(
+      employee?.name || "Employee",
+      (leftStart + leftEnd) / 2,
+      signatureY - 2,
+      {
+        align: "center",
+      },
+    );
 
-    // Right: supervisor name + position below line
-    const supName = signatory?.head_name?.toUpperCase() || "";
-    const supPos  = signatory?.position || "";
-    doc.text(supName, (rightStart + rightEnd) / 2, sigLineY + 4, { align: "center" });
+    const supervisorName = signatory
+      ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
+      : "";
+
+    doc.text(supervisorName, (rightStart + rightEnd) / 2, signatureY - 2, {
+      align: "center",
+    });
+
     doc.setFont(undefined, "normal");
-    doc.setFontSize(7);
-    doc.text(supPos, (rightStart + rightEnd) / 2, sigLineY + 8, { align: "center" });
+    doc.text("Employee Signature", (leftStart + leftEnd) / 2, signatureY + 5, {
+      align: "center",
+    });
+    doc.text("Supervisor", (rightStart + rightEnd) / 2, signatureY + 5, {
+      align: "center",
+    });
   };
 
   //Export to XLSX
@@ -269,56 +235,47 @@ export default function ReportPreview({
         format: "a4",
       });
 
-      // A4 = 210mm × 297mm, standard 15mm margins
-      const PAGE_W = 210;
-      const PAGE_H = 297;
-      const MARGIN = 15;
-      const CONTENT_W = PAGE_W - MARGIN * 2; // 180mm
+      const pageWidth = doc.internal.pageSize.getWidth();
 
+      // Helper to strip seconds and AM/PM (e.g., "08:30:00 AM" -> "08:30")
       const formatTimeShort = (timeStr) => {
         if (!timeStr || timeStr === "-" || timeStr === "--") return "";
-        const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?$/i);
-        if (!match) return timeStr;
-
-        let hours = Number(match[1]);
-        const minutes = match[2];
-        const suffix = match[3]?.toUpperCase();
-
-        if (suffix === "AM" && hours === 12) hours = 0;
-        else if (suffix === "PM" && hours !== 12) hours += 12;
-
-        return `${String(hours).padStart(2, "0")}:${minutes}`;
+        const parts = timeStr.split(":");
+        if (parts.length < 2) return timeStr;
+        return `${parts[0]}:${parts[1].split(" ")[0]}`;
       };
 
+      // Helper function to draw a single DTR slip
       const drawDTRForm = (startX, width) => {
-        const margin = 2.5; 
+        // Reduced horizontal margins to allow text to enlarge
+        const margin = 6; 
         const centerX = startX + width / 2;
-        const contentWidth = width - margin * 2; 
+        const contentWidth = width - margin * 2;
 
         // --- 1. Header Section ---
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
-        doc.text("Monthly Daily Time Record", centerX, 10, { align: "center" });
+        doc.setFontSize(11); // Enlarged
+        doc.text("Monthly Daily Time Record", centerX, 12, { align: "center" });
 
-        doc.setFontSize(8.5);
+        doc.setFontSize(10);
         const { monthYear } = getDateRange();
-        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 15.5, { align: "center" });
+        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 18, { align: "center" });
 
         // --- 2. Identity Section ---
         doc.setLineWidth(0.1);
-        doc.line(startX + margin, 18, startX + width - margin, 18);
-
+        doc.line(startX + margin, 21, startX + width - margin, 21);
+        
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(8.5);
-        doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 22.5);
-        doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 27);
+        doc.setFontSize(10); // Enlarged
+        doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 26);
+        doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 31);
 
-        doc.line(startX + margin, 29, startX + width - margin, 29);
+        doc.line(startX + margin, 33, startX + width - margin, 33);
 
-        // --- 3. Table Header (AM/PM/OT grouped) ---
+        // --- 3. Table Header ---
         const tableHeader = [
           [
-            { content: "No/Day", colSpan: 2, rowSpan: 2, styles: { valign: "bottom", halign: "center" } },
+            { content: "No / Day", rowSpan: 2, styles: { valign: "middle", halign: "left" } },
             { content: "AM", colSpan: 2 },
             { content: "PM", colSpan: 2 },
             { content: "OT", colSpan: 2 },
@@ -347,8 +304,7 @@ export default function ReportPreview({
           }
 
           rows.push([
-            dayNum,
-            dayName,
+            `${dayNum} ${dayName}`,
             formatTimeShort(record?.amIn),
             formatTimeShort(record?.amOut),
             formatTimeShort(record?.pmIn),
@@ -359,15 +315,15 @@ export default function ReportPreview({
         }
 
         autoTable(doc, {
-          startY: 29,
+          startY: 33,
           head: tableHeader,
           body: rows,
-          margin: { left: startX + margin, right: PAGE_W - (startX + width - margin) },
+          margin: { left: startX + margin },
           tableWidth: contentWidth,
           theme: "plain",
           styles: {
-            fontSize: 8.5,
-            cellPadding: 1.0,
+            fontSize: 7.5, 
+            cellPadding: 0.8, 
             halign: "center",
             textColor: [0, 0, 0],
             font: "helvetica",
@@ -377,8 +333,7 @@ export default function ReportPreview({
             fontStyle: "bold",
           },
           columnStyles: {
-            0: { halign: "center", cellWidth: 8  },  // No
-            1: { halign: "left",   cellWidth: 12 },  // Day
+            0: { halign: "left", cellWidth: 16 },
           },
           didDrawCell: (data) => {
             doc.setLineWidth(0.1);
@@ -386,64 +341,57 @@ export default function ReportPreview({
               data.cell.x,
               data.cell.y + data.cell.height,
               data.cell.x + data.cell.width,
-              data.cell.y + data.cell.height,
+              data.cell.y + data.cell.height
             );
           },
         });
 
-        // --- 5. Signature Section (flows after table with spacing for actual signatures) ---
+        // --- 5. Footer / Signature Section ---
         const finalTableY = doc.lastAutoTable.finalY;
+        const footerY = finalTableY + 12;
 
-        // Employee sig line — 15mm gap after table (1.5cm)
-        const empSigLineY = finalTableY + 15;
-        doc.setLineWidth(0.3);
-        doc.line(startX + margin + 3, empSigLineY, startX + width - margin - 3, empSigLineY);
+        doc.line(startX + margin + 5, footerY, startX + width - margin - 5, footerY);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.text("EMPLOYEE SIGNATURE", centerX, empSigLineY + 4, { align: "center" });
-
-        // Boss sig line — 17mm gap below employee label (1.7cm)
-        const bossSigLineY = empSigLineY + 17;
-        doc.setLineWidth(0.3);
-        doc.line(startX + margin + 3, bossSigLineY, startX + width - margin - 3, bossSigLineY);
-
-        // Boss name + position below the line
-        doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
+        doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5, { align: "center" });
+
+        const sigY = footerY + 18; 
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10); 
         const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
-        doc.text(bossName, centerX, bossSigLineY + 5, { align: "center" });
+        doc.text(bossName, centerX, sigY, { align: "center" });
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(7.5);
+        doc.setFontSize(8); 
         const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
-        doc.text(bossPos, centerX, bossSigLineY + 9.5, { align: "center" });
+        doc.text(bossPos, centerX, sigY + 5, { align: "center" });
 
-        // Dateprint row — 12mm below boss position (1.2cm)
-        const datePrintY = bossSigLineY + 9.5 + 12;
         const dateStr = new Date().toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
           month: "long",
           day: "numeric",
         });
-        doc.setFontSize(6.5);
-        doc.text(`dateprint: ${dateStr}`, startX + margin, datePrintY);
-        doc.text(`Page 1 of 1`, startX + width - margin, datePrintY, { align: "right" });
+        doc.setFontSize(7.5);
+        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 12);
+        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 12, { align: "right" });
       };
 
       // --- EXECUTION LOGIC ---
       if (columnLayout === "2") {
-        // Portrait A4, each slip = 105mm wide
-        const SLIP_W = PAGE_W / 2; // 105mm
+        // Form 1 (Left side)
+        drawDTRForm(0, pageWidth / 2);
 
-        drawDTRForm(0, SLIP_W);
-        drawDTRForm(SLIP_W, SLIP_W);
+        // Form 2 (Right side)
+        drawDTRForm(pageWidth / 2, pageWidth / 2);
       } else {
-        // --- 1 COLUMN FORMAT: full width table (180mm content) ---
-        const oneColumnHead = [["Date", "Day", "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"]];
+        // --- 1 COLUMN FORMAT: ADD OT IN/OUT ---
+        const oneColumnHead = [[
+          { content: "Date", styles: { halign: "left" } },
+          "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT"
+        ]];
         const oneColumnBody = reportRows.map((row) => [
           formatDateForOneColumn(row.date),
-          row.day || "",
           formatTimeForOneColumn(row.amIn),
           formatTimeForOneColumn(row.amOut),
           formatTimeForOneColumn(row.pmIn),
@@ -454,20 +402,19 @@ export default function ReportPreview({
 
         drawOneColumnHeader(doc);
 
-        // Date + Day cols fixed, remaining 6 time cols split equally
-        const dateColW = 24;
-        const dayColW  = 10;
-        const timeColW = (CONTENT_W - dateColW - dayColW) / 6;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const marginLeft = 18;
+        const tableWidth = 192 - marginLeft; // matches header lines (18 to 192)
 
         autoTable(doc, {
-          startY: 35,
+          startY: 39.5,
           head: oneColumnHead,
           body: oneColumnBody,
-          margin: { left: MARGIN, right: MARGIN },
-          tableWidth: CONTENT_W,
+          margin: { left: marginLeft },
+          tableWidth,
           styles: {
-            fontSize: 8,
-            cellPadding: 1.5,
+            fontSize: 7,
+            cellPadding: 1.2,
             halign: "center",
             lineWidth: 0,
             lineColor: 0,
@@ -484,29 +431,36 @@ export default function ReportPreview({
             lineColor: 0,
           },
           columnStyles: {
-            0: { halign: "left",   cellWidth: dateColW },
-            1: { halign: "left",   cellWidth: dayColW  },
-            2: { cellWidth: timeColW },
-            3: { cellWidth: timeColW },
-            4: { cellWidth: timeColW },
-            5: { cellWidth: timeColW },
-            6: { cellWidth: timeColW },
-            7: { cellWidth: timeColW },
+            0: { halign: "left", cellWidth: 24 },
+            1: { cellWidth: 19.5 },
+            2: { cellWidth: 19.5 },
+            3: { cellWidth: 19.5 },
+            4: { cellWidth: 19.5 },
+            5: { cellWidth: 19.5 },
+            6: { cellWidth: 19.5 },
           },
           theme: "plain",
+          didParseCell: (data) => {
+            if (data.section === "head" && data.column.index === 0) {
+              data.cell.styles.halign = "left";
+            }
+          },
           didDrawCell: (data) => {
             if (
               (data.section === "head" || data.section === "body") &&
               data.column.index === data.table.columns.length - 1
             ) {
               const y = data.cell.y + data.cell.height;
+              const x1 = marginLeft;
+              const x2 = marginLeft + tableWidth;
               doc.setLineWidth(0.2);
-              doc.line(MARGIN, y, MARGIN + CONTENT_W, y);
+              doc.line(x1, y, x2, y);
             }
           },
         });
 
-        drawOneColumnSignatures(doc);
+        const finalY = doc.lastAutoTable?.finalY || 38;
+        drawOneColumnSignatures(doc, finalY);
       }
 
       doc.save(`${employee?.name || "DTR"}_Report.pdf`);
@@ -515,162 +469,146 @@ export default function ReportPreview({
     }
   };
 
-
   const handleExportPDF = (columnLayout) => {
     setShowPdfOptions(false);
     exportToPDF(columnLayout);
   };
 
-  const { monthYear } = getDateRange();
   console.log("SIGNATORY IN PREVIEW:", signatory);
 
   return (
-      <div className="flex justify-center px-4 py-4 w-full">
-          {/* Report Card */}
-          <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-4xl h-[650px] flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between border-b pb-3 mb-3">
-                  <div className="flex items-center gap-2">
-                      <button
-                          className="text-gray-500 hover:text-blue-900 p-1 rounded-full"
-                          onClick={onBack}
-                      >
-                          <ChevronLeft size={22} />
-                      </button>
-                      <span className="font-semibold text-lg">
-                          Report Preview
-                      </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                      <button
-                          onClick={exportToXLSX}
-                          className="border border-green-600 text-green-600 px-4 py-1 rounded hover:bg-green-50 text-sm font-medium"
-                      >
-                          Export XLSX
-                      </button>
-                      <div className="relative">
-                          <button
-                              onClick={() => setShowPdfOptions((prev) => !prev)}
-                              className="border border-gray-400 text-gray-700 px-4 py-1 rounded hover:bg-gray-100 text-sm font-medium"
-                          >
-                              Export PDF
-                          </button>
-
-                          {showPdfOptions && (
-                              <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-2">
-                                  <p className="text-[11px] text-gray-500 mb-2 px-1">
-                                      Choose layout
-                                  </p>
-                                  <button
-                                      onClick={() => handleExportPDF("1")}
-                                      className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
-                                  >
-                                      1 Column
-                                  </button>
-                                  <button
-                                      onClick={() => handleExportPDF("2")}
-                                      className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
-                                  >
-                                      2 Columns
-                                  </button>
-                              </div>
-                          )}
-                      </div>
-                  </div>
-              </div>
-
-              {/* Report Info */}
-              <div className="flex justify-between items-center mb-2 ">
-                  <div className="flex-1">
-                      <div className="text-center">
-                          <div className="text-sm font-medium">
-                              Monthly Daily Time Record
-                          </div>
-      <div className="text-xs text-gray-500">
-        For the Month of {monthYear.toUpperCase()}
-      </div>
-                      </div>
-                      <div className="text-xs mt-2">
-                          Name:{" "}
-                          <span className="font-semibold">
-                              {employee?.name || "—"}
-                          </span>
-                      </div>
-                  </div>
-                  <div className="text-xs">
-                      Office:{" "}
-                      <span className="font-semibold">
-                          {department?.name || "—"}
-                      </span>
-                  </div>
-              </div>
-              {/* Table */}
-              <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-100">
-                  <table className="min-w-full text-xs border-separate border-spacing-0 rounded-xl overflow-hidden">
-                      <thead className="sticky top-0 z-10">
-                          <tr className="bg-gray-100 text-gray-700 font-semibold">
-                              <th className="px-4 py-2 text-left rounded-tl-lg">
-                                  Date
-                              </th>
-                              <th className="px-4 py-2 text-left">Day</th>
-                              <th className="px-4 py-2 text-left">AM IN</th>
-                              <th className="px-4 py-2 text-left">AM OUT</th>
-                              <th className="px-4 py-2 text-left">PM IN</th>
-                              <th className="px-4 py-2 text-left">PM OUT</th>
-                              <th className="px-4 py-2 text-left">OT IN</th>
-                              <th className="px-4 py-2 text-left rounded-tr-lg">
-                                  OT OUT
-                              </th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {reportRows.length === 0 ? (
-                              <tr>
-                                  <td
-                                      colSpan={8}
-                                      className="px-4 py-6 border-t border-gray-200 text-center text-gray-500"
-                                  >
-                                      No days with time entries to include in
-                                      the report.
-                                  </td>
-                              </tr>
-                          ) : (
-                              reportRows.map((row, idx) => (
-                                  <tr
-                                      key={idx}
-                                      className="hover:bg-gray-50 transition-colors"
-                                  >
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left font-medium text-gray-700">
-                                          {row.date}
-                                      </td>
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
-                                          {row.day}
-                                      </td>
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
-                                          {row.amIn}
-                                      </td>
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
-                                          {row.amOut}
-                                      </td>
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
-                                          {row.pmIn}
-                                      </td>
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
-                                          {row.pmOut}
-                                      </td>
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
-                                          {row.otIn}
-                                      </td>
-                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
-                                          {row.otOut}
-                                      </td>
-                                  </tr>
-                              ))
-                          )}
-                      </tbody>
-                  </table>
-              </div>
+    <div>
+      {/* Report Card */}
+      <div className="bg-white rounded-xl shadow p-6 max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b pb-3 mb-3">
+          <div className="flex items-center gap-2">
+            <button
+              className="text-gray-500 hover:text-blue-900 p-1 rounded-full"
+              onClick={onBack}
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <span className="font-semibold text-lg">Report Preview</span>
+            <span className="ml-2 text-xs text-gray-400">OMA1</span>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportToXLSX}
+              className="border border-green-600 text-green-600 px-4 py-1 rounded hover:bg-green-50 text-sm font-medium"
+            >
+              Export XLSX
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowPdfOptions((prev) => !prev)}
+                className="border border-gray-400 text-gray-700 px-4 py-1 rounded hover:bg-gray-100 text-sm font-medium"
+              >
+                Export PDF
+              </button>
+
+              {showPdfOptions && (
+                <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-2">
+                  <p className="text-[11px] text-gray-500 mb-2 px-1">
+                    Choose layout
+                  </p>
+                  <button
+                    onClick={() => handleExportPDF("1")}
+                    className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
+                  >
+                    1 Column
+                  </button>
+                  <button
+                    onClick={() => handleExportPDF("2")}
+                    className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
+                  >
+                    2 Columns
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Report Info */}
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex-1">
+            <div className="text-center">
+              <div className="text-sm font-medium">
+                Monthly Daily Time Record
+              </div>
+              <div className="text-xs text-gray-500">
+                For the Month of MARCH 2026
+              </div>
+            </div>
+            <div className="text-xs mt-2">
+              Name:{" "}
+              <span className="font-semibold">{employee?.name || "—"}</span>
+            </div>
+          </div>
+          <div className="text-xs">
+            Office:{" "}
+            <span className="font-semibold">{department?.name || "—"}</span>
+          </div>
+        </div>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-xs border-separate border-spacing-0 rounded-xl overflow-hidden">
+            <thead>
+              <tr className="bg-gray-100 text-gray-700 font-semibold">
+                <th className="px-4 py-2 text-left rounded-tl-lg">Date</th>
+                <th className="px-4 py-2 text-left">Day</th>
+                <th className="px-4 py-2 text-left">AM IN</th>
+                <th className="px-4 py-2 text-left">AM OUT</th>
+                <th className="px-4 py-2 text-left">PM IN</th>
+                <th className="px-4 py-2 text-left">PM OUT</th>
+                <th className="px-4 py-2 text-left">OT IN</th>
+                <th className="px-4 py-2 text-left rounded-tr-lg">OT OUT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportRows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-6 border-t border-gray-200 text-center text-gray-500"
+                  >
+                    No days with time entries to include in the report.
+                  </td>
+                </tr>
+              ) : (
+                reportRows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-2 border-t border-gray-200 text-left font-medium text-gray-700">
+                      {row.date}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.day}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.amIn}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.amOut}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.pmIn}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.pmOut}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.otIn}
+                    </td>
+                    <td className="px-4 py-2 border-t border-gray-200 text-left">
+                      {row.otOut}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+    </div>
   );
 }
