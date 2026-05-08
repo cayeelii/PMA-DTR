@@ -54,6 +54,7 @@ const dtrRoute = require("./routes/admin/dtrRoute");
 const activityLogsRoute = require("./routes/admin/activityLogsRoute");
 const maintenanceRoute = require("./routes/admin/maintenanceRoute");
 const homepageRoute = require("./routes/admin/homepageRoute");
+const scheduleRoute = require("./routes/admin/scheduleRoute");
 
 //Routes
 app.use("/api/auth", authRoutes);
@@ -63,6 +64,7 @@ app.use("/api/dtr", dtrRoute);
 app.use("/api/activity-logs", activityLogsRoute);
 app.use("/api/maintenance", maintenanceRoute);
 app.use("/api/homepage", homepageRoute);
+app.use("/api/schedules", scheduleRoute);
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);

@@ -1,110 +1,151 @@
-import { Pencil, Archive } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Pencil, Archive, Plus } from "lucide-react";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function ScheduleTabPrototype() {
-  const employees = [
-    {
-      department: "Standard",
-      shifts: 4,
-      schedule: [
-        ["AM IN", "04:00 → 10:00", "AM"],
-        ["AM OUT", "12:00 → 12:30", "AM"],
-        ["PM IN", "12:31 → 13:00", "PM"],
-        ["PM OUT", "14:00 → 23:59", "PM"],
-      ],
-    },
-    {
-      department: "CM_COOK",
-      shifts: 2,
-      schedule: [
-        ["AM IN", "01:00 → 08:00", "AM"],
-        ["AM OUT", "08:01 → 12:30", "AM"],
-      ],
-    },
-  ];
+    const [schedules, setSchedules] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  const badgeStyle = {
-    AM: "bg-blue-100 text-blue-700",
-    PM: "bg-green-100 text-green-700",
-    OT: "bg-orange-100 text-orange-700",
-  };
+    // FETCH SCHEDULES 
+    const fetchSchedules = async () => {
+        try {
+            setLoading(true);
 
-  return (
-    <div className="relative bg-surface w-full text-theme p-2 pt-2 overflow-y-auto">
-      <div className="p-1 md:p-5 md:mt-0">
+            const response = await fetch(
+                `${API_BASE_URL}/api/schedules`
+            );
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary">
-            Schedule
-          </h1>
+            if (!response.ok) {
+                throw new Error("Failed to fetch schedules");
+            }
 
-          <button className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium shadow">
-            Add Schedule
-          </button>
-        </div>
+            const data = await response.json();
+            setSchedules(data);
 
-        {/* LIST */}
-        <div className="grid gap-4">
-          {employees.map((employee, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl border shadow-sm p-5"
-            >
-              <div className="grid grid-cols-12 gap-4 items-start">
+        } catch (error) {
+            console.error("Error fetching schedules:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-                {/* Department */}
-                <div className="col-span-3">
-                  <h2 className="font-bold text-slate-800 text-lg">
-                    {employee.department}
-                  </h2>
-                  <p className="text-sm text-slate-500">
-                    {employee.shifts} shifts
-                  </p>
-                </div>
+    useEffect(() => {
+        fetchSchedules();
+    }, []);
 
-                {/* Schedule */}
-                <div className="col-span-7 space-y-2">
-                  {employee.schedule.map((shift, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between items-center bg-slate-50 rounded-xl px-4 py-3"
-                    >
-                      <div className="font-medium text-slate-700">
-                        {shift[0]}
-                      </div>
+    return (
+        <div className="bg-surface w-full text-theme p-3 md:p-6">
 
-                      <div className="font-mono text-sm text-slate-700">
-                        {shift[1]}
-                      </div>
+            {/* HEADER */}
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl md:text-3xl font-bold text-primary">
+                    Schedule
+                </h1>
 
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          badgeStyle[shift[2]]
-                        }`}
-                      >
-                        {shift[2]}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-2 flex items-center justify-end gap-2">
-                  <button className="text-blue-600 hover:text-blue-800 transition">
-                    <Pencil size={18} />
-                  </button>
-
-                  <button className="p-2 rounded-md hover:bg-gray-200 text-red-500">
-                    <Archive size={18} />
-                  </button>
-                </div>
-
-              </div>
+                <button className="flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-xl shadow transition">
+                    <Plus size={18} />
+                    Add Schedule
+                </button>
             </div>
-          ))}
-        </div>
 
-      </div>
-    </div>
-  );
+            {/* LOADING STATE */}
+            {loading ? (
+                <div className="text-center text-slate-500 py-10">
+                    Loading schedules...
+                </div>
+            ) : (
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+                    {schedules.map((schedule) => (
+                        <div
+                            key={schedule.schedule_id}
+                            className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 hover:shadow-md transition"
+                        >
+
+                            {/* HEADER */}
+                            <div className="flex items-center justify-between mb-3">
+
+                                <div className="flex items-center gap-2">
+                                    <h2 className="font-bold text-lg text-slate-800">
+                                        {schedule.schedule_name}
+                                    </h2>
+                                </div>
+
+                                {/* ACTIONS */}
+                                <div className="flex gap-1">
+
+                                    <button className="p-2 rounded-lg hover:bg-slate-100 text-blue-600 transition">
+                                        <Pencil size={18} />
+                                    </button>
+
+                                    <button className="p-2 rounded-lg hover:bg-slate-100 text-red-500 transition">
+                                        <Archive size={18} />
+                                    </button>
+
+                                </div>
+                            </div>
+
+                            <div className="border-t border-slate-100 mb-3"></div>
+
+                            {/* TIME DISPLAY */}
+                            <div className="grid gap-2 text-sm">
+
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600 font-medium">AM IN</span>
+                                    <span className="font-mono text-slate-700">
+                                        {schedule.am_in_start} - {schedule.am_in_end}
+                                    </span>
+                                </div>
+
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600 font-medium">AM OUT</span>
+                                    <span className="font-mono text-slate-700">
+                                        {schedule.am_out_start} - {schedule.am_out_end}
+                                    </span>
+                                </div>
+
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600 font-medium">PM IN</span>
+                                    <span className="font-mono text-slate-700">
+                                        {schedule.pm_in_start} - {schedule.pm_in_end}
+                                    </span>
+                                </div>
+
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600 font-medium">PM OUT</span>
+                                    <span className="font-mono text-slate-700">
+                                        {schedule.pm_out_start} - {schedule.pm_out_end}
+                                    </span>
+                                </div>
+
+                                {/* OPTIONAL OT */}
+                                {schedule.ot_in_start && (
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600 font-medium">OT IN</span>
+                                            <span className="font-mono text-slate-700">
+                                                {schedule.ot_in_start} - {schedule.ot_in_end}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600 font-medium">OT OUT</span>
+                                            <span className="font-mono text-slate-700">
+                                                {schedule.ot_out_start} - {schedule.ot_out_end}
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
+
+                            </div>
+                        </div>
+                    ))}
+
+                </div>
+            )}
+
+        </div>
+    );
 }
