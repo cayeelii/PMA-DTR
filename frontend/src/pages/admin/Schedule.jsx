@@ -152,7 +152,7 @@ export default function ScheduleTabPrototype() {
 
             {/* ADD SCHEDULE MODAL */}
             {isAddModalOpen && (
-                <AddScheduleModal onClose={() => setIsAddModalOpen(false)} />
+                <AddScheduleModal onClose={() => setIsAddModalOpen(false)} onSuccess={fetchSchedules} />  
             )}
         </div>
     );
