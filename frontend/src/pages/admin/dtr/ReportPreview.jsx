@@ -111,7 +111,7 @@ export default function ReportPreview({
   };
 
   const drawOneColumnHeader = (doc) => {
-    const { monthYear, rangeText } = getDateRange();
+    const { monthYear } = getDateRange();
     // A4: 210mm wide, 15mm margins → content from x=15 to x=195, center=105
     const M = 15;
     const R = 195;
@@ -274,8 +274,6 @@ export default function ReportPreview({
       const PAGE_H = 297;
       const MARGIN = 15;
       const CONTENT_W = PAGE_W - MARGIN * 2; // 180mm
-
-      const pageWidth = PAGE_W;
 
       const formatTimeShort = (timeStr) => {
         if (!timeStr || timeStr === "-" || timeStr === "--") return "";
@@ -517,146 +515,162 @@ export default function ReportPreview({
     }
   };
 
+
   const handleExportPDF = (columnLayout) => {
     setShowPdfOptions(false);
     exportToPDF(columnLayout);
   };
 
+  const { monthYear } = getDateRange();
   console.log("SIGNATORY IN PREVIEW:", signatory);
 
   return (
-    <div className="flex justify-center px-4">
-      {/* Report Card */}
-      <div className="bg-white rounded-xl shadow p-6 w-full max-w-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b pb-3 mb-3">
-          <div className="flex items-center gap-2">
-            <button
-              className="text-gray-500 hover:text-blue-900 p-1 rounded-full"
-              onClick={onBack}
-            >
-              <ChevronLeft size={22} />
-            </button>
-            <span className="font-semibold text-lg">Report Preview</span>
-            <span className="ml-2 text-xs text-gray-400">OMA1</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={exportToXLSX}
-              className="border border-green-600 text-green-600 px-4 py-1 rounded hover:bg-green-50 text-sm font-medium"
-            >
-              Export XLSX
-            </button>
-            <div className="relative">
-              <button
-                onClick={() => setShowPdfOptions((prev) => !prev)}
-                className="border border-gray-400 text-gray-700 px-4 py-1 rounded hover:bg-gray-100 text-sm font-medium"
-              >
-                Export PDF
-              </button>
+      <div className="flex justify-center px-4 py-4 w-full">
+          {/* Report Card */}
+          <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-4xl h-[650px] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b pb-3 mb-3">
+                  <div className="flex items-center gap-2">
+                      <button
+                          className="text-gray-500 hover:text-blue-900 p-1 rounded-full"
+                          onClick={onBack}
+                      >
+                          <ChevronLeft size={22} />
+                      </button>
+                      <span className="font-semibold text-lg">
+                          Report Preview
+                      </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <button
+                          onClick={exportToXLSX}
+                          className="border border-green-600 text-green-600 px-4 py-1 rounded hover:bg-green-50 text-sm font-medium"
+                      >
+                          Export XLSX
+                      </button>
+                      <div className="relative">
+                          <button
+                              onClick={() => setShowPdfOptions((prev) => !prev)}
+                              className="border border-gray-400 text-gray-700 px-4 py-1 rounded hover:bg-gray-100 text-sm font-medium"
+                          >
+                              Export PDF
+                          </button>
 
-              {showPdfOptions && (
-                <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-2">
-                  <p className="text-[11px] text-gray-500 mb-2 px-1">
-                    Choose layout
-                  </p>
-                  <button
-                    onClick={() => handleExportPDF("1")}
-                    className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
-                  >
-                    1 Column
-                  </button>
-                  <button
-                    onClick={() => handleExportPDF("2")}
-                    className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
-                  >
-                    2 Columns
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        {/* Report Info */}
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex-1">
-            <div className="text-center">
-              <div className="text-sm font-medium">
-                Monthly Daily Time Record
+                          {showPdfOptions && (
+                              <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-2">
+                                  <p className="text-[11px] text-gray-500 mb-2 px-1">
+                                      Choose layout
+                                  </p>
+                                  <button
+                                      onClick={() => handleExportPDF("1")}
+                                      className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
+                                  >
+                                      1 Column
+                                  </button>
+                                  <button
+                                      onClick={() => handleExportPDF("2")}
+                                      className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
+                                  >
+                                      2 Columns
+                                  </button>
+                              </div>
+                          )}
+                      </div>
+                  </div>
               </div>
-              <div className="text-xs text-gray-500">
-                For the Month of MARCH 2026
-              </div>
-            </div>
-            <div className="text-xs mt-2">
-              Name:{" "}
-              <span className="font-semibold">{employee?.name || "—"}</span>
-            </div>
-          </div>
-          <div className="text-xs">
-            Office:{" "}
-            <span className="font-semibold">{department?.name || "—"}</span>
-          </div>
-        </div>
-        {/* Table */}
-        <div className="overflow-auto max-h-96 rounded-lg border border-gray-100">
-          <table className="min-w-full text-xs border-separate border-spacing-0 rounded-xl overflow-hidden">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-100 text-gray-700 font-semibold">
-                <th className="px-4 py-2 text-left rounded-tl-lg">Date</th>
-                <th className="px-4 py-2 text-left">Day</th>
-                <th className="px-4 py-2 text-left">AM IN</th>
-                <th className="px-4 py-2 text-left">AM OUT</th>
-                <th className="px-4 py-2 text-left">PM IN</th>
-                <th className="px-4 py-2 text-left">PM OUT</th>
-                <th className="px-4 py-2 text-left">OT IN</th>
-                <th className="px-4 py-2 text-left rounded-tr-lg">OT OUT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reportRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-6 border-t border-gray-200 text-center text-gray-500"
-                  >
-                    No days with time entries to include in the report.
-                  </td>
-                </tr>
-              ) : (
-                reportRows.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-2 border-t border-gray-200 text-left font-medium text-gray-700">
-                      {row.date}
-                    </td>
-                    <td className="px-4 py-2 border-t border-gray-200 text-left">
-                      {row.day}
-                    </td>
-                    <td className="px-4 py-2 border-t border-gray-200 text-left">
-                      {row.amIn}
-                    </td>
-                    <td className="px-4 py-2 border-t border-gray-200 text-left">
-                      {row.amOut}
-                    </td>
-                    <td className="px-4 py-2 border-t border-gray-200 text-left">
-                      {row.pmIn}
-                    </td>
-                    <td className="px-4 py-2 border-t border-gray-200 text-left">
-                      {row.pmOut}
-                    </td>
-                    <td className="px-4 py-2 border-t border-gray-200 text-left">
-                      {row.otIn}
-                    </td>
-                    <td className="px-4 py-2 border-t border-gray-200 text-left">
-                      {row.otOut}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+
+              {/* Report Info */}
+              <div className="flex justify-between items-center mb-2 ">
+                  <div className="flex-1">
+                      <div className="text-center">
+                          <div className="text-sm font-medium">
+                              Monthly Daily Time Record
+                          </div>
+      <div className="text-xs text-gray-500">
+        For the Month of {monthYear.toUpperCase()}
       </div>
-    </div>
+                      </div>
+                      <div className="text-xs mt-2">
+                          Name:{" "}
+                          <span className="font-semibold">
+                              {employee?.name || "—"}
+                          </span>
+                      </div>
+                  </div>
+                  <div className="text-xs">
+                      Office:{" "}
+                      <span className="font-semibold">
+                          {department?.name || "—"}
+                      </span>
+                  </div>
+              </div>
+              {/* Table */}
+              <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-100">
+                  <table className="min-w-full text-xs border-separate border-spacing-0 rounded-xl overflow-hidden">
+                      <thead className="sticky top-0 z-10">
+                          <tr className="bg-gray-100 text-gray-700 font-semibold">
+                              <th className="px-4 py-2 text-left rounded-tl-lg">
+                                  Date
+                              </th>
+                              <th className="px-4 py-2 text-left">Day</th>
+                              <th className="px-4 py-2 text-left">AM IN</th>
+                              <th className="px-4 py-2 text-left">AM OUT</th>
+                              <th className="px-4 py-2 text-left">PM IN</th>
+                              <th className="px-4 py-2 text-left">PM OUT</th>
+                              <th className="px-4 py-2 text-left">OT IN</th>
+                              <th className="px-4 py-2 text-left rounded-tr-lg">
+                                  OT OUT
+                              </th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {reportRows.length === 0 ? (
+                              <tr>
+                                  <td
+                                      colSpan={8}
+                                      className="px-4 py-6 border-t border-gray-200 text-center text-gray-500"
+                                  >
+                                      No days with time entries to include in
+                                      the report.
+                                  </td>
+                              </tr>
+                          ) : (
+                              reportRows.map((row, idx) => (
+                                  <tr
+                                      key={idx}
+                                      className="hover:bg-gray-50 transition-colors"
+                                  >
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left font-medium text-gray-700">
+                                          {row.date}
+                                      </td>
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
+                                          {row.day}
+                                      </td>
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
+                                          {row.amIn}
+                                      </td>
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
+                                          {row.amOut}
+                                      </td>
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
+                                          {row.pmIn}
+                                      </td>
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
+                                          {row.pmOut}
+                                      </td>
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
+                                          {row.otIn}
+                                      </td>
+                                      <td className="px-4 py-2 border-t border-gray-200 text-left">
+                                          {row.otOut}
+                                      </td>
+                                  </tr>
+                              ))
+                          )}
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
   );
 }

@@ -650,7 +650,6 @@ const DTREditView = ({ employee, batchId, onBack, onGenerateReport }) => {
         }
 
         return convertTo24Hour(entry?.[field], field);
-        return convertTo24Hour(entry?.[field], field);
       };
 
       const payload = changedEntries.map((entry) => ({
