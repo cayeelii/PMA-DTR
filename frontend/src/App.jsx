@@ -28,6 +28,7 @@ import ChangePasswordPage from "./pages/admin/ChangePassword.jsx";
 import EmployeeLoginPage from "./pages/employee/EmployeeLogin.jsx";
 import EmployeeRegisterPage from "./pages/employee/EmployeeRegister.jsx";
 import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
+import EmployeeDTR from "./pages/employee/EmployeeDTR.jsx";
 import EmployeeProfilePage from "./pages/employee/EmployeeProfile.jsx";
 import EmployeeChangePasswordPage from "./pages/employee/EmployeeChangePassword.jsx";
 
@@ -90,6 +91,7 @@ function App() {
         >
           <Route index element={<Navigate to="home" />} />
           <Route path="home" element={<EmployeeHomePage />} />
+          <Route path="dtr" element={<EmployeeDTR />} />
           <Route path="profile" element={<EmployeeProfilePage />} />
           <Route
             path="employee-change-password"

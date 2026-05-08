@@ -48,6 +48,8 @@ app.use(
 );
 
 const authRoutes = require("./routes/authRoute");
+
+// Admin routes
 const adminUsersRoute = require("./routes/admin/usersRoute");
 const adminSignatoryRoutes = require("./routes/admin/signatoriesRoute");
 const dtrRoute = require("./routes/admin/dtrRoute");
@@ -56,7 +58,12 @@ const maintenanceRoute = require("./routes/admin/maintenanceRoute");
 const homepageRoute = require("./routes/admin/homepageRoute");
 const scheduleRoute = require("./routes/admin/scheduleRoute");
 
-//Routes
+// Employee routes
+const employeeHomepageRoute = require("./routes/employee/homepageRoute");
+const employeeDtrRoute = require("./routes/employee/dtrRoute");
+
+
+// Admin
 app.use("/api/auth", authRoutes);
 app.use("/api/users", adminUsersRoute);
 app.use("/api/signatories", adminSignatoryRoutes);
@@ -65,6 +72,10 @@ app.use("/api/activity-logs", activityLogsRoute);
 app.use("/api/maintenance", maintenanceRoute);
 app.use("/api/homepage", homepageRoute);
 app.use("/api/schedules", scheduleRoute);
+
+// Employee
+app.use("/api/employee/homepage", employeeHomepageRoute);
+app.use("/api/employee/dtr", employeeDtrRoute);
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);

@@ -12,54 +12,51 @@ const getEmployeeHomepage = async (req, res) => {
 
     const bioId = user.bio_id;
 
-    // Get employee DTR logs
     const [rows] = await db.query(
-      `SELECT 
-          log_id,
-          date_only,
-          time_only,
-          log_type,
-          status
-       FROM employee_dtr
-       WHERE bio_id = ?
-       ORDER BY date_only DESC, time_only DESC`,
+      `
+      SELECT DISTINCT
+        b.id AS batch_id,
+        b.file_name,
+        d.date_only
+      FROM employee_dtr d
+      INNER JOIN dtr_batches b
+        ON d.batch_id = b.id
+      WHERE d.bio_id = ?
+      `,
       [bioId]
     );
 
-    // Format rows
-    const logs = rows.map((log) => {
-      const date = new Date(log.date_only);
+    // Group by YEAR → MONTH from date_only
+    const grouped = {};
+
+    rows.forEach((row) => {
+      const date = new Date(row.date_only);
 
       const year = date.getFullYear();
-
       const month = date.toLocaleString("en-US", {
         month: "long",
       });
 
-      return {
-        id: log.log_id,
-        date: log.date_only,
-        time: log.time_only,
-        type: log.log_type,
-        status: log.status,
-        year,
-        month,
-      };
-    });
-
-    // Group by Year → Month
-    const grouped = {};
-
-    logs.forEach((log) => {
-      if (!grouped[log.year]) {
-        grouped[log.year] = {};
+      if (!grouped[year]) grouped[year] = {};
+      if (!grouped[year][month]) {
+        grouped[year][month] = {
+          label: month,
+          files: [],
+        };
       }
 
-      if (!grouped[log.year][log.month]) {
-        grouped[log.year][log.month] = [];
-      }
+      // avoid duplicate batch entries
+      const exists = grouped[year][month].files.some(
+        (f) => f.batch_id === row.batch_id
+      );
 
-      grouped[log.year][log.month].push(log);
+      if (!exists) {
+        grouped[year][month].files.push({
+          id: row.batch_id,
+          name: row.file_name,
+          url: `/employee/dtr/${row.batch_id}`,
+        });
+      }
     });
 
     res.json({
@@ -69,16 +66,10 @@ const getEmployeeHomepage = async (req, res) => {
       },
       dtr: grouped,
     });
-
   } catch (err) {
     console.error("Homepage error:", err);
-
-    res.status(500).json({
-      message: "Server error",
-    });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-module.exports = {
-  getEmployeeHomepage,
-};
+module.exports = { getEmployeeHomepage };
