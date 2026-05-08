@@ -1,11 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  getEmployeeDTR,
-} = require("../../controllers/employee/getEmployeeDTR");
+const employeeDtr = require("../../controllers/employee/dtrController");
 
 // Employee logged-in DTR
-router.get("/view", getEmployeeDTR);
+router.get("/view", employeeDtr.getEmployeeDTR);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const db = require("../../config/db");
 
-const getEmployeeDTR = async (req, res) => {
+const getEmployeeDTR = (req, res) => {
   try {
     const user = req.session.user;
 
@@ -10,88 +10,56 @@ const getEmployeeDTR = async (req, res) => {
       });
     }
 
-    const bioId = user.bio_id;
-
-    // optional filters from frontend
+    const bio_id = user.bio_id;
     const { month, year } = req.query;
 
-    let query = `
+    let sql = `
       SELECT 
-        date_only,
+        DATE_FORMAT(date_only, '%Y-%m-%d') AS date,
         DAYNAME(date_only) AS day,
-        log_type,
-        time_only
+
+        MAX(CASE WHEN log_type = 'AM IN' THEN time_only END) AS am_in,
+        MAX(CASE WHEN log_type = 'AM OUT' THEN time_only END) AS am_out,
+        MAX(CASE WHEN log_type = 'PM IN' THEN time_only END) AS pm_in,
+        MAX(CASE WHEN log_type = 'PM OUT' THEN time_only END) AS pm_out,
+        MAX(CASE WHEN log_type = 'OT IN' THEN time_only END) AS ot_in,
+        MAX(CASE WHEN log_type = 'OT OUT' THEN time_only END) AS ot_out
+
       FROM employee_dtr
       WHERE bio_id = ?
+        AND date_only IS NOT NULL
     `;
 
-    const params = [bioId];
+    const params = [bio_id];
 
     if (month && year) {
-      query += ` AND MONTH(date_only) = ? AND YEAR(date_only) = ?`;
+      sql += ` AND MONTH(date_only) = ? AND YEAR(date_only) = ?`;
       params.push(month, year);
     }
 
-    query += ` ORDER BY date_only ASC, time_only ASC`;
+    sql += ` GROUP BY date_only ORDER BY date_only ASC`;
 
-    const [rows] = await db.query(query, params);
-
-    // 🧠 transform into DTR table format
-    const dtrMap = {};
-
-    rows.forEach((row) => {
-      const dateKey = row.date_only.toISOString().split("T")[0];
-
-      if (!dtrMap[dateKey]) {
-        dtrMap[dateKey] = {
-          date: dateKey,
-          day: row.day,
-          am_in: null,
-          am_out: null,
-          pm_in: null,
-          pm_out: null,
-          ot_in: null,
-          ot_out: null,
-        };
+    db.query(sql, params, (err, results) => {
+      if (err) {
+        console.error("Employee DTR Error:", err);
+        return res.status(500).json({
+          message: "Database error",
+          error: err.message,
+        });
       }
 
-      const time = row.time_only;
-      const type = row.log_type;
-
-      // map log types to UI columns
-      switch (type) {
-        case "AM IN":
-          dtrMap[dateKey].am_in = time;
-          break;
-        case "AM OUT":
-          dtrMap[dateKey].am_out = time;
-          break;
-        case "PM IN":
-          dtrMap[dateKey].pm_in = time;
-          break;
-        case "PM OUT":
-          dtrMap[dateKey].pm_out = time;
-          break;
-        case "OT IN":
-          dtrMap[dateKey].ot_in = time;
-          break;
-        case "OT OUT":
-          dtrMap[dateKey].ot_out = time;
-          break;
-      }
+      return res.json({
+        user: {
+          name: user.name,
+          bio_id: user.bio_id,
+        },
+        dtr: results || [],
+      });
     });
 
-    res.json({
-      user: {
-        name: user.name,
-        bio_id: user.bio_id,
-      },
-      dtr: Object.values(dtrMap),
-    });
-
-  } catch (err) {
-    console.error("DTR fetch error:", err);
-    res.status(500).json({
+  } catch (error) {
+    console.error("Server Error:", error);
+    return res.status(500).json({
       message: "Server error",
     });
   }

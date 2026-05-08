@@ -273,6 +273,7 @@ const getEmployeesByDepartment = (req, res) => {
   });
 };
 
+// Get Employee DTR
 const getEmployeeDTR = (req, res) => {
   try {
     const { bio_id, month, year, batch_id } = req.query;

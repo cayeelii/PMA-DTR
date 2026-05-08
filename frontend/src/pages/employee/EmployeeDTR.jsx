@@ -10,34 +10,42 @@ export default function EmployeeDTR() {
   const [loading, setLoading] = useState(true);
 
   // Fetch DTR data
-  useEffect(() => {
-    const fetchDTR = async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/dtr/view?month=${selectedMonth}`,
-          {
-            credentials: "include",
-          }
-        );
+ useEffect(() => {
+  const fetchDTR = async () => {
+    setLoading(true);
 
-        const data = await res.json();
+    try {
+      const [year, month] = selectedMonth.split("-");
 
-        if (res.ok) {
-          setUser(data.user);
-          setDtrRows(data.dtr || []);
+      const res = await fetch(
+        `${API_BASE_URL}/api/employee/dtr/view?month=${month}&year=${year}`,
+        {
+          credentials: "include",
         }
-      } catch (err) {
-        console.error("Failed to load DTR:", err);
-      } finally {
-        setLoading(false);
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setUser(data.user);
+        setDtrRows(data.dtr || []);
+      } else {
+        setDtrRows([]);
       }
-    };
+    } catch (err) {
+      console.error("Failed to load DTR:", err);
+      setDtrRows([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchDTR();
-  }, [selectedMonth]);
+  fetchDTR();
+}, [selectedMonth]);
 
-  const employeeName = user?.name || "Employee";
-  const employeeId = user?.bio_id || "N/A";
+
+  const employeeName = user?.name;
+  const employeeId = user?.bio_id;
 
   return (
     <div className="p-6 w-full h-full bg-[#ECEEF3]">
