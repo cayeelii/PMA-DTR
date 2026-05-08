@@ -96,7 +96,7 @@ function MaintenancePage() {
         console.error("Activity log failed:", logErr.message)
       );
 
-      await fetchMaintenance(); // IMPORTANT: wait
+      await fetchMaintenance(); 
       setModalConfig({ isOpen: false, mode: "" });
 
     } catch (err) {

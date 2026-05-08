@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Pencil, Archive, Plus } from "lucide-react";
+import AddScheduleModal from "../../components/AddSchedule";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function ScheduleTabPrototype() {
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     // FETCH SCHEDULES 
     const fetchSchedules = async () => {
@@ -43,8 +45,10 @@ export default function ScheduleTabPrototype() {
                     Schedule
                 </h1>
 
-                <button className="flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-xl shadow transition">
-                    <Plus size={18} />
+                <button 
+                    className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium shadow"
+                    onClick={() => setIsAddModalOpen(true)}
+                >
                     Add Schedule
                 </button>
             </div>
@@ -93,29 +97,29 @@ export default function ScheduleTabPrototype() {
                             <div className="grid gap-2 text-sm">
 
                                 <div className="flex justify-between">
-                                    <span className="text-slate-600 font-medium">AM IN</span>
-                                    <span className="font-mono text-slate-700">
+                                    <span className="text-slate-600 font-medium px-6">AM IN</span>
+                                    <span className="font-mono text-slate-700 px-6">
                                         {schedule.am_in_start} - {schedule.am_in_end}
                                     </span>
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <span className="text-slate-600 font-medium">AM OUT</span>
-                                    <span className="font-mono text-slate-700">
+                                    <span className="text-slate-600 font-medium px-6">AM OUT</span>
+                                    <span className="font-mono text-slate-700 px-6">
                                         {schedule.am_out_start} - {schedule.am_out_end}
                                     </span>
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <span className="text-slate-600 font-medium">PM IN</span>
-                                    <span className="font-mono text-slate-700">
+                                    <span className="text-slate-600 font-medium px-6">PM IN</span>
+                                    <span className="font-mono text-slate-700 px-6">
                                         {schedule.pm_in_start} - {schedule.pm_in_end}
                                     </span>
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <span className="text-slate-600 font-medium">PM OUT</span>
-                                    <span className="font-mono text-slate-700">
+                                    <span className="text-slate-600 font-medium px-6">PM OUT</span>
+                                    <span className="font-mono text-slate-700 px-6">
                                         {schedule.pm_out_start} - {schedule.pm_out_end}
                                     </span>
                                 </div>
@@ -124,15 +128,15 @@ export default function ScheduleTabPrototype() {
                                 {schedule.ot_in_start && (
                                     <>
                                         <div className="flex justify-between">
-                                            <span className="text-slate-600 font-medium">OT IN</span>
-                                            <span className="font-mono text-slate-700">
+                                            <span className="text-slate-600 font-medium px-6">OT IN</span>
+                                            <span className="font-mono text-slate-700 px-6">
                                                 {schedule.ot_in_start} - {schedule.ot_in_end}
                                             </span>
                                         </div>
 
                                         <div className="flex justify-between">
-                                            <span className="text-slate-600 font-medium">OT OUT</span>
-                                            <span className="font-mono text-slate-700">
+                                            <span className="text-slate-600 font-medium px-6">OT OUT</span>
+                                            <span className="font-mono text-slate-700 px-6">
                                                 {schedule.ot_out_start} - {schedule.ot_out_end}
                                             </span>
                                         </div>
@@ -146,6 +150,10 @@ export default function ScheduleTabPrototype() {
                 </div>
             )}
 
+            {/* ADD SCHEDULE MODAL */}
+            {isAddModalOpen && (
+                <AddScheduleModal onClose={() => setIsAddModalOpen(false)} />
+            )}
         </div>
     );
 }
