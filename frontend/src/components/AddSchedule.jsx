@@ -3,24 +3,23 @@ import { X, Clock } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Dropdown options for HH, MM, SS
+const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
+const minsSecs = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
+
 export default function AddScheduleModal({ onClose, onSuccess }) {
     const [showOT, setShowOT] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const [form, setForm] = useState({
         schedule_name: "",
-        am_in_start: "",
-        am_in_end: "",
-        am_out_start: "",
-        am_out_end: "",
-        pm_in_start: "",
-        pm_in_end: "",
-        pm_out_start: "",
-        pm_out_end: "",
-        ot_in_start: "",
-        ot_in_end: "",
-        ot_out_start: "",
-        ot_out_end: "",
+        // Initialized with 00:00:00 to support dropdown logic
+        am_in_start: "00:00:00", am_in_end: "00:00:00",
+        am_out_start: "00:00:00", am_out_end: "00:00:00",
+        pm_in_start: "00:00:00", pm_in_end: "00:00:00",
+        pm_out_start: "00:00:00", pm_out_end: "00:00:00",
+        ot_in_start: "00:00:00", ot_in_end: "00:00:00",
+        ot_out_start: "00:00:00", ot_out_end: "00:00:00",
     });
 
     // List of fields that require time validation (excluding schedule_name)
@@ -44,6 +43,15 @@ export default function AddScheduleModal({ onClose, onSuccess }) {
             ...prev,
             [name]: newValue,
         }));
+    };
+
+    // Helper to update specific parts of the HH:MM:SS string via dropdowns
+    const handleDropdownChange = (fieldName, part, val) => {
+        const parts = form[fieldName].split(":");
+        if (part === "h") parts[0] = val;
+        if (part === "m") parts[1] = val;
+        if (part === "s") parts[2] = val;
+        setForm((prev) => ({ ...prev, [fieldName]: parts.join(":") }));
     };
 
     const handleSubmit = async () => {
@@ -93,6 +101,28 @@ export default function AddScheduleModal({ onClose, onSuccess }) {
         }
     };
 
+    // Component to render dropdowns for a specific field
+    const TimePickerGroup = ({ fieldName }) => {
+        const [h, m, s] = form[fieldName].split(":");
+        const selectClass = "bg-transparent outline-none cursor-pointer text-sm font-semibold text-gray-700 hover:text-blue-700 focus:text-blue-700 transition-colors px-1 py-0.5 rounded";
+        return (
+            <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg px-3 py-2 w-full shadow-sm hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <Clock size={13} className="text-gray-300 mr-1 flex-shrink-0" />
+                <select value={h} onChange={(e) => handleDropdownChange(fieldName, "h", e.target.value)} className={selectClass}>
+                    {hours.map(val => <option key={val} value={val}>{val}</option>)}
+                </select>
+                <span className="text-gray-300 font-light select-none">:</span>
+                <select value={m} onChange={(e) => handleDropdownChange(fieldName, "m", e.target.value)} className={selectClass}>
+                    {minsSecs.map(val => <option key={val} value={val}>{val}</option>)}
+                </select>
+                <span className="text-gray-300 font-light select-none">:</span>
+                <select value={s} onChange={(e) => handleDropdownChange(fieldName, "s", e.target.value)} className={selectClass}>
+                    {minsSecs.map(val => <option key={val} value={val}>{val}</option>)}
+                </select>
+            </div>
+        );
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-xl">
@@ -123,53 +153,17 @@ export default function AddScheduleModal({ onClose, onSuccess }) {
                     <h3 className="font-semibold mb-3">AM SHIFT</h3>
                     <div className="flex flex-col gap-3">
                         <div>
-                            <div className="text-xs font-semibold text-gray-600 mb-2">AM IN</div>
+                            <div className="text-xs font-semibold text-gray-600 mb-2">AM IN (START - END)</div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="relative">
-                                    <input
-                                        name="am_in_start"
-                                        value={form.am_in_start}
-                                        placeholder="01:00:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
-                                <div className="relative">
-                                    <input
-                                        name="am_in_end"
-                                        value={form.am_in_end}
-                                        placeholder="08:00:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
+                                <TimePickerGroup fieldName="am_in_start" />
+                                <TimePickerGroup fieldName="am_in_end" />
                             </div>
                         </div>
                         <div>
-                            <div className="text-xs font-semibold text-gray-600 mb-2">AM OUT</div>
+                            <div className="text-xs font-semibold text-gray-600 mb-2">AM OUT (START - END)</div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="relative">
-                                    <input
-                                        name="am_out_start"
-                                        value={form.am_out_start}
-                                        placeholder="08:01:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
-                                <div className="relative">
-                                    <input
-                                        name="am_out_end"
-                                        value={form.am_out_end}
-                                        placeholder="11:59:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
+                                <TimePickerGroup fieldName="am_out_start" />
+                                <TimePickerGroup fieldName="am_out_end" />
                             </div>
                         </div>
                     </div>
@@ -180,53 +174,17 @@ export default function AddScheduleModal({ onClose, onSuccess }) {
                     <h3 className="font-semibold mb-3">PM SHIFT</h3>
                     <div className="flex flex-col gap-3">
                         <div>
-                            <div className="text-xs font-semibold text-gray-600 mb-2">PM IN</div>
+                            <div className="text-xs font-semibold text-gray-600 mb-2">PM IN (START - END)</div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="relative">
-                                    <input
-                                        name="pm_in_start"
-                                        value={form.pm_in_start}
-                                        placeholder="12:00:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
-                                <div className="relative">
-                                    <input
-                                        name="pm_in_end"
-                                        value={form.pm_in_end}
-                                        placeholder="12:29:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
+                                <TimePickerGroup fieldName="pm_in_start" />
+                                <TimePickerGroup fieldName="pm_in_end" />
                             </div>
                         </div>
                         <div>
-                            <div className="text-xs font-semibold text-gray-600 mb-2">PM OUT</div>
+                            <div className="text-xs font-semibold text-gray-600 mb-2">PM OUT (START - END)</div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="relative">
-                                    <input
-                                        name="pm_out_start"
-                                        value={form.pm_out_start}
-                                        placeholder="12:30:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
-                                <div className="relative">
-                                    <input
-                                        name="pm_out_end"
-                                        value={form.pm_out_end}
-                                        placeholder="17:00:00"
-                                        className="border p-2 rounded w-full pr-10"
-                                        onChange={handleChange}
-                                    />
-                                    <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                </div>
+                                <TimePickerGroup fieldName="pm_out_start" />
+                                <TimePickerGroup fieldName="pm_out_end" />
                             </div>
                         </div>
                     </div>
@@ -247,53 +205,17 @@ export default function AddScheduleModal({ onClose, onSuccess }) {
                     <div className="bg-gray-100 p-4 rounded-lg mb-4">
                         <div className="flex flex-col gap-3">
                             <div>
-                                <div className="text-xs font-semibold text-gray-600 mb-2">OT IN</div>
+                                <div className="text-xs font-semibold text-gray-600 mb-2">OT IN (START - END)</div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="relative">
-                                        <input
-                                            name="ot_in_start"
-                                            value={form.ot_in_start}
-                                            placeholder="23:00:00"
-                                            className="border p-2 rounded w-full pr-10"
-                                            onChange={handleChange}
-                                        />
-                                        <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                    </div>
-                                    <div className="relative">
-                                        <input
-                                            name="ot_in_end"
-                                            value={form.ot_in_end}
-                                            placeholder="23:59:59"
-                                            className="border p-2 rounded w-full pr-10"
-                                            onChange={handleChange}
-                                        />
-                                        <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                    </div>
+                                    <TimePickerGroup fieldName="ot_in_start" />
+                                    <TimePickerGroup fieldName="ot_in_end" />
                                 </div>
                             </div>
                             <div>
-                                <div className="text-xs font-semibold text-gray-600 mb-2">OT OUT</div>
+                                <div className="text-xs font-semibold text-gray-600 mb-2">OT OUT (START - END)</div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="relative">
-                                        <input
-                                            name="ot_out_start"
-                                            value={form.ot_out_start}
-                                            placeholder="00:01:00"
-                                            className="border p-2 rounded w-full pr-10"
-                                            onChange={handleChange}
-                                        />
-                                        <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                    </div>
-                                    <div className="relative">
-                                        <input
-                                            name="ot_out_end"
-                                            value={form.ot_out_end}
-                                            placeholder="00:30:00"
-                                            className="border p-2 rounded w-full pr-10"
-                                            onChange={handleChange}
-                                        />
-                                        <Clock className="absolute right-3 top-2.5 w-4 h-4 text-gray-500" />
-                                    </div>
+                                    <TimePickerGroup fieldName="ot_out_start" />
+                                    <TimePickerGroup fieldName="ot_out_end" />
                                 </div>
                             </div>
                         </div>
