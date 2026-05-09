@@ -45,7 +45,10 @@ const LoginPage = ({ setUser }) => {
 
       if (data.user?.role === "admin" || data.user?.role === "superadmin") {
         navigate("/admin/home", { replace: true });
-      } else if (data.user?.role === "employee") {
+      } else if (
+        data.user?.role === "employee" ||
+        data.user?.role === "supervisor"
+      ) {
         navigate("/employee/home", { replace: true });
       } else {
         setError("Unauthorized access");

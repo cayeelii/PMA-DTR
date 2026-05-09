@@ -106,7 +106,7 @@ const login = (req, res) => {
     sql = `
       SELECT user_id, username, bio_id, password, role, active_session_id
       FROM users
-      WHERE username = ? AND role != 'employee'
+      WHERE username = ?
       LIMIT 1
     `;
     param = username;

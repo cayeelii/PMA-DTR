@@ -4,7 +4,7 @@ const PublicRoute = ({ children, user }) => {
   if (user) {
     if (user.role === "admin" || user.role === "superadmin") {
       return <Navigate to="/admin/home" replace />;
-    } else if (user.role === "employee") {
+    } else if (user.role === "employee" || user.role === "supervisor") {
       return <Navigate to="/employee/home" replace />;
     }
   }
