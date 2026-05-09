@@ -4,6 +4,56 @@ import { useSearchParams } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Converts date safely into local date
+function parseLocalDate(dateString) {
+    const [year, month, day] = dateString.split("-").map(Number);
+    return new Date(year, month - 1, day);
+}
+
+// Creates complete calendar rows for the month
+function buildCalendarMonth(year, month, existingRows) {
+    const rowsMap = new Map();
+
+    existingRows.forEach((row) => {
+        rowsMap.set(row.rawDate, row);
+    });
+
+    const totalDays = new Date(year, month, 0).getDate();
+    const calendarRows = [];
+
+    for (let day = 1; day <= totalDays; day++) {
+        const dateObj = new Date(year, month - 1, day);
+
+        const rawDate = `${year}-${String(month).padStart(2, "0")}-${String(
+            day,
+        ).padStart(2, "0")}`;
+
+        const formattedDate = `${String(month).padStart(2, "0")}/${String(
+            day,
+        ).padStart(2, "0")}/${String(year).slice(-2)}`;
+
+        if (rowsMap.has(rawDate)) {
+            calendarRows.push(rowsMap.get(rawDate));
+        } else {
+            calendarRows.push({
+                rawDate,
+                date: formattedDate,
+                day: DAY_LABELS[dateObj.getDay()],
+                am_in: "",
+                am_out: "",
+                pm_in: "",
+                pm_out: "",
+                ot_in: "",
+                ot_out: "",
+            });
+        }
+    }
+
+    return calendarRows;
+}
+
 export default function EmployeeDTR() {
     const [searchParams] = useSearchParams();
 
@@ -11,7 +61,6 @@ export default function EmployeeDTR() {
     const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
 
     const yearParam = searchParams.get("year") || currentYear;
-
     const monthParam = String(
         searchParams.get("month") || currentMonth,
     ).padStart(2, "0");
@@ -19,7 +68,6 @@ export default function EmployeeDTR() {
     const [user, setUser] = useState(null);
     const [dtrRows, setDtrRows] = useState([]);
     const [selectedMonth] = useState(`${yearParam}-${monthParam}`);
-
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -40,7 +88,43 @@ export default function EmployeeDTR() {
 
                 if (res.ok) {
                     setUser(data.user);
-                    setDtrRows(data.dtr || []);
+
+                    const formattedRows = (data.dtr || []).map((row) => {
+                        const rawDate =
+                            row.rawDate ||
+                            row.date_only ||
+                            row.date;
+
+                        const dateObj = parseLocalDate(rawDate);
+
+                        return {
+                            rawDate,
+                            date: `${String(
+                                dateObj.getMonth() + 1,
+                            ).padStart(2, "0")}/${String(
+                                dateObj.getDate(),
+                            ).padStart(2, "0")}/${String(
+                                dateObj.getFullYear(),
+                            ).slice(-2)}`,
+
+                            day: DAY_LABELS[dateObj.getDay()],
+
+                            am_in: row.am_in || "",
+                            am_out: row.am_out || "",
+                            pm_in: row.pm_in || "",
+                            pm_out: row.pm_out || "",
+                            ot_in: row.ot_in || "",
+                            ot_out: row.ot_out || "",
+                        };
+                    });
+
+                    const fullCalendarRows = buildCalendarMonth(
+                        Number(year),
+                        Number(month),
+                        formattedRows,
+                    );
+
+                    setDtrRows(fullCalendarRows);
                 } else {
                     setDtrRows([]);
                 }
@@ -60,6 +144,7 @@ export default function EmployeeDTR() {
 
     const formatMonth = (value) => {
         const [year, month] = value.split("-");
+
         return new Date(year, month - 1).toLocaleString("en-US", {
             month: "long",
             year: "numeric",
@@ -82,7 +167,7 @@ export default function EmployeeDTR() {
 
                 <button
                     onClick={() => window.print()}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
+                    className=" inline-flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition"
                 >
                     <Download size={16} />
                     Export PDF
@@ -90,57 +175,93 @@ export default function EmployeeDTR() {
             </div>
 
             {/* TABLE */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                <div className="overflow-auto max-h-[70vh]">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-100">
+            <div className="flex justify-center items-center overflow-hidden">
+                <div className="bg-white rounded-xl shadow-md overflow-auto w-[150vh] max-h-[80vh]">
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
                             <tr>
-                                <th className="p-3">Date</th>
-                                <th className="p-3">Day</th>
-                                <th className="p-3">AM IN</th>
-                                <th className="p-3">AM OUT</th>
-                                <th className="p-3">PM IN</th>
-                                <th className="p-3">PM OUT</th>
-                                <th className="p-3">OT IN</th>
-                                <th className="p-3">OT OUT</th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    Date
+                                </th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    Day
+                                </th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    AM IN
+                                </th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    AM OUT
+                                </th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    PM IN
+                                </th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    PM OUT
+                                </th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    OT IN
+                                </th>
+                                <th className="sticky top-0 bg-gray-100 z-10 p-3 text-center">
+                                    OT OUT
+                                </th>
                             </tr>
                         </thead>
 
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="8" className="p-4">
+                                    <td
+                                        colSpan="8"
+                                        className="p-4 text-center"
+                                    >
                                         Loading...
                                     </td>
                                 </tr>
                             ) : dtrRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="p-4">
+                                    <td
+                                        colSpan="8"
+                                        className="p-4 text-center"
+                                    >
                                         No DTR records found.
                                     </td>
                                 </tr>
                             ) : (
                                 dtrRows.map((row, index) => (
-                                    <tr key={index} className="border-b">
-                                        <td className="p-3">{row.date}</td>
-                                        <td className="p-3">{row.day}</td>
-                                        <td className="p-3">
-                                            {row.am_in || "-"}
+                                    <tr
+                                        key={index}
+                                        className="border-b hover:bg-gray-50"
+                                    >
+                                        <td className="p-3 text-center">
+                                            {row.date}
                                         </td>
-                                        <td className="p-3">
-                                            {row.am_out || "-"}
+
+                                        <td className="p-3 text-center">
+                                            {row.day}
                                         </td>
-                                        <td className="p-3">
-                                            {row.pm_in || "-"}
+
+                                        <td className="p-3 text-center">
+                                            {row.am_in}
                                         </td>
-                                        <td className="p-3">
-                                            {row.pm_out || "-"}
+
+                                        <td className="p-3 text-center">
+                                            {row.am_out}
                                         </td>
-                                        <td className="p-3">
-                                            {row.ot_in || "-"}
+
+                                        <td className="p-3 text-center">
+                                            {row.pm_in}
                                         </td>
-                                        <td className="p-3">
-                                            {row.ot_out || "-"}
+
+                                        <td className="p-3 text-center">
+                                            {row.pm_out}
+                                        </td>
+
+                                        <td className="p-3 text-center">
+                                            {row.ot_in}
+                                        </td>
+
+                                        <td className="p-3 text-center">
+                                            {row.ot_out}
                                         </td>
                                     </tr>
                                 ))
