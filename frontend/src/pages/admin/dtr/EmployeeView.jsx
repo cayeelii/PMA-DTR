@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, Search } from "lucide-react";
 
 const EmployeeView = ({
@@ -10,6 +10,9 @@ const EmployeeView = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPdfOptions, setShowPdfOptions] = useState(false);
+
+  const pdfDropdownRef = useRef(null);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -39,6 +42,18 @@ const EmployeeView = ({
     fetchEmployees();
   }, [departmentName, batchId]);
 
+  // Close PDF dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (pdfDropdownRef.current && !pdfDropdownRef.current.contains(e.target)) {
+        setShowPdfOptions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // FILTER
   const filteredEmployees = employees.filter(
     (emp) =>
@@ -46,7 +61,7 @@ const EmployeeView = ({
       emp.id?.toString().includes(searchTerm),
   );
 
-  //Handle export xlsx
+  // Handle Export XLSX
   const handleExportXLSX = async () => {
     try {
       const response = await fetch(
@@ -72,6 +87,37 @@ const EmployeeView = ({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Export failed:", error);
+    }
+  };
+
+  // Handle Export PDF with layout
+  const handleExportPDF = async (columnLayout) => {
+    setShowPdfOptions(false);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/dtr/export-department-pdf?department=${encodeURIComponent(
+          departmentName,
+        )}&batch_id=${batchId}&layout=${columnLayout}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to export PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${departmentName}_employees_${columnLayout}col.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("PDF export failed:", error);
     }
   };
 
@@ -109,17 +155,44 @@ const EmployeeView = ({
           />
         </div>
 
+        {/* EXPORT BUTTONS */}
         <div className="flex items-center gap-3 ml-4">
-          <span className="text-gray-500 text-sm font-medium bg-gray-100 px-3 py-1 rounded-full">
-            {filteredEmployees.length} employees
-          </span>
-
           <button
             onClick={handleExportXLSX}
             className="border border-green-600 text-green-600 px-4 py-1 rounded hover:bg-green-50 text-sm font-medium"
           >
             Export XLSX
           </button>
+
+          {/* Export PDF with layout dropdown */}
+          <div className="relative" ref={pdfDropdownRef}>
+            <button
+              onClick={() => setShowPdfOptions((prev) => !prev)}
+              className="border border-gray-400 text-gray-700 px-4 py-1 rounded hover:bg-gray-100 text-sm font-medium"
+            >
+              Export PDF
+            </button>
+
+            {showPdfOptions && (
+              <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-2">
+                <p className="text-[11px] text-gray-500 mb-2 px-1">
+                  Choose layout
+                </p>
+                <button
+                  onClick={() => handleExportPDF("1")}
+                  className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
+                >
+                  1 Column
+                </button>
+                <button
+                  onClick={() => handleExportPDF("2")}
+                  className="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100"
+                >
+                  2 Columns
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
