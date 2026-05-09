@@ -3,6 +3,6 @@ const router = express.Router();
 
 const homepageController = require("../../controllers/employee/homepageController");
 
-router.get("/", homepageController.getEmployeeHomepage);
+router.get("/summary", homepageController.getDTRSummary);
 
 module.exports = router;

@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function EmployeeHome() {
     const [user, setUser] = useState(null);
-    const [dtrData, setDtrData] = useState([]);
+    const [summary, setSummary] = useState(null); 
     const [openFolders, setOpenFolders] = useState({});
     const [loading, setLoading] = useState(true);
 
@@ -24,10 +24,9 @@ export default function EmployeeHome() {
             try {
                 const res = await fetch(
                     `${API_BASE_URL}/api/auth/current-user`,
-                    {
-                        credentials: "include",
-                    },
+                    { credentials: "include" }
                 );
+
                 const data = await res.json();
 
                 if (res.ok && data.user) {
@@ -41,42 +40,30 @@ export default function EmployeeHome() {
         fetchCurrentUser();
     }, []);
 
-    // Fetch DTR files
     useEffect(() => {
-        const fetchHomepage = async () => {
+        const fetchSummary = async () => {
             try {
                 const res = await fetch(
-                    `${API_BASE_URL}/api/employee/homepage`,
-                    {
-                        credentials: "include",
-                    },
+                    `${API_BASE_URL}/api/employee/homepage/summary`,
+                    { credentials: "include" }
                 );
 
                 const data = await res.json();
 
                 if (res.ok) {
-                    setUser(data.user);
-                    setDtrData(data.dtr || {});
+                    setSummary(data);
                 }
             } catch (err) {
-                console.error("Failed to fetch homepage:", err);
+                console.error("Failed to fetch DTR summary:", err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchHomepage();
+        fetchSummary();
     }, []);
 
-    const username = user?.name || user?.username || "User";
-
-    // Group files by year
-    const grouped = Object.keys(dtrData || {}).reduce((acc, year) => {
-        if (!dtrData[year]) return acc;
-
-        acc[year] = dtrData[year];
-        return acc;
-    }, {});
+    const username = user?.name || user?.username;
 
     const toggleFolder = (year) => {
         setOpenFolders((prev) => ({
@@ -98,7 +85,7 @@ export default function EmployeeHome() {
                 </div>
             </div>
 
-            {/* DTR Container */}
+            {/* DTR Container (UNCHANGED UI) */}
             <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-2xl ml-10">
                 <div className="flex items-center gap-2 mb-4 text-blue-600 font-medium">
                     <Folder size={20} />
@@ -111,62 +98,75 @@ export default function EmployeeHome() {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {Object.keys(grouped).length === 0 && (
+
+                        {/* NO DATA */}
+                        {!summary?.available && (
                             <div className="text-gray-500 text-sm">
                                 No DTR files found.
                             </div>
                         )}
 
-                        {/* YEAR LIST */}
-                        {Object.entries(dtrData).map(([year, months]) => (
-                            <div
-                                key={year}
-                                className="border rounded-lg overflow-hidden"
-                            >
-                                {/* YEAR HEADER */}
-                                <div
-                                    className="flex items-center justify-between bg-gray-100 px-4 py-2 cursor-pointer"
-                                    onClick={() => toggleFolder(year)}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        {openFolders[year] ? (
-                                            <ChevronDown size={16} />
-                                        ) : (
-                                            <ChevronRight size={16} />
+                        {/* YEAR LIST (FIXED STRUCTURE) */}
+                        {summary?.available &&
+                            Object.entries(summary.available).map(
+                                ([year, months]) => (
+                                    <div
+                                        key={year}
+                                        className="border rounded-lg overflow-hidden"
+                                    >
+                                        {/* YEAR HEADER */}
+                                        <div
+                                            className="flex items-center justify-between bg-gray-100 px-4 py-2 cursor-pointer"
+                                            onClick={() => toggleFolder(year)}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                {openFolders[year] ? (
+                                                    <ChevronDown size={16} />
+                                                ) : (
+                                                    <ChevronRight size={16} />
+                                                )}
+                                                <span className="font-medium">
+                                                    {year}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* MONTH LIST */}
+                                        {openFolders[year] && (
+                                            <div className="p-3 space-y-2">
+                                                {months.map((month) => {
+                                                    const monthIndex = month;
+
+                                                    const monthName =
+                                                        new Date(
+                                                            year,
+                                                            month - 1
+                                                        ).toLocaleString(
+                                                            "en-US",
+                                                            { month: "long" }
+                                                        );
+
+                                                    return (
+                                                        <div
+                                                            key={month}
+                                                            className="p-2 rounded hover:bg-blue-50 cursor-pointer text-sm flex justify-between items-center"
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    `/employee/dtr?month=${monthIndex}&year=${year}`
+                                                                )
+                                                            }
+                                                        >
+                                                            <span>
+                                                                {monthName}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         )}
-                                        <span className="font-medium">
-                                            {year}
-                                        </span>
                                     </div>
-                                </div>
-
-                                {/* MONTH LIST */}
-                                {openFolders[year] && (
-                                    <div className="p-3 space-y-2">
-                                        {Object.keys(months).map((month) => {
-                                            const monthIndex =
-                                                new Date(
-                                                    `${month} 1, ${year}`,
-                                                ).getMonth() + 1;
-
-                                            return (
-                                                <div
-                                                    key={month}
-                                                    className="p-2 rounded hover:bg-blue-50 cursor-pointer text-sm flex justify-between items-center"
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/employee/dtr?month=${monthIndex}&year=${year}`,
-                                                        )
-                                                    }
-                                                >
-                                                    <span>{month}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                                )
+                            )}
                     </div>
                 )}
             </div>

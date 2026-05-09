@@ -57,20 +57,67 @@ function buildCalendarMonth(year, month, existingRows) {
 export default function EmployeeDTR() {
     const [searchParams] = useSearchParams();
 
-    const currentYear = new Date().getFullYear();
-    const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
-
-    const yearParam = searchParams.get("year") || currentYear;
-    const monthParam = String(
-        searchParams.get("month") || currentMonth,
-    ).padStart(2, "0");
-
     const [user, setUser] = useState(null);
     const [dtrRows, setDtrRows] = useState([]);
-    const [selectedMonth] = useState(`${yearParam}-${monthParam}`);
+    const [selectedMonth, setSelectedMonth] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
+        const loadInitialMonth = async () => {
+            const yearParam = searchParams.get("year");
+            const monthParam = searchParams.get("month");
+
+            // Get month-year from URL query first
+            if (yearParam && monthParam) {
+                if (isMounted) {
+                    setSelectedMonth(
+                        `${yearParam}-${String(monthParam).padStart(2, "0")}`,
+                    );
+                }
+                return;
+            }
+
+            // DB fallback
+            try {
+                const res = await fetch(
+                    `${API_BASE_URL}/api/employee/dtr/latest-month`,
+                    { credentials: "include" },
+                );
+
+                const data = await res.json();
+
+                if (data?.year && data?.month && isMounted) {
+                    setSelectedMonth(
+                        `${data.year}-${String(data.month).padStart(2, "0")}`,
+                    );
+                    return;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+
+            // Final fallback to current month-year
+            if (isMounted) {
+                const now = new Date();
+                setSelectedMonth(
+                    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
+                );
+            }
+        };
+
+        loadInitialMonth();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [searchParams]);
+
+    // FETCH DTR
+    useEffect(() => {
+        if (!selectedMonth) return;
+
         const fetchDTR = async () => {
             setLoading(true);
 
@@ -79,9 +126,7 @@ export default function EmployeeDTR() {
 
                 const res = await fetch(
                     `${API_BASE_URL}/api/employee/dtr/view?month=${Number(month)}&year=${year}`,
-                    {
-                        credentials: "include",
-                    },
+                    { credentials: "include" },
                 );
 
                 const data = await res.json();
@@ -90,25 +135,14 @@ export default function EmployeeDTR() {
                     setUser(data.user);
 
                     const formattedRows = (data.dtr || []).map((row) => {
-                        const rawDate =
-                            row.rawDate ||
-                            row.date_only ||
-                            row.date;
+                        const rawDate = row.rawDate || row.date;
 
                         const dateObj = parseLocalDate(rawDate);
 
                         return {
                             rawDate,
-                            date: `${String(
-                                dateObj.getMonth() + 1,
-                            ).padStart(2, "0")}/${String(
-                                dateObj.getDate(),
-                            ).padStart(2, "0")}/${String(
-                                dateObj.getFullYear(),
-                            ).slice(-2)}`,
-
+                            date: `${String(dateObj.getMonth() + 1).padStart(2, "0")}/${String(dateObj.getDate()).padStart(2, "0")}/${String(dateObj.getFullYear()).slice(-2)}`,
                             day: DAY_LABELS[dateObj.getDay()],
-
                             am_in: row.am_in || "",
                             am_out: row.am_out || "",
                             pm_in: row.pm_in || "",
@@ -143,6 +177,8 @@ export default function EmployeeDTR() {
     const employeeId = user?.bio_id;
 
     const formatMonth = (value) => {
+        if (!value) return "No DTR Available";
+
         const [year, month] = value.split("-");
 
         return new Date(year, month - 1).toLocaleString("en-US", {
@@ -210,19 +246,13 @@ export default function EmployeeDTR() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td
-                                        colSpan="8"
-                                        className="p-4 text-center"
-                                    >
+                                    <td colSpan="8" className="p-4 text-center">
                                         Loading...
                                     </td>
                                 </tr>
                             ) : dtrRows.length === 0 ? (
                                 <tr>
-                                    <td
-                                        colSpan="8"
-                                        className="p-4 text-center"
-                                    >
+                                    <td colSpan="8" className="p-4 text-center">
                                         No DTR records found.
                                     </td>
                                 </tr>
@@ -230,7 +260,7 @@ export default function EmployeeDTR() {
                                 dtrRows.map((row, index) => (
                                     <tr
                                         key={index}
-                                        className="border-b hover:bg-gray-50"
+                                        className="border-b hover:bg-gray-50 text-slate-900 text-[15px] leading-relaxed tracking-wide"
                                     >
                                         <td className="p-3 text-center">
                                             {row.date}

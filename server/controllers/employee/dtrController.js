@@ -74,6 +74,43 @@ const getEmployeeDTR = (req, res) => {
     }
 };
 
+const getLatestDTR = (req, res) => {
+    const user = req.session.user;
+
+    const sql = `
+        SELECT 
+            YEAR(date_only) AS year,
+            MONTH(date_only) AS month
+        FROM employee_dtr
+        WHERE bio_id = ?
+        GROUP BY YEAR(date_only), MONTH(date_only)
+        ORDER BY year DESC, month DESC
+        LIMIT 1
+    `;
+
+    db.query(sql, [user.bio_id], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "DB error" });
+        }
+
+        // if no data at all
+        if (result.length === 0) {
+            return res.json({
+                year: null,
+                month: null,
+                hasData: false
+            });
+        }
+
+        res.json({
+            ...result[0],
+            hasData: true
+        });
+    });
+};
+
 module.exports = {
     getEmployeeDTR,
+    getLatestDTR,
 };
