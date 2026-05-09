@@ -3,6 +3,7 @@ const PAGE_SIZE = 20;
 import { useEffect, useState } from "react";
 import { Search, Archive } from "lucide-react";
 import AdminAccounts from "./AdminAccounts";
+import SupervisorAccounts from "./SupervisorAccounts";
 import AddEmployeeModal from "../../components/AddEmployee";
 import PendingEmployeesModal from "../../components/PendingEmployeesModal";
 import ArchiveAdminModal from "../../components/ArchiveAdmin";
@@ -50,7 +51,9 @@ function EmployeeAccounts() {
     setEmployeeError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/employees/approved`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/employees/approved`,
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -87,7 +90,9 @@ function EmployeeAccounts() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/signatories/departments`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/signatories/departments`,
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -123,8 +128,9 @@ function EmployeeAccounts() {
     fetchDepartments();
   }, []);
 
-  const filteredApprovedEmployees = approvedEmployees.filter((employee) =>
-    employee.username.toLowerCase().includes(search.toLowerCase()) ||
+  const filteredApprovedEmployees = approvedEmployees.filter(
+    (employee) =>
+      employee.username.toLowerCase().includes(search.toLowerCase()) ||
       String(employee.bio_id).toLowerCase().includes(search.toLowerCase()) ||
       employee.dept_name.toLowerCase().includes(search.toLowerCase()),
   );
@@ -375,7 +381,7 @@ function EmployeeAccounts() {
           </h1>
         </div>
         <div className="flex gap-8 border-b border-gray-200 mb-4 relative">
-          {["admins", "employees"].map((tab) => (
+          {["admins", "supervisors", "employees"].map((tab) => (
             <button
               key={tab}
               className={`relative pb-2 px-1 font-medium transition-colors duration-200 cursor-pointer focus:outline-none
@@ -394,6 +400,8 @@ function EmployeeAccounts() {
         <div className="min-h-[500px] transition-all duration-300">
           {activeTab === "admins" ? (
             <AdminAccounts />
+          ) : activeTab === "supervisors" ? (
+            <SupervisorAccounts />
           ) : (
             <div className="ml-10 md:ml-7">
               <div className="mt-8" />

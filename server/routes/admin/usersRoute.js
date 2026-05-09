@@ -27,10 +27,16 @@ router.patch("/restore/:user_id", adminUserController.restoreUser);
 //POST /users/add
 router.post("/add", adminUserController.addAdminUser);
 
-//POST /users/add-employee  (admin creates approved employee)
+//POST /users/add-employee
 router.post("/add-employee", adminUserController.addEmployee);
 
-// GET /users/admins
+//GET /users/admins
 router.get("/admins", adminUserController.getAllAdmins);
+
+//POST /users/add-supervisor
+router.post("/add-supervisor", adminUserController.addSupervisor);
+
+//Get /users/supervisors
+router.get("/supervisors", adminUserController.getSupervisors);
 
 module.exports = router;

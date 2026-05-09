@@ -9,12 +9,6 @@ router.post("/register", authController.register);
 //POST /auth/login
 router.post("/login", authController.login);
 
-//POST /auth/adminLogin
-router.post("/adminLogin", authController.adminLogin);
-
-//POST /auth/employeeLogin
-router.post("/employeeLogin", authController.employeeLogin);
-
 //POST /auth/logout
 router.post("/logout", authController.logout);
 
