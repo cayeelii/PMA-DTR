@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pencil, Archive, Plus } from "lucide-react";
 import AddScheduleModal from "../../components/AddSchedule";
+import EditScheduleModal from "../../components/EditSchedule";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -8,6 +9,8 @@ export default function ScheduleTabPrototype() {
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedSchedule, setSelectedSchedule] = useState(null);
 
     // FETCH SCHEDULES 
     const fetchSchedules = async () => {
@@ -35,6 +38,12 @@ export default function ScheduleTabPrototype() {
     useEffect(() => {
         fetchSchedules();
     }, []);
+
+    // HANDLE EDIT
+    const handleEdit = (schedule) => {
+        setSelectedSchedule(schedule);
+        setIsEditModalOpen(true);
+    };
 
     return (
         <div className="bg-surface w-full text-theme p-3 md:p-6">
@@ -80,7 +89,10 @@ export default function ScheduleTabPrototype() {
                                 {/* ACTIONS */}
                                 <div className="flex gap-1">
 
-                                    <button className="p-2 rounded-lg hover:bg-slate-100 text-blue-600 transition">
+                                    <button 
+                                        className="p-2 rounded-lg hover:bg-slate-100 text-blue-600 transition"
+                                        onClick={() => handleEdit(schedule)}
+                                    >
                                         <Pencil size={18} />
                                     </button>
 
@@ -153,6 +165,15 @@ export default function ScheduleTabPrototype() {
             {/* ADD SCHEDULE MODAL */}
             {isAddModalOpen && (
                 <AddScheduleModal onClose={() => setIsAddModalOpen(false)} onSuccess={fetchSchedules} />  
+            )}
+            
+            {/* Edit SCHEDULE MODAL */}
+            {isEditModalOpen && selectedSchedule && (
+                <EditScheduleModal
+                    schedule={selectedSchedule}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSuccess={fetchSchedules}
+                />
             )}
         </div>
     );
