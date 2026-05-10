@@ -31,6 +31,7 @@ import EmployeeHomePage from "./pages/employee/EmployeeHome.jsx";
 import EmployeeDTR from "./pages/employee/EmployeeDTR.jsx";
 import EmployeeProfilePage from "./pages/employee/EmployeeProfile.jsx";
 import EmployeeChangePasswordPage from "./pages/employee/EmployeeChangePassword.jsx";
+import SupervisorEmployeeView from "./pages/employee/SupervisorEmployeeView.jsx";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -92,6 +93,7 @@ function App() {
           <Route index element={<Navigate to="home" />} />
           <Route path="home" element={<EmployeeHomePage />} />
           <Route path="dtr" element={<EmployeeDTR />} />
+          <Route path="employees" element={<SupervisorEmployeeView />} />
           <Route path="profile" element={<EmployeeProfilePage />} />
           <Route
             path="employee-change-password"

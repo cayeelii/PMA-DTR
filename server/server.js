@@ -61,6 +61,7 @@ const scheduleRoute = require("./routes/admin/scheduleRoute");
 // Employee routes
 const employeeHomepageRoute = require("./routes/employee/homepageRoute");
 const employeeDtrRoute = require("./routes/employee/dtrRoute");
+const supervisorRoute = require("./routes/employee/supervisorRoute");
 
 
 // Admin
@@ -76,6 +77,7 @@ app.use("/api/schedules", scheduleRoute);
 // Employee
 app.use("/api/employee/homepage", employeeHomepageRoute);
 app.use("/api/employee/dtr", employeeDtrRoute);
+app.use("/api/supervisor", supervisorRoute);
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);

@@ -8,7 +8,8 @@ export function formatRoleLabel(role) {
 
   if (normalizedRole === "superadmin") return "Super Admin";
   if (normalizedRole === "admin") return "Admin";
-    if (normalizedRole === "employee") return "Employee";
+  if (normalizedRole === "employee") return "Employee";
+  if (normalizedRole === "supervisor") return "Supervisor";
 
   return role || "";
 }
