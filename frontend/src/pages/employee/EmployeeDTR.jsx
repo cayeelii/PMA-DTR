@@ -139,7 +139,12 @@ export default function EmployeeDTR() {
                     // ── 2. User profile — DTR endpoint may include it; if not,
                     //       fall back to /api/auth/current-user which always does.
                     let userData = data.user || null;
-                    if (!userData?.name && !userData?.username) {
+                    const needsProfileFallback =
+                        !userData?.bio_id ||
+                        (!userData?.name && !userData?.username) ||
+                        (!userData?.department && !userData?.dept_name && !userData?.dept_id);
+
+                    if (needsProfileFallback) {
                         try {
                             const profileRes = await fetch(
                                 `${API_BASE_URL}/api/auth/current-user`,
@@ -147,7 +152,10 @@ export default function EmployeeDTR() {
                             );
                             const profileData = await profileRes.json();
                             if (profileRes.ok && profileData.user) {
-                                userData = profileData.user;
+                                userData = {
+                                    ...userData,
+                                    ...profileData.user,
+                                };
                             }
                         } catch (e) {
                             console.error("Profile fallback failed:", e);
@@ -327,9 +335,10 @@ export default function EmployeeDTR() {
             doc.text(`Office: ${deptName || "-"}`, 192, 23.1, { align: "right" });
 
             doc.setLineWidth(0.25);
-            doc.line(18, 25.0, 192, 25.0);
-            doc.text(`Name: ${employeeName || "-"}`, 19.2, 28.0);
-            doc.line(18, 29.5, 192, 29.5);
+            doc.line(18, 27.5, 192, 27.5);
+            doc.text(`Name: ${employeeName || "-"}`, 19.2, 30.5);
+            doc.text(`Bio ID: ${employeeId || "-"}`, 192, 30.5, { align: "right" });
+            doc.line(18, 32.0, 192, 32.0);
 
             // ── Table ────────────────────────────────────────────────────────
             const marginLeft = 18;
