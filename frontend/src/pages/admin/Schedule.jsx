@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Pencil, Archive, Plus } from "lucide-react";
 import AddScheduleModal from "../../components/AddSchedule";
 import EditScheduleModal from "../../components/EditSchedule";
+import { saveActivityLog } from "../../utils/activityLogs";
+
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 export default function ScheduleTabPrototype() {
     const [schedules, setSchedules] = useState([]);
@@ -11,8 +14,10 @@ export default function ScheduleTabPrototype() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedSchedule, setSelectedSchedule] = useState(null);
+    const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+    const [scheduleToArchive, setScheduleToArchive] = useState(null);
 
-    // FETCH SCHEDULES 
+    // FETCH SCHEDULES
     const fetchSchedules = async () => {
         try {
             setLoading(true);
@@ -39,10 +44,99 @@ export default function ScheduleTabPrototype() {
         fetchSchedules();
     }, []);
 
-    // HANDLE EDIT
+
     const handleEdit = (schedule) => {
         setSelectedSchedule(schedule);
         setIsEditModalOpen(true);
+    };
+
+
+    const handleArchiveClick = (schedule) => {
+        setScheduleToArchive(schedule);
+        setIsArchiveModalOpen(true);
+    };
+
+
+    const handleArchiveConfirm = async () => {
+        if (!scheduleToArchive) return;
+
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/api/schedules/${scheduleToArchive.schedule_id}/archive`,
+                {
+                    method: "PATCH",
+                }
+            );
+
+
+            if (!response.ok) {
+                throw new Error("Failed to archive schedule");
+            }
+
+
+            // Log the activity
+            try {
+                await saveActivityLog({
+                    action: "Archived Schedule",
+                    details: `Archived schedule "${scheduleToArchive.schedule_name}".`,
+                });
+            } catch (logErr) {
+                console.error("Failed to save activity log:", logErr);
+            }
+
+
+            setIsArchiveModalOpen(false);
+            setScheduleToArchive(null);
+            await fetchSchedules();
+        } catch (error) {
+            console.error("Error archiving schedule:", error);
+            alert("Failed to archive schedule");
+        }
+    };
+
+
+    const handleAddSuccess = async () => {
+        try {
+            // Get the newly added schedule details from the API
+            const response = await fetch(`${API_BASE_URL}/api/schedules`);
+            const data = await response.json();
+           
+            
+            const newSchedule = data[data.length - 1];
+           
+            if (newSchedule) {
+                await saveActivityLog({
+                    action: "Added Schedule",
+                    details: `Added schedule "${newSchedule.schedule_name}".`,
+                });
+            }
+        } catch (logErr) {
+            console.error("Failed to save activity log:", logErr);
+        }
+
+
+        setIsAddModalOpen(false);
+        await fetchSchedules();
+    };
+
+
+    const handleEditSuccess = async () => {
+        try {
+            if (selectedSchedule) {
+                await saveActivityLog({
+                    action: "Updated Schedule",
+                    details: `Updated schedule "${selectedSchedule.schedule_name}".`,
+                });
+            }
+        } catch (logErr) {
+            console.error("Failed to save activity log:", logErr);
+        }
+
+
+        setIsEditModalOpen(false);
+        setSelectedSchedule(null);
+        await fetchSchedules();
     };
 
     return (
@@ -54,7 +148,7 @@ export default function ScheduleTabPrototype() {
                     Schedule
                 </h1>
 
-                <button 
+                <button
                     className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium shadow"
                     onClick={() => setIsAddModalOpen(true)}
                 >
@@ -89,14 +183,18 @@ export default function ScheduleTabPrototype() {
                                 {/* ACTIONS */}
                                 <div className="flex gap-1">
 
-                                    <button 
+                                    <button
                                         className="p-2 rounded-lg hover:bg-slate-100 text-blue-600 transition"
                                         onClick={() => handleEdit(schedule)}
                                     >
                                         <Pencil size={18} />
                                     </button>
 
-                                    <button className="p-2 rounded-lg hover:bg-slate-100 text-red-500 transition">
+
+                                    <button
+                                        className="p-2 rounded-lg hover:bg-slate-100 text-red-500 transition"
+                                        onClick={() => handleArchiveClick(schedule)}
+                                    >
                                         <Archive size={18} />
                                     </button>
 
@@ -155,26 +253,62 @@ export default function ScheduleTabPrototype() {
                                     </>
                                 )}
 
+
                             </div>
                         </div>
                     ))}
 
+
                 </div>
             )}
 
+
             {/* ADD SCHEDULE MODAL */}
             {isAddModalOpen && (
-                <AddScheduleModal onClose={() => setIsAddModalOpen(false)} onSuccess={fetchSchedules} />  
+                <AddScheduleModal onClose={() => setIsAddModalOpen(false)} onSuccess={handleAddSuccess} />  
             )}
-            
+           
             {/* Edit SCHEDULE MODAL */}
             {isEditModalOpen && selectedSchedule && (
                 <EditScheduleModal
                     schedule={selectedSchedule}
                     onClose={() => setIsEditModalOpen(false)}
-                    onSuccess={fetchSchedules}
+                    onSuccess={handleEditSuccess}
                 />
+            )}
+
+
+            {/* ARCHIVE SCHEDULE MODAL */}
+            {isArchiveModalOpen && scheduleToArchive && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">
+                            Archive Schedule
+                        </h2>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to archive the schedule <strong>"{scheduleToArchive.schedule_name}"</strong>? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-4 justify-end">
+                            <button
+                                onClick={() => {
+                                    setIsArchiveModalOpen(false);
+                                    setScheduleToArchive(null);
+                                }}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleArchiveConfirm}
+                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition"
+                            >
+                                Archive
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
 }
+
