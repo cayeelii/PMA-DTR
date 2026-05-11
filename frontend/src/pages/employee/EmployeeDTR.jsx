@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -176,6 +178,175 @@ export default function EmployeeDTR() {
     const employeeName = user?.name;
     const employeeId = user?.bio_id;
 
+    // ── 1-column PDF export — matches ReportPreview exactly ──────────────────
+    const exportToPDF = () => {
+        try {
+            const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+            // ── Helpers ───────────────────────────────────────────────────────
+            const parseDate = (value) => {
+                if (!value) return null;
+                const parts = String(value).trim().split(/[/-]/);
+                if (parts.length !== 3) return null;
+                const month = Number(parts[0]);
+                const day   = Number(parts[1]);
+                let   year  = Number(parts[2]);
+                if (!month || !day || !year) return null;
+                if (year < 100) year += 2000;
+                const parsed = new Date(year, month - 1, day);
+                return Number.isNaN(parsed.getTime()) ? null : parsed;
+            };
+
+            const formatDateIso = (date) =>
+                `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+            const validDates = dtrRows
+                .map((r) => parseDate(r.date))
+                .filter(Boolean)
+                .sort((a, b) => a - b);
+
+            const monthYear = validDates.length
+                ? validDates[0].toLocaleString("en-US", { month: "long", year: "numeric" })
+                : formatMonth(selectedMonth);
+
+            const rangeText = validDates.length
+                ? `${formatDateIso(validDates[0])} - ${formatDateIso(validDates[validDates.length - 1])}`
+                : "-";
+
+            const formatTimeForOneColumn = (value) => {
+                if (!value) return "";
+                const text = String(value).trim();
+                if (!text || text === "-" || text === "--") return "";
+                const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?$/i);
+                if (!match) return text;
+                let hours = Number(match[1]);
+                const minutes = match[2];
+                const suffix  = match[3]?.toUpperCase();
+                if (suffix === "AM" && hours === 12) hours = 0;
+                else if (suffix === "PM" && hours !== 12) hours += 12;
+                const twelveHour = ((hours + 11) % 12) + 1;
+                return `${twelveHour}:${minutes}`;
+            };
+
+            const formatDateForOneColumn = (value) => {
+                const parsed = parseDate(value);
+                if (!parsed) return value || "";
+                return `${parsed.getMonth() + 1}/${parsed.getDate()}/${parsed.getFullYear()}`;
+            };
+
+            // ── Header (matches ReportPreview drawOneColumnHeader) ────────────
+            doc.setLineWidth(0.4);
+            doc.line(18, 13, 192, 13);
+
+            doc.setFont(undefined, "bold");
+            doc.setFontSize(10);
+            doc.text(
+                `DAILY TIME RECORD OF - ${String(monthYear).toUpperCase()}`,
+                105, 18, { align: "center" },
+            );
+
+            doc.setLineWidth(0.25);
+            doc.line(18, 20.2, 192, 20.2);
+
+            doc.setFont(undefined, "normal");
+            doc.setFontSize(8);
+            doc.text(`Statistics Date: ${rangeText}`, 19.2, 23.1);
+            doc.text(`Office: ${user?.department || "-"}`, 192, 23.1, { align: "right" });
+
+            doc.setLineWidth(0.25);
+            doc.line(18, 25.0, 192, 25.0);
+            doc.text(`Name: ${employeeName || "-"}`, 19.2, 28.0);
+            doc.line(18, 29.5, 192, 29.5);
+
+            // ── Table (matches ReportPreview 1-column autoTable) ──────────────
+            const marginLeft = 18;
+            const tableWidth = 192 - marginLeft;
+
+            autoTable(doc, {
+                startY: 39.5,
+                head: [[
+                    { content: "Date", styles: { halign: "left" } },
+                    "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT",
+                ]],
+                body: dtrRows.map((row) => [
+                    formatDateForOneColumn(row.date),
+                    formatTimeForOneColumn(row.am_in),
+                    formatTimeForOneColumn(row.am_out),
+                    formatTimeForOneColumn(row.pm_in),
+                    formatTimeForOneColumn(row.pm_out),
+                    formatTimeForOneColumn(row.ot_in),
+                    formatTimeForOneColumn(row.ot_out),
+                ]),
+                margin: { left: marginLeft },
+                tableWidth,
+                styles: { fontSize: 7, cellPadding: 1.2, halign: "center", lineWidth: 0, lineColor: 0 },
+                headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: "bold", lineWidth: 0, lineColor: 0 },
+                bodyStyles: { lineWidth: 0, lineColor: 0 },
+                columnStyles: {
+                    0: { halign: "left", cellWidth: 24 },
+                    1: { cellWidth: 19.5 },
+                    2: { cellWidth: 19.5 },
+                    3: { cellWidth: 19.5 },
+                    4: { cellWidth: 19.5 },
+                    5: { cellWidth: 19.5 },
+                    6: { cellWidth: 19.5 },
+                },
+                theme: "plain",
+                didParseCell: (data) => {
+                    if (data.section === "head" && data.column.index === 0) {
+                        data.cell.styles.halign = "left";
+                    }
+                },
+                didDrawCell: (data) => {
+                    if (
+                        (data.section === "head" || data.section === "body") &&
+                        data.column.index === data.table.columns.length - 1
+                    ) {
+                        const y  = data.cell.y + data.cell.height;
+                        doc.setLineWidth(0.2);
+                        doc.line(marginLeft, y, marginLeft + tableWidth, y);
+                    }
+                },
+            });
+
+            // ── Signatures (matches ReportPreview drawOneColumnSignatures) ────
+            const finalY = doc.lastAutoTable?.finalY || 38;
+            let signatureY = finalY + 32;
+            if (signatureY > doc.internal.pageSize.getHeight() - 30) {
+                doc.addPage();
+                signatureY = 40;
+            }
+
+            const leftStart = 26, leftEnd = 86;
+            const rightStart = 124, rightEnd = 184;
+
+            doc.setLineWidth(0.3);
+            doc.line(leftStart, signatureY, leftEnd, signatureY);
+            doc.line(rightStart, signatureY, rightEnd, signatureY);
+
+            doc.setFontSize(8);
+            doc.setFont(undefined, "bold");
+            doc.text(
+                employeeName || "Employee",
+                (leftStart + leftEnd) / 2, signatureY - 2,
+                { align: "center" },
+            );
+            doc.text(
+                user?.supervisor || "",
+                (rightStart + rightEnd) / 2, signatureY - 2,
+                { align: "center" },
+            );
+
+            doc.setFont(undefined, "normal");
+            doc.text("Employee Signature", (leftStart + leftEnd) / 2, signatureY + 5, { align: "center" });
+            doc.text("Supervisor",         (rightStart + rightEnd) / 2, signatureY + 5, { align: "center" });
+
+            doc.save(`${employeeName || "DTR"}_${monthYear}_Report.pdf`);
+        } catch (error) {
+            console.error("PDF export failed:", error);
+        }
+    };
+
     const formatMonth = (value) => {
         if (!value) return "No DTR Available";
 
@@ -202,7 +373,7 @@ export default function EmployeeDTR() {
                 </div>
 
                 <button
-                    onClick={() => window.print()}
+                    onClick={exportToPDF}
                     className=" inline-flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition"
                 >
                     <Download size={16} />
