@@ -60,6 +60,7 @@ export default function EmployeeDTR() {
     const [searchParams] = useSearchParams();
 
     const [user, setUser] = useState(null);
+    const [signatory, setSignatory] = useState(null); // ← NEW
     const [dtrRows, setDtrRows] = useState([]);
     const [selectedMonth, setSelectedMonth] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -116,7 +117,7 @@ export default function EmployeeDTR() {
         };
     }, [searchParams]);
 
-    // FETCH DTR
+    // FETCH DTR + profile + signatory
     useEffect(() => {
         if (!selectedMonth) return;
 
@@ -126,6 +127,7 @@ export default function EmployeeDTR() {
             try {
                 const [year, month] = selectedMonth.split("-");
 
+                // ── 1. DTR rows ───────────────────────────────────────────────
                 const res = await fetch(
                     `${API_BASE_URL}/api/employee/dtr/view?month=${Number(month)}&year=${year}`,
                     { credentials: "include" },
@@ -134,7 +136,42 @@ export default function EmployeeDTR() {
                 const data = await res.json();
 
                 if (res.ok) {
-                    setUser(data.user);
+                    // ── 2. User profile — DTR endpoint may include it; if not,
+                    //       fall back to /api/auth/current-user which always does.
+                    let userData = data.user || null;
+                    if (!userData?.name && !userData?.username) {
+                        try {
+                            const profileRes = await fetch(
+                                `${API_BASE_URL}/api/auth/current-user`,
+                                { credentials: "include" },
+                            );
+                            const profileData = await profileRes.json();
+                            if (profileRes.ok && profileData.user) {
+                                userData = profileData.user;
+                            }
+                        } catch (e) {
+                            console.error("Profile fallback failed:", e);
+                        }
+                    }
+                    setUser(userData);
+
+                    // ── 3. Signatory — use what the DTR endpoint returned;
+                    //       if missing, fetch via the signatory endpoint using dept_id.
+                    let sigData = data.signatory || null;
+                    if (!sigData && userData?.dept_id) {
+                        try {
+                            const sigRes = await fetch(
+                                `${API_BASE_URL}/api/dtr/signatory?dept_id=${userData.dept_id}`,
+                                { credentials: "include" },
+                            );
+                            if (sigRes.ok) sigData = await sigRes.json();
+                        } catch (e) {
+                            console.error("Signatory fallback failed:", e);
+                        }
+                    }
+                    setSignatory(sigData);
+
+                    console.log("User resolved:", userData, "Signatory resolved:", sigData);
 
                     const formattedRows = (data.dtr || []).map((row) => {
                         const rawDate = row.rawDate || row.date;
@@ -175,25 +212,27 @@ export default function EmployeeDTR() {
         fetchDTR();
     }, [selectedMonth]);
 
-    const employeeName = user?.name;
-    const employeeId = user?.bio_id;
+    // Handle both API shapes: name/username, dept_name/department
+    const employeeName = user?.name || user?.username || "";
+    const employeeId   = user?.bio_id || "";
+    const deptName     = user?.dept_name || user?.department || "";
 
-    // ── 1-column PDF export — matches ReportPreview exactly ──────────────────
+    // ── 1-column PDF export — mirrors ReportPreview exactly ──────────────────
     const exportToPDF = () => {
         try {
             const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-            // ── Helpers ───────────────────────────────────────────────────────
+            // ── Date helpers ─────────────────────────────────────────────────
             const parseDate = (value) => {
                 if (!value) return null;
                 const parts = String(value).trim().split(/[/-]/);
                 if (parts.length !== 3) return null;
-                const month = Number(parts[0]);
-                const day   = Number(parts[1]);
-                let   year  = Number(parts[2]);
-                if (!month || !day || !year) return null;
-                if (year < 100) year += 2000;
-                const parsed = new Date(year, month - 1, day);
+                const m = Number(parts[0]);
+                const d = Number(parts[1]);
+                let   y = Number(parts[2]);
+                if (!m || !d || !y) return null;
+                if (y < 100) y += 2000;
+                const parsed = new Date(y, m - 1, d);
                 return Number.isNaN(parsed.getTime()) ? null : parsed;
             };
 
@@ -234,7 +273,7 @@ export default function EmployeeDTR() {
                 return `${parsed.getMonth() + 1}/${parsed.getDate()}/${parsed.getFullYear()}`;
             };
 
-            // ── Header (matches ReportPreview drawOneColumnHeader) ────────────
+            // ── Header ───────────────────────────────────────────────────────
             doc.setLineWidth(0.4);
             doc.line(18, 13, 192, 13);
 
@@ -251,14 +290,14 @@ export default function EmployeeDTR() {
             doc.setFont(undefined, "normal");
             doc.setFontSize(8);
             doc.text(`Statistics Date: ${rangeText}`, 19.2, 23.1);
-            doc.text(`Office: ${user?.department || "-"}`, 192, 23.1, { align: "right" });
+            doc.text(`Office: ${deptName || "-"}`, 192, 23.1, { align: "right" });
 
             doc.setLineWidth(0.25);
             doc.line(18, 25.0, 192, 25.0);
             doc.text(`Name: ${employeeName || "-"}`, 19.2, 28.0);
             doc.line(18, 29.5, 192, 29.5);
 
-            // ── Table (matches ReportPreview 1-column autoTable) ──────────────
+            // ── Table ────────────────────────────────────────────────────────
             const marginLeft = 18;
             const tableWidth = 192 - marginLeft;
 
@@ -283,13 +322,13 @@ export default function EmployeeDTR() {
                 headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: "bold", lineWidth: 0, lineColor: 0 },
                 bodyStyles: { lineWidth: 0, lineColor: 0 },
                 columnStyles: {
-                    0: { halign: "left", cellWidth: 24 },
-                    1: { cellWidth: 19.5 },
-                    2: { cellWidth: 19.5 },
-                    3: { cellWidth: 19.5 },
-                    4: { cellWidth: 19.5 },
-                    5: { cellWidth: 19.5 },
-                    6: { cellWidth: 19.5 },
+                    0: { halign: "left", cellWidth: 27 },
+                    1: { cellWidth: 24.5 },
+                    2: { cellWidth: 24.5 },
+                    3: { cellWidth: 24.5 },
+                    4: { cellWidth: 24.5 },
+                    5: { cellWidth: 24.5 },
+                    6: { cellWidth: 24.5 },
                 },
                 theme: "plain",
                 didParseCell: (data) => {
@@ -302,14 +341,14 @@ export default function EmployeeDTR() {
                         (data.section === "head" || data.section === "body") &&
                         data.column.index === data.table.columns.length - 1
                     ) {
-                        const y  = data.cell.y + data.cell.height;
+                        const y = data.cell.y + data.cell.height;
                         doc.setLineWidth(0.2);
                         doc.line(marginLeft, y, marginLeft + tableWidth, y);
                     }
                 },
             });
 
-            // ── Signatures (matches ReportPreview drawOneColumnSignatures) ────
+            // ── Signatures ───────────────────────────────────────────────────
             const finalY = doc.lastAutoTable?.finalY || 38;
             let signatureY = finalY + 32;
             if (signatureY > doc.internal.pageSize.getHeight() - 30) {
@@ -326,19 +365,26 @@ export default function EmployeeDTR() {
 
             doc.setFontSize(8);
             doc.setFont(undefined, "bold");
+
+            // Employee name above left line
             doc.text(
                 employeeName || "Employee",
                 (leftStart + leftEnd) / 2, signatureY - 2,
                 { align: "center" },
             );
+
+            // Signatory name above right line — same as ReportPreview
+            const supervisorName = signatory
+                ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
+                : "";
             doc.text(
-                user?.supervisor || "",
+                supervisorName,
                 (rightStart + rightEnd) / 2, signatureY - 2,
                 { align: "center" },
             );
 
             doc.setFont(undefined, "normal");
-            doc.text("Employee Signature", (leftStart + leftEnd) / 2, signatureY + 5, { align: "center" });
+            doc.text("Employee Signature", (leftStart + leftEnd) / 2,  signatureY + 5, { align: "center" });
             doc.text("Supervisor",         (rightStart + rightEnd) / 2, signatureY + 5, { align: "center" });
 
             doc.save(`${employeeName || "DTR"}_${monthYear}_Report.pdf`);
@@ -374,7 +420,7 @@ export default function EmployeeDTR() {
 
                 <button
                     onClick={exportToPDF}
-                    className=" inline-flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition"
                 >
                     <Download size={16} />
                     Export PDF
@@ -433,37 +479,14 @@ export default function EmployeeDTR() {
                                         key={index}
                                         className="border-b hover:bg-gray-50 text-slate-900 text-[15px] leading-relaxed tracking-wide"
                                     >
-                                        <td className="p-3 text-center">
-                                            {row.date}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            {row.day}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            {row.am_in}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            {row.am_out}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            {row.pm_in}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            {row.pm_out}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            {row.ot_in}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            {row.ot_out}
-                                        </td>
+                                        <td className="p-3 text-center">{row.date}</td>
+                                        <td className="p-3 text-center">{row.day}</td>
+                                        <td className="p-3 text-center">{row.am_in}</td>
+                                        <td className="p-3 text-center">{row.am_out}</td>
+                                        <td className="p-3 text-center">{row.pm_in}</td>
+                                        <td className="p-3 text-center">{row.pm_out}</td>
+                                        <td className="p-3 text-center">{row.ot_in}</td>
+                                        <td className="p-3 text-center">{row.ot_out}</td>
                                     </tr>
                                 ))
                             )}
