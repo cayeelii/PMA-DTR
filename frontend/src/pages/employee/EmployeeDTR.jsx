@@ -259,12 +259,10 @@ export default function EmployeeDTR() {
     const employeeId   = user?.bio_id || "";
     const deptName     = user?.dept_name || user?.department || "";
 
-    // ── 1-column PDF export — mirrors ReportPreview exactly ──────────────────
     const exportToPDF = () => {
         try {
             const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-            // ── Date helpers ─────────────────────────────────────────────────
             const parseDate = (value) => {
                 if (!value) return null;
                 const parts = String(value).trim().split(/[/-]/);
@@ -278,8 +276,17 @@ export default function EmployeeDTR() {
                 return Number.isNaN(parsed.getTime()) ? null : parsed;
             };
 
-            const formatDateIso = (date) =>
-                `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+            const formatMonthYear = (value) => {
+                if (!value) return "-";
+
+                const [year, month] = String(value).split("-").map(Number);
+                if (!year || !month) return "-";
+
+                return new Date(year, month - 1).toLocaleString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                });
+            };
 
             const validDates = dtrRows
                 .map((r) => parseDate(r.date))
@@ -288,25 +295,15 @@ export default function EmployeeDTR() {
 
             const monthYear = validDates.length
                 ? validDates[0].toLocaleString("en-US", { month: "long", year: "numeric" })
-                : formatMonth(selectedMonth);
-
-            const rangeText = validDates.length
-                ? `${formatDateIso(validDates[0])} - ${formatDateIso(validDates[validDates.length - 1])}`
-                : "-";
+                : formatMonthYear(selectedMonth);
 
             const formatTimeForOneColumn = (value) => {
                 if (!value) return "";
+
                 const text = String(value).trim();
                 if (!text || text === "-" || text === "--") return "";
-                const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?$/i);
-                if (!match) return text;
-                let hours = Number(match[1]);
-                const minutes = match[2];
-                const suffix  = match[3]?.toUpperCase();
-                if (suffix === "AM" && hours === 12) hours = 0;
-                else if (suffix === "PM" && hours !== 12) hours += 12;
-                const twelveHour = ((hours + 11) % 12) + 1;
-                return `${twelveHour}:${minutes}`;
+
+                return text;
             };
 
             const formatDateForOneColumn = (value) => {
@@ -315,43 +312,114 @@ export default function EmployeeDTR() {
                 return `${parsed.getMonth() + 1}/${parsed.getDate()}/${parsed.getFullYear()}`;
             };
 
-            // ── Header ───────────────────────────────────────────────────────
-            doc.setLineWidth(0.4);
-            doc.line(18, 13, 192, 13);
+            const drawHeader = () => {
+                doc.setLineWidth(0.4);
+                doc.line(18, 13, 192, 13);
 
-            doc.setFont(undefined, "bold");
-            doc.setFontSize(10);
-            doc.text(
-                `DAILY TIME RECORD OF - ${String(monthYear).toUpperCase()}`,
-                105, 18, { align: "center" },
-            );
+                doc.setFont(undefined, "bold");
+                doc.setFontSize(10);
+                doc.text("MONTHLY DAILY TIME RECORD -- DRAFT COPY", 105, 18, {
+                    align: "center",
+                });
 
-            doc.setLineWidth(0.25);
-            doc.line(18, 20.2, 192, 20.2);
+                doc.setFont(undefined, "normal");
+                doc.setFontSize(9);
+                doc.text(`For the Month of ${String(monthYear).toUpperCase()}`, 105, 23, {
+                    align: "center",
+                });
 
-            doc.setFont(undefined, "normal");
-            doc.setFontSize(8);
-            doc.text(`Statistics Date: ${rangeText}`, 19.2, 23.1);
-            doc.text(`Office: ${deptName || "-"}`, 192, 23.1, { align: "right" });
+                doc.setLineWidth(0.25);
+                doc.line(18, 25.2, 192, 25.2);
 
-            doc.setLineWidth(0.25);
-            doc.line(18, 27.5, 192, 27.5);
-            doc.text(`Name: ${employeeName || "-"}`, 19.2, 30.5);
-            doc.text(`Bio ID: ${employeeId || "-"}`, 192, 30.5, { align: "right" });
-            doc.line(18, 32.0, 192, 32.0);
+                doc.setFontSize(8);
+                doc.text(`Employee Name: ${employeeName || "-"}`, 19, 29);
+                doc.text(`Department: ${deptName || "-"}`, 105, 29, { align: "center" });
+                doc.text(`BIO ID NO: ${employeeId || "-"}`, 192, 29, { align: "right" });
 
-            // ── Table ────────────────────────────────────────────────────────
+                doc.setLineWidth(0.25);
+                doc.line(18, 31.8, 192, 31.8);
+            };
+
+            const drawFooter = (contentEndY) => {
+                const noteY = contentEndY + 6;
+                const note =
+                    "SUBMIT DRAFT COPY OF DTR AT OMAI for validation/approval of entries. Attach original QB form and mission order in your field copy only. Draft Copy must also be signed by your DEPT. HEAD / SUPERVISOR prior to submission to OMAI.";
+
+                const noteLines = doc.splitTextToSize(note, 160);
+                doc.setFontSize(7);
+                doc.setFont(undefined, "bold");
+                doc.text(noteLines, 18, noteY);
+
+                const extraSignatureSpace = 18; 
+                let signatureY = noteY + noteLines.length * 3.5 + 10 + extraSignatureSpace;
+                if (signatureY > doc.internal.pageSize.getHeight() - 35) {
+                    doc.addPage();
+                    drawHeader();
+                    signatureY = 52;
+                }
+
+                doc.setFont(undefined, "normal");
+                doc.text("Certified True and Correct", 48, signatureY - 8, {
+                    align: "center",
+                });
+                doc.text("Approved by", 152, signatureY - 8, { align: "center" });
+
+                const leftStart = 26;
+                const leftEnd = 86;
+                const rightStart = 124;
+                const rightEnd = 184;
+
+                doc.setLineWidth(0.3);
+                doc.line(leftStart, signatureY, leftEnd, signatureY);
+                doc.line(rightStart, signatureY, rightEnd, signatureY);
+
+                doc.setFontSize(8);
+                doc.setFont(undefined, "bold");
+                doc.text(employeeName || "Employee", 56, signatureY - 2, {
+                    align: "center",
+                });
+
+                const supervisorName = signatory
+                    ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
+                    : "";
+                doc.text(supervisorName || "Supervisor", 154, signatureY - 2, {
+                    align: "center",
+                });
+
+                doc.setFont(undefined, "normal");
+                doc.text("EMPLOYEE SIGNATURE", 56, signatureY + 5, { align: "center" });
+                doc.text("", 154, signatureY + 5, { align: "center" });
+
+                const dateStr = new Date().toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                });
+                doc.text(`dateprint: ${dateStr}`, 18, signatureY + 13);
+                doc.text("Page 1 of 1", 192, signatureY + 13, { align: "right" });
+            };
+
+            drawHeader();
+
             const marginLeft = 18;
-            const tableWidth = 192 - marginLeft;
+            const tableWidth = 174;
 
             autoTable(doc, {
-                startY: 39.5,
+                startY: 35,
                 head: [[
                     { content: "Date", styles: { halign: "left" } },
-                    "AM IN", "AM OUT", "PM IN", "PM OUT", "OT IN", "OT OUT",
+                    "Day",
+                    "AM IN",
+                    "AM OUT",
+                    "PM IN",
+                    "PM OUT",
+                    "OT IN",
+                    "OT OUT",
                 ]],
                 body: dtrRows.map((row) => [
                     formatDateForOneColumn(row.date),
+                    row.day || "",
                     formatTimeForOneColumn(row.am_in),
                     formatTimeForOneColumn(row.am_out),
                     formatTimeForOneColumn(row.pm_in),
@@ -361,19 +429,37 @@ export default function EmployeeDTR() {
                 ]),
                 margin: { left: marginLeft },
                 tableWidth,
-                styles: { fontSize: 7, cellPadding: 1.2, halign: "center", lineWidth: 0, lineColor: 0 },
-                headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: "bold", lineWidth: 0, lineColor: 0 },
-                bodyStyles: { lineWidth: 0, lineColor: 0 },
-                columnStyles: {
-                    0: { halign: "left", cellWidth: 27 },
-                    1: { cellWidth: 24.5 },
-                    2: { cellWidth: 24.5 },
-                    3: { cellWidth: 24.5 },
-                    4: { cellWidth: 24.5 },
-                    5: { cellWidth: 24.5 },
-                    6: { cellWidth: 24.5 },
-                },
                 theme: "plain",
+                styles: {
+                    fontSize: 7,
+                    cellPadding: 0.9,
+                    halign: "center",
+                    valign: "middle",
+                    lineColor: 0,
+                    lineWidth: 0,
+                    font: "helvetica",
+                },
+                headStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: 0,
+                    fontStyle: "bold",
+                    lineColor: 0,
+                    lineWidth: 0,
+                },
+                bodyStyles: {
+                    lineColor: 0,
+                    lineWidth: 0,
+                },
+                columnStyles: {
+                    0: { halign: "left", cellWidth: 24 },
+                    1: { cellWidth: 14 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 20 },
+                    4: { cellWidth: 20 },
+                    5: { cellWidth: 20 },
+                    6: { cellWidth: 20 },
+                    7: { cellWidth: 20 },
+                },
                 didParseCell: (data) => {
                     if (data.section === "head" && data.column.index === 0) {
                         data.cell.styles.halign = "left";
@@ -391,44 +477,8 @@ export default function EmployeeDTR() {
                 },
             });
 
-            // ── Signatures ───────────────────────────────────────────────────
-            const finalY = doc.lastAutoTable?.finalY || 38;
-            let signatureY = finalY + 32;
-            if (signatureY > doc.internal.pageSize.getHeight() - 30) {
-                doc.addPage();
-                signatureY = 40;
-            }
-
-            const leftStart = 26, leftEnd = 86;
-            const rightStart = 124, rightEnd = 184;
-
-            doc.setLineWidth(0.3);
-            doc.line(leftStart, signatureY, leftEnd, signatureY);
-            doc.line(rightStart, signatureY, rightEnd, signatureY);
-
-            doc.setFontSize(8);
-            doc.setFont(undefined, "bold");
-
-            // Employee name above left line
-            doc.text(
-                employeeName || "Employee",
-                (leftStart + leftEnd) / 2, signatureY - 2,
-                { align: "center" },
-            );
-
-            // Signatory name above right line — same as ReportPreview
-            const supervisorName = signatory
-                ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
-                : "";
-            doc.text(
-                supervisorName,
-                (rightStart + rightEnd) / 2, signatureY - 2,
-                { align: "center" },
-            );
-
-            doc.setFont(undefined, "normal");
-            doc.text("Employee Signature", (leftStart + leftEnd) / 2,  signatureY + 5, { align: "center" });
-            doc.text("Supervisor",         (rightStart + rightEnd) / 2, signatureY + 5, { align: "center" });
+            const finalY = doc.lastAutoTable?.finalY || 35;
+            drawFooter(finalY);
 
             doc.save(`${employeeName || "DTR"}_${monthYear}_Report.pdf`);
         } catch (error) {
