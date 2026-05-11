@@ -58,12 +58,46 @@ const getEmployeeDTR = (req, res) => {
                 });
             }
 
-            return res.json({
-                user: {
-                    name: user.name,
-                    bio_id: user.bio_id,
-                },
-                dtr: results || [],
+            const departmentName = (user.department || "").trim();
+            if (!departmentName) {
+                return res.json({
+                    user: {
+                        name: user.name,
+                        bio_id: user.bio_id,
+                        department: user.department || "",
+                    },
+                    signatory: null,
+                    dtr: results || [],
+                });
+            }
+
+            const signatorySql = `
+                SELECT
+                    s.signatory_id,
+                    s.head_name,
+                    s.position,
+                    d.dept_id,
+                    d.dept_name
+                FROM signatories s
+                JOIN departments d ON d.dept_id = s.dept_id
+                WHERE TRIM(d.dept_name) = TRIM(?)
+                LIMIT 1
+            `;
+
+            db.query(signatorySql, [departmentName], (signErr, signRows) => {
+                if (signErr) {
+                    console.error("Employee DTR signatory lookup error:", signErr);
+                }
+
+                return res.json({
+                    user: {
+                        name: user.name,
+                        bio_id: user.bio_id,
+                        department: user.department || "",
+                    },
+                    signatory: signErr ? null : signRows[0] || null,
+                    dtr: results || [],
+                });
             });
         });
     } catch (error) {

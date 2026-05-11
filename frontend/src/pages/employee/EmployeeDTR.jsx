@@ -155,8 +155,8 @@ export default function EmployeeDTR() {
                     }
                     setUser(userData);
 
-                    // ── 3. Signatory — use what the DTR endpoint returned;
-                    //       if missing, fetch via the signatory endpoint using dept_id.
+                    // 3. Signatory - use what the DTR endpoint returned.
+                    //    Fallback by dept_id first, then by department name.
                     let sigData = data.signatory || null;
                     if (!sigData && userData?.dept_id) {
                         try {
@@ -166,7 +166,41 @@ export default function EmployeeDTR() {
                             );
                             if (sigRes.ok) sigData = await sigRes.json();
                         } catch (e) {
-                            console.error("Signatory fallback failed:", e);
+                            console.error("Signatory fallback by dept_id failed:", e);
+                        }
+                    }
+
+                    if (!sigData) {
+                        const userDeptName = (
+                            userData?.department || userData?.dept_name || ""
+                        )
+                            .toString()
+                            .trim()
+                            .toLowerCase();
+
+                        if (userDeptName) {
+                            try {
+                                const allSignatoriesRes = await fetch(
+                                    `${API_BASE_URL}/api/signatories`,
+                                    { credentials: "include" },
+                                );
+
+                                if (allSignatoriesRes.ok) {
+                                    const allSignatories = await allSignatoriesRes.json();
+                                    if (Array.isArray(allSignatories)) {
+                                        sigData =
+                                            allSignatories.find((item) => {
+                                                const deptName = (item?.dept_name || "")
+                                                    .toString()
+                                                    .trim()
+                                                    .toLowerCase();
+                                                return deptName === userDeptName;
+                                            }) || null;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error("Signatory fallback by department failed:", e);
+                            }
                         }
                     }
                     setSignatory(sigData);
