@@ -431,8 +431,8 @@ export default function EmployeeDTR() {
                 tableWidth,
                 theme: "plain",
                 styles: {
-                    fontSize: 7,
-                    cellPadding: 0.9,
+                    fontSize: 7.5, 
+                    cellPadding: 1.4, 
                     halign: "center",
                     valign: "middle",
                     lineColor: 0,
@@ -451,14 +451,14 @@ export default function EmployeeDTR() {
                     lineWidth: 0,
                 },
                 columnStyles: {
-                    0: { halign: "left", cellWidth: 24 },
-                    1: { cellWidth: 14 },
-                    2: { cellWidth: 20 },
-                    3: { cellWidth: 20 },
-                    4: { cellWidth: 20 },
-                    5: { cellWidth: 20 },
-                    6: { cellWidth: 20 },
-                    7: { cellWidth: 20 },
+                    0: { halign: "left", cellWidth: 24.5 },
+                    1: { cellWidth: 14.5 },
+                    2: { cellWidth: 20.5 },
+                    3: { cellWidth: 20.5 },
+                    4: { cellWidth: 20.5 },
+                    5: { cellWidth: 20.5 },
+                    6: { cellWidth: 20.5 },
+                    7: { cellWidth: 20.5 },
                 },
                 didParseCell: (data) => {
                     if (data.section === "head" && data.column.index === 0) {
