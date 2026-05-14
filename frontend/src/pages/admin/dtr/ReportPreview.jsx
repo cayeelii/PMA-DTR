@@ -288,21 +288,24 @@ export default function ReportPreview({
         const z = zoom;
 
         // --- 1. Header Section ---
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11 * z); // Enlarged
+        doc.setFont("times", "bold");
+        doc.setFontSize(12 * z);
         doc.text("Monthly Daily Time Record", centerX, 12 * z, { align: "center" });
 
-        doc.setFontSize(10 * z);
+        doc.setFont("times", "normal");
+        doc.setFontSize(9 * z);
         const { monthYear } = getDateRange();
-        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 18 * z, { align: "center" });
+        doc.text(`For the Month of ${String(monthYear).toUpperCase()}`, centerX, 18 * z, { align: "center" });
 
         // --- 2. Identity Section ---
         doc.setLineWidth(0.1);
         doc.line(startX + margin, 21 * z, startX + width - margin, 21 * z);
         
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10 * z); // Enlarged
+        doc.setFont("times", "bold");
+        doc.setFontSize(10 * z);
         doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 26 * z);
+        doc.setFont("times", "normal");
+        doc.setFontSize(9 * z);
         doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 31 * z);
 
         doc.line(startX + margin, 33 * z, startX + width - margin, 33 * z);
@@ -357,11 +360,11 @@ export default function ReportPreview({
           tableWidth: contentWidth,
           theme: "plain",
           styles: {
-            fontSize: 7.5 * z, 
-            cellPadding: 0.8 * z, 
+            fontSize: 8 * z,
+            cellPadding: 1 * z,
             halign: "center",
             textColor: [0, 0, 0],
-            font: "helvetica",
+            font: "times",
           },
           headStyles: {
             fillColor: [255, 255, 255],
@@ -386,19 +389,19 @@ export default function ReportPreview({
         const footerY = finalTableY + 12 * z;
 
         doc.line(startX + margin + 5, footerY, startX + width - margin - 5, footerY);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5 * z);
+        doc.setFont("times", "normal");
+        doc.setFontSize(8 * z);
         doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5 * z, { align: "center" });
 
         const sigY = footerY + 18 * z;
-        doc.line(startX + margin + 5, sigY, startX + width - margin - 5, sigY); 
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10 * z); 
+        doc.line(startX + margin + 5, sigY, startX + width - margin - 5, sigY);
+        doc.setFont("times", "bold");
+        doc.setFontSize(9 * z);
         const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
         doc.text(bossName, centerX, sigY + 5 * z, { align: "center" });
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8 * z); 
+        doc.setFont("times", "normal");
+        doc.setFontSize(8 * z);
         const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
         doc.text(bossPos, centerX, sigY + 10 * z, { align: "center" });
 
@@ -440,10 +443,10 @@ export default function ReportPreview({
         // Draw header
         doc.setLineWidth(0.4);
         doc.line(18, 13, 192, 13);
-        doc.setFont(undefined, "bold");
-        doc.setFontSize(10);
+        doc.setFont("times", "bold");
+        doc.setFontSize(12);
         doc.text("MONTHLY DAILY TIME RECORD -- DRAFT COPY", 105, 18, { align: "center" });
-        doc.setFont(undefined, "normal");
+        doc.setFont("times", "normal");
         doc.setFontSize(9);
         doc.text(`For the Month of ${String(monthYear).toUpperCase()}`, 105, 23, { align: "center" });
         doc.setLineWidth(0.25);
@@ -484,13 +487,13 @@ export default function ReportPreview({
           tableWidth,
           theme: "plain",
           styles: {
-            fontSize: 7.5,
-            cellPadding: 1.4,
+            fontSize: 8,
+            cellPadding: 1.2,
             halign: "center",
             valign: "middle",
             lineColor: 0,
             lineWidth: 0,
-            font: "helvetica",
+            font: "times",
           },
           headStyles: {
             fillColor: [255, 255, 255],
@@ -537,8 +540,8 @@ export default function ReportPreview({
         const note =
           "SUBMIT DRAFT COPY OF DTR AT OMAI for validation/approval of entries. Attach original QB form and mission order in your field copy only. Draft Copy must also be signed by your DEPT. HEAD / SUPERVISOR prior to submission to OMAI.";
         const noteLines = doc.splitTextToSize(note, 160);
+        doc.setFont("times", "bold");
         doc.setFontSize(7);
-        doc.setFont(undefined, "bold");
         doc.text(noteLines, 18, noteY);
         const extraSignatureSpace = 18;
         let signatureY = noteY + noteLines.length * 3.5 + 10 + extraSignatureSpace;
@@ -547,10 +550,10 @@ export default function ReportPreview({
           // Redraw header if new page
           doc.setLineWidth(0.4);
           doc.line(18, 13, 192, 13);
-          doc.setFont(undefined, "bold");
-          doc.setFontSize(10);
+          doc.setFont("times", "bold");
+          doc.setFontSize(12);
           doc.text("MONTHLY DAILY TIME RECORD -- DRAFT COPY", 105, 18, { align: "center" });
-          doc.setFont(undefined, "normal");
+          doc.setFont("times", "normal");
           doc.setFontSize(9);
           doc.text(`For the Month of ${String(monthYear).toUpperCase()}`, 105, 23, { align: "center" });
           doc.setLineWidth(0.25);
@@ -563,7 +566,7 @@ export default function ReportPreview({
           doc.line(18, 31.8, 192, 31.8);
           signatureY = 52;
         }
-        doc.setFont(undefined, "normal");
+        doc.setFont("times", "normal");
         doc.text("Certified True and Correct", 48, signatureY - 8, { align: "center" });
         doc.text("Approved by", 152, signatureY - 8, { align: "center" });
         const leftStart = 26;
@@ -573,8 +576,8 @@ export default function ReportPreview({
         doc.setLineWidth(0.3);
         doc.line(leftStart, signatureY, leftEnd, signatureY);
         doc.line(rightStart, signatureY, rightEnd, signatureY);
-        doc.setFontSize(8);
-        doc.setFont(undefined, "bold");
+        doc.setFontSize(9);
+        doc.setFont("times", "bold");
         doc.text(employeeName || "Employee", 56, signatureY - 2, { align: "center" });
         const supervisorName = activeSignatory?.head_name || "Supervisor";
         const supervisorPosition = activeSignatory?.position || "";
@@ -594,7 +597,7 @@ export default function ReportPreview({
         }
 
         doc.text(supervisorName, 154, signatureY + 5, { align: "center" });
-        doc.setFont(undefined, "normal");
+        doc.setFont("times", "normal");
         doc.text("EMPLOYEE SIGNATURE", 56, signatureY + 5, { align: "center" });
         doc.text(supervisorPosition, 154, signatureY + 10, { align: "center" });
         const dateStr = new Date().toLocaleDateString("en-US", {
