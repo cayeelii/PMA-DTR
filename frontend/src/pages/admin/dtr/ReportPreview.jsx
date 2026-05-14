@@ -677,46 +677,46 @@ export default function ReportPreview({
           </div>
         </div>
         {/* Report Info */}
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex-1">
-            <div className="text-center">
-              <div className="text-sm font-medium">
-                Monthly Daily Time Record
-              </div>
-              <div className="text-xs text-gray-500">
-                {(() => {
-                  // Dynamically compute the month/year from dtrRows
-                  const parseDate = (value) => {
-                    if (!value) return null;
-                    const parts = String(value).trim().split(/[/-]/);
-                    if (parts.length !== 3) return null;
-                    const m = Number(parts[0]);
-                    const d = Number(parts[1]);
-                    let y = Number(parts[2]);
-                    if (!m || !d || !y) return null;
-                    if (y < 100) y += 2000;
-                    const parsed = new Date(y, m - 1, d);
-                    return Number.isNaN(parsed.getTime()) ? null : parsed;
-                  };
-                  const validDates = (dtrRows || [])
-                    .map((r) => parseDate(r.date))
-                    .filter(Boolean)
-                    .sort((a, b) => a - b);
-                  const monthYear = validDates.length
-                    ? validDates[0].toLocaleString("en-US", { month: "long", year: "numeric" })
-                    : "-";
-                  return `For the Month of ${monthYear.toUpperCase()}`;
-                })()}
-              </div>
+        <div className="mb-2">
+          <div className="w-full text-center">
+            <div className="text-sm font-medium">
+              Monthly Daily Time Record
             </div>
-            <div className="text-xs mt-2">
+            <div className="text-xs text-gray-500">
+              {(() => {
+                // Dynamically compute the month/year from dtrRows
+                const parseDate = (value) => {
+                  if (!value) return null;
+                  const parts = String(value).trim().split(/[/-]/);
+                  if (parts.length !== 3) return null;
+                  const m = Number(parts[0]);
+                  const d = Number(parts[1]);
+                  let y = Number(parts[2]);
+                  if (!m || !d || !y) return null;
+                  if (y < 100) y += 2000;
+                  const parsed = new Date(y, m - 1, d);
+                  return Number.isNaN(parsed.getTime()) ? null : parsed;
+                };
+                const validDates = (dtrRows || [])
+                  .map((r) => parseDate(r.date))
+                  .filter(Boolean)
+                  .sort((a, b) => a - b);
+                const monthYear = validDates.length
+                  ? validDates[0].toLocaleString("en-US", { month: "long", year: "numeric" })
+                  : "-";
+                return `For the Month of ${monthYear.toUpperCase()}`;
+              })()}
+            </div>
+          </div>
+          <div className="mt-2 flex justify-between items-center">
+            <div className="text-xs">
               Name:{" "}
               <span className="font-semibold">{employee?.name || "—"}</span>
             </div>
-          </div>
-          <div className="text-xs">
-            Office:{" "}
-            <span className="font-semibold">{department?.name || "—"}</span>
+            <div className="text-xs">
+              Office:{" "}
+              <span className="font-semibold">{department?.name || "—"}</span>
+            </div>
           </div>
         </div>
         {/* Table */}
