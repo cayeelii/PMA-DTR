@@ -304,7 +304,7 @@ export default function ReportPreview({
           }
 
           rows.push([
-            `${dayNum} ${dayName}`,
+            `${dayNum}    ${dayName}`,
             formatTimeShort(record?.amIn),
             formatTimeShort(record?.amOut),
             formatTimeShort(record?.pmIn),
@@ -355,16 +355,17 @@ export default function ReportPreview({
         doc.setFontSize(8.5);
         doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5, { align: "center" });
 
-        const sigY = footerY + 18; 
+        const sigY = footerY + 18;
+        doc.line(startX + margin + 5, sigY, startX + width - margin - 5, sigY); 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10); 
         const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
-        doc.text(bossName, centerX, sigY, { align: "center" });
+        doc.text(bossName, centerX, sigY + 5, { align: "center" });
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8); 
         const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
-        doc.text(bossPos, centerX, sigY + 5, { align: "center" });
+        doc.text(bossPos, centerX, sigY + 10, { align: "center" });
 
         const dateStr = new Date().toLocaleDateString("en-US", {
           weekday: "long",
@@ -373,8 +374,8 @@ export default function ReportPreview({
           day: "numeric",
         });
         doc.setFontSize(7.5);
-        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 12);
-        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 12, { align: "right" });
+        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 18);
+        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 18, { align: "right" });
       };
 
       // --- EXECUTION LOGIC ---
