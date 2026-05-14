@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -128,7 +128,11 @@ const DepartmentView = ({ fileName, onReset, batchId, onSelect }) => {
             Export XLSX
           </button>
 
-          <span className="bg-green-100 text-green-800 px-4 py-1 rounded-full text-sm font-medium border border-green-200">
+          <span
+            className="flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full font-semibold border border-green-300"
+            style={{ fontSize: "0.9rem" }}
+          >
+            <FileText size={16} className="shrink-0" />
             {fileName}
           </span>
         </div>
