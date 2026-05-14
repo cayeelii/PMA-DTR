@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -12,8 +12,41 @@ export default function ReportPreview({
   signatory,
 }) {
   const [showPdfOptions, setShowPdfOptions] = useState(false);
+  const [resolvedSignatory, setResolvedSignatory] = useState(signatory || null);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // Use the same full calendar  
+  useEffect(() => {
+    setResolvedSignatory(signatory || null);
+  }, [signatory]);
+
+  useEffect(() => {
+    const deptId = department?.dept_id || department?.id;
+    if (signatory || !deptId || !API_BASE_URL) return;
+
+    let cancelled = false;
+
+    const fetchSignatory = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/dtr/signatory?dept_id=${deptId}`,
+        );
+        const data = await res.json();
+        if (!cancelled) {
+          setResolvedSignatory(data || null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch supervisor name:", error);
+      }
+    };
+
+    fetchSignatory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE_URL, department?.dept_id, department?.id, signatory]);
+
+  const activeSignatory = resolvedSignatory || signatory;
   const reportRows = dtrRows;
 
   const tableData = reportRows.map((row) => [
@@ -236,6 +269,7 @@ export default function ReportPreview({
       });
 
       const pageWidth = doc.internal.pageSize.getWidth();
+      const zoom = 1.05;
 
       // Helper to strip seconds and AM/PM (e.g., "08:30:00 AM" -> "08:30")
       const formatTimeShort = (timeStr) => {
@@ -251,26 +285,27 @@ export default function ReportPreview({
         const margin = 6; 
         const centerX = startX + width / 2;
         const contentWidth = width - margin * 2;
+        const z = zoom;
 
         // --- 1. Header Section ---
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(11); // Enlarged
-        doc.text("Monthly Daily Time Record", centerX, 12, { align: "center" });
+        doc.setFontSize(11 * z); // Enlarged
+        doc.text("Monthly Daily Time Record", centerX, 12 * z, { align: "center" });
 
-        doc.setFontSize(10);
+        doc.setFontSize(10 * z);
         const { monthYear } = getDateRange();
-        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 18, { align: "center" });
+        doc.text(`For the Month of ${monthYear.toUpperCase()}`, centerX, 18 * z, { align: "center" });
 
         // --- 2. Identity Section ---
         doc.setLineWidth(0.1);
-        doc.line(startX + margin, 21, startX + width - margin, 21);
+        doc.line(startX + margin, 21 * z, startX + width - margin, 21 * z);
         
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10); // Enlarged
-        doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 26);
-        doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 31);
+        doc.setFontSize(10 * z); // Enlarged
+        doc.text(`Name: ${employee?.name?.toUpperCase() || "-"}`, startX + margin, 26 * z);
+        doc.text(`Dept / Office: ${department?.name || "-"}`, startX + margin, 31 * z);
 
-        doc.line(startX + margin, 33, startX + width - margin, 33);
+        doc.line(startX + margin, 33 * z, startX + width - margin, 33 * z);
 
         // --- 3. Table Header ---
         const tableHeader = [
@@ -315,15 +350,15 @@ export default function ReportPreview({
         }
 
         autoTable(doc, {
-          startY: 33,
+          startY: 33 * z,
           head: tableHeader,
           body: rows,
           margin: { left: startX + margin },
           tableWidth: contentWidth,
           theme: "plain",
           styles: {
-            fontSize: 7.5, 
-            cellPadding: 0.8, 
+            fontSize: 7.5 * z, 
+            cellPadding: 0.8 * z, 
             halign: "center",
             textColor: [0, 0, 0],
             font: "helvetica",
@@ -348,24 +383,24 @@ export default function ReportPreview({
 
         // --- 5. Footer / Signature Section ---
         const finalTableY = doc.lastAutoTable.finalY;
-        const footerY = finalTableY + 12;
+        const footerY = finalTableY + 12 * z;
 
         doc.line(startX + margin + 5, footerY, startX + width - margin - 5, footerY);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5, { align: "center" });
+        doc.setFontSize(8.5 * z);
+        doc.text("EMPLOYEE SIGNATURE", centerX, footerY + 5 * z, { align: "center" });
 
-        const sigY = footerY + 18;
+        const sigY = footerY + 18 * z;
         doc.line(startX + margin + 5, sigY, startX + width - margin - 5, sigY); 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10); 
+        doc.setFontSize(10 * z); 
         const bossName = signatory?.head_name?.toUpperCase() || "CAPT JOHN RONALD A MANGAHAS PN(GSC)";
-        doc.text(bossName, centerX, sigY + 5, { align: "center" });
+        doc.text(bossName, centerX, sigY + 5 * z, { align: "center" });
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8); 
+        doc.setFontSize(8 * z); 
         const bossPos = signatory?.position || "AC of S for Plans and Programs, MA5, PMA";
-        doc.text(bossPos, centerX, sigY + 10, { align: "center" });
+        doc.text(bossPos, centerX, sigY + 10 * z, { align: "center" });
 
         const dateStr = new Date().toLocaleDateString("en-US", {
           weekday: "long",
@@ -373,23 +408,25 @@ export default function ReportPreview({
           month: "long",
           day: "numeric",
         });
-        doc.setFontSize(7.5);
-        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 18);
-        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 18, { align: "right" });
+        doc.setFontSize(7.5 * z);
+        doc.text(`dateprint: ${dateStr}`, startX + margin, sigY + 18 * z);
+        doc.text(`Page 1 of 1`, startX + width - margin, sigY + 18 * z, { align: "right" });
       };
 
       // --- EXECUTION LOGIC ---
       if (columnLayout === "2") {
         // Form 1 (Left side)
         drawDTRForm(0, pageWidth / 2);
-
-        // Form 2 (Right side)
         drawDTRForm(pageWidth / 2, pageWidth / 2);
       } else {
-        // --- 1 COLUMN FORMAT: MATCH EmployeeDTR ---
-        // Draw header (copied from EmployeeDTR)
+        // --- 1 COLUMN FORMAT
         const employeeName = employee?.name || employee?.username || "";
-        const employeeId   = employee?.bio_id || "";
+        const employeeId =
+          employee?.bio_id ||
+          employee?.bioId ||
+          employee?.employee_id ||
+          employee?.id ||
+          "";
         const deptName     = department?.name || department?.dept_name || department?.department || "";
 
         const validDates = reportRows
@@ -539,13 +576,27 @@ export default function ReportPreview({
         doc.setFontSize(8);
         doc.setFont(undefined, "bold");
         doc.text(employeeName || "Employee", 56, signatureY - 2, { align: "center" });
-        const supervisorName = signatory
-          ? `${signatory.position || ""} ${signatory.head_name || ""}`.trim()
-          : "";
-        doc.text(supervisorName || "Supervisor", 154, signatureY - 2, { align: "center" });
+        const supervisorName = activeSignatory?.head_name || "Supervisor";
+        const supervisorPosition = activeSignatory?.position || "";
+        const supervisorSignature =
+          activeSignatory?.signature ||
+          activeSignatory?.signature_url ||
+          activeSignatory?.signatureUrl ||
+          activeSignatory?.signature_file ||
+          "";
+
+        if (typeof supervisorSignature === "string" && supervisorSignature.startsWith("data:image/")) {
+          try {
+            doc.addImage(supervisorSignature, "PNG", rightStart + 10, signatureY - 13, 40, 10);
+          } catch (err) {
+            console.warn("Supervisor signature image could not be rendered:", err);
+          }
+        }
+
+        doc.text(supervisorName, 154, signatureY + 5, { align: "center" });
         doc.setFont(undefined, "normal");
         doc.text("EMPLOYEE SIGNATURE", 56, signatureY + 5, { align: "center" });
-        doc.text("", 154, signatureY + 5, { align: "center" });
+        doc.text(supervisorPosition, 154, signatureY + 10, { align: "center" });
         const dateStr = new Date().toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
